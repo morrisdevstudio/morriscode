@@ -82,7 +82,10 @@ vi.mock('../shared/ModalFooter', () => ({
   ModalFooter: () => null,
 }))
 
-vi.mock('../shared/icons', () => ({
+vi.mock('../shared/icons', async (importOriginal) => ({
+  // Real icons by default so new icons never break the mock; the stubs below
+  // keep the test-friendly markers the assertions rely on.
+  ...(await importOriginal<typeof import('../shared/icons')>()),
   EllipsisIcon: () => <span data-testid="ellipsis-icon">...</span>,
   SpinIcon: () => <span data-testid="spin-icon" className="animate-spin" />,
   StopIcon: () => <span data-testid="stop-icon" />,
