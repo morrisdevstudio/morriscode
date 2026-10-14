@@ -1,11 +1,11 @@
 # Project Tasks — Product Specification
 
 > Status: accepted for implementation
-> Scope: user experience in the OpenFox context. Describes features and behavior, not implementation details.
+> Scope: user experience in the MorrisCode context. Describes features and behavior, not implementation details.
 
 ## 1. Purpose & Goals
 
-Replace the "what's next" scratchpad — a physical note on the desk — with a first-class, project-scoped task board living inside OpenFox. The board IS the new scratchpad: ideas, bugs, and chores captured digitally. There is nothing to migrate — the board starts empty and simply takes over the scratchpad's role.
+Replace the "what's next" scratchpad — a physical note on the desk — with a first-class, project-scoped task board living inside MorrisCode. The board IS the new scratchpad: ideas, bugs, and chores captured digitally. There is nothing to migrate — the board starts empty and simply takes over the scratchpad's role.
 
 Goals:
 
@@ -27,7 +27,7 @@ Goals:
 ## 3. Storage & Scope
 
 - Tasks are **scoped to a project**: each project has its own board. Boards never mix across projects.
-- Tasks are **stored locally** in OpenFox's private storage — deliberately invisible to git. The board does not leak into the repository, does not create merge conflicts, and follows the user's machine like sessions and projects do.
+- Tasks are **stored locally** in MorrisCode's private storage — deliberately invisible to git. The board does not leak into the repository, does not create merge conflicts, and follows the user's machine like sessions and projects do.
 - The board survives server restarts and is fully owned by the server (single source of truth). All connected clients render what the server sends.
 - There is no cross-project aggregation, export, or sharing in scope.
 
@@ -156,7 +156,7 @@ Both paths produce the same linked-card state, the same "Open session" button, a
 ### 7.4 In Progress behaviors
 
 - The card always shows a link to its bound session ("Open session"), which re-opens that session from anywhere in the app.
-- Task ↔ session links are never removed implicitly; sessions are never deleted in OpenFox, so the link never dangles. Links are only broken by explicit user action (revert to To Do, delete). Over time a task may carry multiple session links: the active working session plus previous attempts kept as history (§7.5).
+- Task ↔ session links are never removed implicitly; sessions are never deleted in MorrisCode, so the link never dangles. Links are only broken by explicit user action (revert to To Do, delete). Over time a task may carry multiple session links: the active working session plus previous attempts kept as history (§7.5).
 - Moving a task back to To Do unbinds it and **frees its slot** immediately (the session itself is untouched; it simply no longer represents this task).
 - If the task's session is left idle without reaching Done, the task remains active and keeps its slot — a strict, predictable WIP limit.
 
@@ -271,7 +271,7 @@ Reminder content always includes: task title, previous → new state, and (relev
 - No cross-project boards or global task inbox.
 - No priorities, deadlines, assignees, tags, or estimates — ordering in the column is the only ranking.
 - No integration with external issue trackers (GitHub issues, Linear, etc.).
-- No change to OpenFox's session lifecycle (sessions are never deleted; task features build on that).
+- No change to MorrisCode's session lifecycle (sessions are never deleted; task features build on that).
 - No team sharing via the repo — the board is intentionally private to the local install (§3).
 
 ## 15. Nice-to-Haves / Future

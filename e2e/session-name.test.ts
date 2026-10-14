@@ -16,7 +16,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { ServerMessage } from '@openfox/shared/protocol'
+import type { ServerMessage } from '@morriscode/shared/protocol'
 
 describe('Auto Session Name', () => {
   let server: TestServerHandle

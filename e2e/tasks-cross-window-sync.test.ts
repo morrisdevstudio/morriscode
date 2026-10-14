@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import type { TasksUpdatePayload } from '@openfox/shared/protocol'
+import type { TasksUpdatePayload } from '@morriscode/shared/protocol'
 import {
   createTestClient,
   createTestProject,

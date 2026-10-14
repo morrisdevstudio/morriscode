@@ -1,6 +1,6 @@
 # PR Review Workflow
 
-> How to review, fix, and merge pull requests in OpenFox — agent-assisted.
+> How to review, fix, and merge pull requests in MorrisCode — agent-assisted.
 
 ## Overview
 
@@ -22,7 +22,7 @@ workspace switch review-pr-<N>
 
 # 2. Point origin to GitHub (workspaces use --shared clone, origin
 #    defaults to the local repo path — gh needs a GitHub remote)
-git remote set-url origin git@github.com:co-l/openfox.git
+git remote set-url origin git@github.com:morrisdevstudio/morriscode.git
 
 # 3. Sync workspace with develop
 git fetch origin
@@ -35,7 +35,7 @@ gh pr checkout <N>
 PR_BASE=$(gh pr view <N> --json baseRefName --jq '.baseRefName')
 if [ "$PR_BASE" != "develop" ]; then
   echo "⚠️  PR #<N> targets '$PR_BASE' — retargeting to 'develop'"
-  gh api repos/co-l/openfox/pulls/<N> -X PATCH -f base=develop
+  gh api repos/morrisdevstudio/morriscode/pulls/<N> -X PATCH -f base=develop
   git fetch origin
 fi
 
@@ -112,7 +112,7 @@ git push origin review-fixes-<N>
 #    The API operates on the remote PR branch — it ignores our
 #    local state entirely. No force-push needed.
 # ──────────────────────────────────────────────
-gh api repos/co-l/openfox/pulls/<N>/merge -X PUT \
+gh api repos/morrisdevstudio/morriscode/pulls/<N>/merge -X PUT \
   -f merge_method=squash \
   -f commit_title="feat: description (#<N>)"
 
@@ -167,14 +167,14 @@ ghi9012 ...                            ← previous develop
 ```bash
 # ── Setup ──
 workspace switch review-pr-103
-git remote set-url origin git@github.com:co-l/openfox.git
+git remote set-url origin git@github.com:morrisdevstudio/morriscode.git
 git fetch origin && git reset --hard origin/develop
 gh pr checkout 103
 
 PR_BASE=$(gh pr view 103 --json baseRefName --jq '.baseRefName')
 if [ "$PR_BASE" != "develop" ]; then
   echo "⚠️  PR #103 targets '$PR_BASE' — retargeting to 'develop'"
-  gh api repos/co-l/openfox/pulls/103 -X PATCH -f base=develop
+  gh api repos/morrisdevstudio/morriscode/pulls/103 -X PATCH -f base=develop
   git fetch origin
 fi
 
@@ -197,7 +197,7 @@ dev_server start
 # ── User tests, iterates if needed ──
 
 # ── Merge (user says "merge it") ──
-gh api repos/co-l/openfox/pulls/103/merge -X PUT \
+gh api repos/morrisdevstudio/morriscode/pulls/103/merge -X PUT \
   -f merge_method=squash \
   -f commit_title="feat: PDF embedded-image support (#103)"
 workspace switch original
@@ -233,7 +233,7 @@ workspace switch review-pr-<N>
 `gh pr merge` may fail with `GraphQL: Projects (classic) is being deprecated` even when the merge succeeds. Use the REST API directly instead:
 
 ```bash
-gh api repos/co-l/openfox/pulls/<N>/merge -X PUT \
+gh api repos/morrisdevstudio/morriscode/pulls/<N>/merge -X PUT \
   -f merge_method=squash \
   -f commit_title="feat: description (#<N>)"
 ```
@@ -245,7 +245,7 @@ If a workspace switch fails midway, clean up manually:
 ```bash
 workspace delete <name>          # via tool
 # or manually:
-rm -rf ~/.local/share/openfox/workspaces/<project>/<name>
+rm -rf ~/.local/share/morriscode/workspaces/<project>/<name>
 ```
 
 ### Rebase conflicts
@@ -269,7 +269,7 @@ git rebase --abort
 Always use the REST API for merging to avoid GraphQL deprecation errors:
 
 ```bash
-gh api repos/co-l/openfox/pulls/<N>/merge -X PUT \
+gh api repos/morrisdevstudio/morriscode/pulls/<N>/merge -X PUT \
   -f merge_method=squash \
   -f commit_title="feat: description (#<N>)"
 ```

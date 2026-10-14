@@ -1,6 +1,6 @@
 # Provider Plugins
 
-OpenFox supports third-party provider plugins that add new authentication methods and API transports. This document explains the plugin system, how to write a plugin, and how it integrates with the runtime.
+MorrisCode supports third-party provider plugins that add new authentication methods and API transports. This document explains the plugin system, how to write a plugin, and how it integrates with the runtime.
 
 ---
 
@@ -44,9 +44,9 @@ A preset is a UI convenience: it appears as a clickable tile in the provider set
 
 A plugin is an npm package. The runtime discovers plugins in these locations (in order):
 
-1. `{configDirectory}/plugins/` — primary location for user-installed plugins (`~/.config/openfox/plugins/` in production, `~/.config/openfox-dev/plugins/` in development)
+1. `{configDirectory}/plugins/` — primary location for user-installed plugins (`~/.config/morriscode/plugins/` in production, `~/.config/morriscode-dev/plugins/` in development)
 2. `{cwd}/node_modules/` — for local development
-3. The OpenFox installation's own `node_modules/`
+3. The MorrisCode installation's own `node_modules/`
 
 ```
 my-provider-plugin/
@@ -157,7 +157,7 @@ interface ProviderRequestContext {
 ## Lifecycle
 
 ```
-OpenFox starts
+MorrisCode starts
   │
   ├── Scan plugins directory for packages with openfox.plugin field
   ├── Validate apiVersion === 1 (skip with diagnostic if not)
@@ -258,9 +258,9 @@ export function register(registry: ProviderPluginRegistry) {
 1. Build your plugin package
 2. Copy it to the plugins directory:
    ```bash
-   mkdir -p ~/.config/openfox-dev/plugins/my-plugin
-   cp -r dist/* ~/.config/openfox-dev/plugins/my-plugin/
+   mkdir -p ~/.config/morriscode-dev/plugins/my-plugin
+   cp -r dist/* ~/.config/morriscode-dev/plugins/my-plugin/
    ```
-3. Restart OpenFox (dev mode picks up `~/.config/openfox-dev/`)
+3. Restart MorrisCode (dev mode picks up `~/.config/morriscode-dev/`)
 4. Check `GET /api/plugins` for load status
 5. The preset appears in the "Add Provider" wizard under the available inference engines

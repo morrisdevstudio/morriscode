@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3'
 
-const dbPath = '/home/conrad/.local/share/openfox/sessions.db'
+const dbPath = '/home/conrad/.local/share/morriscode/sessions.db'
 
 const sessionId = process.argv[2]
 if (!sessionId) {

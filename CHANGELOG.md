@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0
+
+MorrisCode fork of OpenFox 2.0.161.
+
+This changelog is inherited from upstream OpenFox: everything below 0.1.0 describes
+upstream releases up to the fork point.
+
+### Changes
+
+- **Rebrand** — package name, binaries, configuration and data directories, the
+  `OPENFOX_*` environment variables (now `MORRISCODE_*`), storage keys, the project-level
+  `.openfox/` directory (now `.morriscode/`) and every user-facing string.
+- **Interface restyle** — the web UI is rebuilt around a neutral dark palette and a
+  sans-serif interface font, with monospace reserved for code, paths and metrics.
+- **Plugin contract preserved** — the `openfox` manifest key and the `openfox/plugin` and
+  `openfox/provider` import specifiers are unchanged, so existing plugins keep working.
+
 ## 2.0.161 - 2026-10-05
 
 ### Features

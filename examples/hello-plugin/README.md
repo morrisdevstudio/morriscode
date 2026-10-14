@@ -1,6 +1,6 @@
 # openfox-hello-plugin
 
-Reference OpenFox plugin demonstrating every contribution point:
+Reference MorrisCode plugin demonstrating every contribution point:
 
 - a tool (`hello_plugin_greet`)
 - a slash command (`hello-plugin`)
@@ -23,6 +23,6 @@ npm test
 ```
 
 Install it from **Settings → Plugins** with the local path to this directory, or
-copy it into `~/.config/openfox/plugins/`.
+copy it into `~/.config/morriscode/plugins/`.
 
 Full authoring guide: [`docs/PLUGINS.md`](../../docs/PLUGINS.md).

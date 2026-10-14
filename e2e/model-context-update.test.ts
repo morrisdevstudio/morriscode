@@ -25,7 +25,7 @@ describe('Model Context Update', () => {
 
   beforeAll(async () => {
     // Use isolated config file to avoid races with parallel tests
-    configPath = join(tmpdir(), `openfox-e2e-config-${randomUUID()}.json`)
+    configPath = join(tmpdir(), `morriscode-e2e-config-${randomUUID()}.json`)
 
     // Set up test provider in isolated config
     const globalConfig = await loadGlobalConfig(testMode, configPath)

@@ -31,7 +31,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { ServerMessage } from '@openfox/shared/protocol'
+import type { ServerMessage } from '@morriscode/shared/protocol'
 // Type for path confirmation payload
 interface PathConfirmationPayload {
   callId: string
@@ -80,7 +80,7 @@ describe('Path Security', () => {
     testDir = await createTestProject({ template: 'typescript' })
 
     // Create a directory outside the workdir for testing
-    outsideDir = join(tmpdir(), `openfox-outside-${Date.now()}`)
+    outsideDir = join(tmpdir(), `morriscode-outside-${Date.now()}`)
     await mkdir(outsideDir, { recursive: true })
 
     const restProject = await createProject(server.url, { name: 'Path Security Test', workdir: testDir.path })

@@ -1,10 +1,10 @@
-# OpenFox Codebase Guide
+# MorrisCode Codebase Guide
 
 > Guidelines for AI coding agents operating in this repository.
 
 ## Project Overview
 
-OpenFox is a local-LLM-first agentic coding assistant. It provides:
+MorrisCode is a local-LLM-first agentic coding assistant. It provides:
 
 - **Core Functionality**: Autonomous coding agent that plans, implements, and verifies tasks using local LLMs
 - **Dual Modes**: Planner (task breakdown) → Builder (implementation with verification loop)
@@ -86,7 +86,7 @@ npx vitest run                    # Run all e2e tests
 npx vitest run protocol.test.ts   # Run specific test
 
 # Verbose mode (shows tool calls, agent thinking, phase transitions)
-OPENFOX_TEST_VERBOSE=true npx vitest run
+MORRISCODE_TEST_VERBOSE=true npx vitest run
 ```
 
 ### Testing Workflow
@@ -145,7 +145,7 @@ import { FolderIcon, CheckIcon, ChevronDownIcon } from './shared/icons'
 
 ### Error Handling
 
-- Custom error classes extend `OpenFoxError`
+- Custom error classes extend `MorrisCodeError`
 - In tools, return result objects instead of throwing:
 
 ```typescript
@@ -217,19 +217,19 @@ component `useEffect` fetch.
   fetch lived in `DevServerFooter`. If a fetch is needed on mount, it belongs in
   the data hook or the resource itself.
 
-### `.openfox/` Directory Contract
+### `.morriscode/` Directory Contract
 
-Every file in `.openfox/` must be **committable** and **meaningful in the project context** — it describes how OpenFox interacts with _this repository_ for any contributor.
+Every file in `.morriscode/` must be **committable** and **meaningful in the project context** — it describes how MorrisCode interacts with _this repository_ for any contributor.
 
-**Belongs in `.openfox/`:** `dev.json`, `workspace.json`, `commands/*`, `skills/*`, `workflows/*`, `agents/*` — anything that shapes the project's tooling, automation, or agent behavior.
+**Belongs in `.morriscode/`:** `dev.json`, `workspace.json`, `commands/*`, `skills/*`, `workflows/*`, `agents/*` — anything that shapes the project's tooling, automation, or agent behavior.
 
 **Does NOT belong:** Personal preferences (model, theme, keybindings, API keys). Those go in the **database** — globally or project-scoped per user.
 
 **Rationale:** Clean repo, no leaked personal config, reliable source of truth for CI and collaborators.
 
-**Workflows:** When asked to create or edit a workflow, load the built-in `workflows` skill via `load_skill("workflows")` — it is the authoritative reference for workflow file format, storage locations (project `.openfox/workflows/` vs global `{configDir}/workflows/`), the full JSON schema, step types, transition conditions, and template variables ([docs/WORKFLOWS.md](docs/WORKFLOWS.md) is a pointer to it). Project workflows belong in `.openfox/workflows/` and are committable.
+**Workflows:** When asked to create or edit a workflow, load the built-in `workflows` skill via `load_skill("workflows")` — it is the authoritative reference for workflow file format, storage locations (project `.morriscode/workflows/` vs global `{configDir}/workflows/`), the full JSON schema, step types, transition conditions, and template variables ([docs/WORKFLOWS.md](docs/WORKFLOWS.md) is a pointer to it). Project workflows belong in `.morriscode/workflows/` and are committable.
 
-**Plugins:** When asked to create or edit a plugin, read [docs/PLUGINS.md](docs/PLUGINS.md) — the authoritative reference for the `openfox/plugin` contract (manifest, registry API, UI slots, settings, hooks, RPC, transitions, versioning, trust model). For host internals (lifecycle, install pipeline, wiring) see [docs/PLUGIN-ARCHITECTURE.md](docs/PLUGIN-ARCHITECTURE.md). The reference implementation lives in [examples/hello-plugin](examples/hello-plugin). Plugins run in-process with full trust; never load project-local plugin code from a cloned repo.
+**Plugins:** When asked to create or edit a plugin, read [docs/PLUGINS.md](docs/PLUGINS.md) — the authoritative reference for the `morriscode/plugin` contract (manifest, registry API, UI slots, settings, hooks, RPC, transitions, versioning, trust model). For host internals (lifecycle, install pipeline, wiring) see [docs/PLUGIN-ARCHITECTURE.md](docs/PLUGIN-ARCHITECTURE.md). The reference implementation lives in [examples/hello-plugin](examples/hello-plugin). Plugins run in-process with full trust; never load project-local plugin code from a cloned repo.
 
 ## TDD Workflow
 
@@ -245,11 +245,11 @@ Need to trace through a session, understand why the agent did something, or find
 
 |                | Production                           | Development                              |
 | -------------- | ------------------------------------ | ---------------------------------------- |
-| **Config dir** | `~/.config/openfox/`                 | `~/.config/openfox-dev/`                 |
-| **Database**   | `~/.local/share/openfox/sessions.db` | `~/.local/share/openfox-dev/sessions.db` |
+| **Config dir** | `~/.config/morriscode/`                 | `~/.config/morriscode-dev/`                 |
+| **Database**   | `~/.local/share/morriscode/sessions.db` | `~/.local/share/morriscode-dev/sessions.db` |
 
 **Port-based distinction:** Port **10369** is always production. Dev servers start at **10370** and increment (10371, 10372, ...) depending on project startup order (prod proxifies the dev server on its own port + N).
 
 ## Production Config
 
-NEVER modify production configuration files (e.g., `~/.config/openfox/`). These are user-specific and should only be changed by the user.
+NEVER modify production configuration files (e.g., `~/.config/morriscode/`). These are user-specific and should only be changed by the user.

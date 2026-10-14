@@ -45,7 +45,7 @@ describe('collectReferencedPaths', () => {
 
   it('collects bin paths from the record form', () => {
     expect(
-      collectReferencedPaths({ bin: { openfox: './dist/cli/index.js', 'openfox-dev': './dist/cli/dev.js' } }),
+      collectReferencedPaths({ bin: { morriscode: './dist/cli/index.js', 'morriscode-dev': './dist/cli/dev.js' } }),
     ).toEqual(['dist/cli/dev.js', 'dist/cli/index.js'])
   })
 

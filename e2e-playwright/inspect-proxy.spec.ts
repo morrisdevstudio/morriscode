@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-const SERVER_URL = process.env['OPENFOX_E2E_SERVER_URL'] || 'http://localhost:10669'
+const SERVER_URL = process.env['MORRISCODE_E2E_SERVER_URL'] || 'http://localhost:10669'
 
 interface TestContext {
   projectId: string
@@ -29,9 +29,9 @@ async function apiFetch(path: string, options: RequestInit & { token?: string } 
 
 async function setupTest(): Promise<TestContext> {
   const timestamp = Date.now()
-  const workdir = join(tmpdir(), `openfox-inspect-e2e-${timestamp}`)
+  const workdir = join(tmpdir(), `morriscode-inspect-e2e-${timestamp}`)
   await mkdir(workdir, { recursive: true })
-  await mkdir(join(workdir, '.openfox'), { recursive: true })
+  await mkdir(join(workdir, '.morriscode'), { recursive: true })
 
   // Login to get auth token
   const loginRes = await fetch(`${SERVER_URL}/api/auth/login`, {
@@ -79,7 +79,7 @@ async function setupTest(): Promise<TestContext> {
     hotReload: false,
     disableInspect: false,
   }
-  await writeFile(join(workdir, '.openfox', configFilename), JSON.stringify(devConfig, null, 2) + '\n')
+  await writeFile(join(workdir, '.morriscode', configFilename), JSON.stringify(devConfig, null, 2) + '\n')
 
   const cleanup = async () => {
     devServer.close()

@@ -23,8 +23,8 @@ import {
 } from './utils/index.js'
 
 const PLUGIN_NAME = 'e2e-hello-plugin'
-const PLUGIN_DIR = join(process.cwd(), 'e2e', '.openfox-test', 'plugins', PLUGIN_NAME)
-const PLUGIN_SOURCE_DIR = join(process.cwd(), 'e2e', '.openfox-test', 'plugin-sources', PLUGIN_NAME)
+const PLUGIN_DIR = join(process.cwd(), 'e2e', '.morriscode-test', 'plugins', PLUGIN_NAME)
+const PLUGIN_SOURCE_DIR = join(process.cwd(), 'e2e', '.morriscode-test', 'plugin-sources', PLUGIN_NAME)
 
 const PLUGIN_MANIFEST = JSON.stringify({
   name: PLUGIN_NAME,
@@ -209,9 +209,9 @@ describe('Plugin system', () => {
     const testDir: TestProject = await createTestProject({ template: 'typescript' })
     try {
       const project = await createProject(server.url, { name: 'Plugin tool test', workdir: testDir.path })
-      await mkdir(join(testDir.path, '.openfox', 'agents'), { recursive: true })
+      await mkdir(join(testDir.path, '.morriscode', 'agents'), { recursive: true })
       await writeFile(
-        join(testDir.path, '.openfox', 'agents', 'plugin-tester.agent.md'),
+        join(testDir.path, '.morriscode', 'agents', 'plugin-tester.agent.md'),
         `---\nid: plugin-tester\nname: Plugin Tester\ndescription: Uses the plugin tool\nsubagent: false\ncolor: '#3b82f6'\nallowedTools:\n  - glob\n  - step_done\n---\n\nUse the glob tool when asked.\n`,
       )
       const session = await createSession(server.url, { projectId: project.id })

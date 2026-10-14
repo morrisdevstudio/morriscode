@@ -25,7 +25,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'OPENFOX_PORT=10669 OPENFOX_DB_PATH=:memory: OPENFOX_MOCK_LLM=true npm run dev',
+    command: 'MORRISCODE_PORT=10669 MORRISCODE_DB_PATH=:memory: MORRISCODE_MOCK_LLM=true npm run dev',
     url: 'http://localhost:10669',
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',

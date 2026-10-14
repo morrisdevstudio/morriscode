@@ -13,8 +13,8 @@ import type {
   SessionStatePayload,
   PendingPathConfirmationPayload,
   ProjectStatePayload,
-} from '@openfox/shared/protocol'
-import type { Session, Project, Message, ToolResult, ContextState } from '@openfox/shared'
+} from '@morriscode/shared/protocol'
+import type { Session, Project, Message, ToolResult, ContextState } from '@morriscode/shared'
 
 // ============================================================================
 // Types
@@ -231,9 +231,9 @@ function logMessage(msg: ServerMessage): void {
 // ============================================================================
 
 export async function createTestClient(options: TestClientOptions = {}): Promise<TestClient> {
-  const url = options.url ?? process.env['OPENFOX_TEST_WS_URL'] ?? 'ws://localhost:3999/ws'
+  const url = options.url ?? process.env['MORRISCODE_TEST_WS_URL'] ?? 'ws://localhost:3999/ws'
   const defaultTimeout = options.timeout ?? DEFAULT_WAIT_TIMEOUT_MS
-  const verbose = options.verbose ?? process.env['OPENFOX_TEST_VERBOSE'] === 'true'
+  const verbose = options.verbose ?? process.env['MORRISCODE_TEST_VERBOSE'] === 'true'
 
   const ws = new WebSocket(url)
   const events: ServerMessage[] = []

@@ -2,7 +2,7 @@
 
 Baseline harness for the browser-side memory footprint of a long, fast-streaming
 conversation. It answers "how much RAM does the tab actually need, and does it
-keep growing?" — the question behind "OpenFox becomes unusable after a while".
+keep growing?" — the question behind "MorrisCode becomes unusable after a while".
 
 ```bash
 npm run bench:web                      # build the app, then measure

@@ -14,7 +14,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { GitStatusPayload, GitDiffFile } from '@openfox/shared/protocol'
+import type { GitStatusPayload, GitDiffFile } from '@morriscode/shared/protocol'
 
 function runGit(cwd: string, args: string[]): void {
   execFileSync('git', args, { cwd, stdio: 'ignore' })
@@ -26,7 +26,7 @@ describe('Git Status Watcher', () => {
   let project: TestProject
 
   beforeAll(async () => {
-    process.env['OPENFOX_GIT_POLL_INTERVAL'] = '1000'
+    process.env['MORRISCODE_GIT_POLL_INTERVAL'] = '1000'
     server = await createTestServer()
   })
 
@@ -78,7 +78,7 @@ describe('Git Status Watcher', () => {
   }, 10_000)
 
   it('reports submodule changes when the submodule has untracked-only modifications', async () => {
-    const subDir = join(tmpdir(), `openfox-submodule-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    const subDir = join(tmpdir(), `morriscode-submodule-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     try {
       await mkdir(subDir, { recursive: true })
       runGit(subDir, ['init', '--initial-branch=main'])
