@@ -205,7 +205,11 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
 
       res.json({ current, latest: latestVersion, isUpdateAvailable, isService })
     } catch (err) {
-      logger.error('[auto-update] Error in version check', { error: err instanceof Error ? err.message : String(err) })
+      // An unpublished package name (or a missing npm CLI) is the expected state for
+      // this fork rather than a server failure, so keep it below the default log level.
+      logger.debug('[auto-update] Version check unavailable', {
+        error: err instanceof Error ? err.message : String(err),
+      })
       const currentVersion = isDev ? current.replace(/-dev$/, '') : current
       res.json({ current, latest: currentVersion, isUpdateAvailable: false, isService })
     }
