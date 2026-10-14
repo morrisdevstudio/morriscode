@@ -1,17 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { buildOpenFoxMcpBootstrap } from './bootstrap.js'
+import { buildMorrisCodeMcpBootstrap } from './bootstrap.js'
 
-describe('buildOpenFoxMcpBootstrap', () => {
+describe('buildMorrisCodeMcpBootstrap', () => {
   it('builds a ready-to-paste client config in local mode (no auth)', () => {
-    const config = buildOpenFoxMcpBootstrap({
+    const config = buildMorrisCodeMcpBootstrap({
       host: '127.0.0.1',
       port: 10469,
       authRequired: false,
       sessionToken: null,
     })
     expect(config).toEqual({
-      name: 'openfox',
+      name: 'morriscode',
       transport: 'http',
       url: 'http://127.0.0.1:10469/mcp',
     })
@@ -19,7 +19,7 @@ describe('buildOpenFoxMcpBootstrap', () => {
   })
 
   it('attaches the freshly computed token in network mode', () => {
-    const config = buildOpenFoxMcpBootstrap({
+    const config = buildMorrisCodeMcpBootstrap({
       host: '10.0.0.5',
       port: 10369,
       authRequired: true,
@@ -30,7 +30,7 @@ describe('buildOpenFoxMcpBootstrap', () => {
   })
 
   it('normalizes wildcard bind hosts to loopback', () => {
-    const config = buildOpenFoxMcpBootstrap({
+    const config = buildMorrisCodeMcpBootstrap({
       host: '0.0.0.0',
       port: 10469,
       authRequired: false,
@@ -41,7 +41,7 @@ describe('buildOpenFoxMcpBootstrap', () => {
 
   it('refuses to emit a config when network mode lacks a token', () => {
     expect(() =>
-      buildOpenFoxMcpBootstrap({
+      buildMorrisCodeMcpBootstrap({
         host: '127.0.0.1',
         port: 10469,
         authRequired: true,

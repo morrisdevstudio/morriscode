@@ -19,7 +19,7 @@ describe('project-creator', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `morriscode-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     await mkdir(testDir, { recursive: true })
   })
 

@@ -44,7 +44,7 @@ describe('edit_file corruption bug reproduction', () => {
     initDatabase(createTestConfig())
     initEventStore(getDatabase())
 
-    testDir = join(tmpdir(), `openfox-edit-corruption-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-edit-corruption-test-${Date.now()}`)
     await rm(testDir, { recursive: true, force: true })
     await mkdir(testDir, { recursive: true })
 

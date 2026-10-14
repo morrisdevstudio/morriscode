@@ -99,8 +99,8 @@ function tool(name: string, description = `desc ${name}`): LLMToolDefinition {
 
 const CACHED_TOOL = tool('cached-tool')
 const liveTool = tool('live-tool')
-const OLD_SYSTEM_PROMPT = 'You are OpenFox in the source environment. Working directory: /src/original.'
-const NEW_SYSTEM_PROMPT = 'You are OpenFox in the target environment. Working directory: /target/other.'
+const OLD_SYSTEM_PROMPT = 'You are MorrisCode in the source environment. Working directory: /src/original.'
+const NEW_SYSTEM_PROMPT = 'You are MorrisCode in the target environment. Working directory: /target/other.'
 
 const mockProviderManager = {
   getCurrentModelContext: vi.fn(() => 200000),
@@ -130,8 +130,8 @@ describe('Session export / import', () => {
     initDatabase(config)
     initEventStore(getDatabase())
 
-    workdir = await mkdtemp(join(tmpdir(), 'openfox-export-src-'))
-    targetWorkdir = await mkdtemp(join(tmpdir(), 'openfox-export-dst-'))
+    workdir = await mkdtemp(join(tmpdir(), 'morriscode-export-src-'))
+    targetWorkdir = await mkdtemp(join(tmpdir(), 'morriscode-export-dst-'))
     projectId = createProject('Source project', workdir).id
     targetProjectId = createProject('Target project', targetWorkdir).id
     manager = new SessionManager(mockProviderManager)
@@ -225,7 +225,7 @@ describe('Session export / import', () => {
         providerId: 'test-provider',
         providerModel: 'test-model',
       })
-      expect(payload.source.openfoxVersion).toBeTruthy()
+      expect(payload.source.morriscodeVersion).toBeTruthy()
       expect(payload.source.effectiveModel).toBeTruthy()
     })
 

@@ -4,7 +4,7 @@ import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-const TEST_DIR = join(tmpdir(), `openfox-cli-i18n-test-${Date.now()}`)
+const TEST_DIR = join(tmpdir(), `morriscode-cli-i18n-test-${Date.now()}`)
 
 vi.mock('./paths.js', () => ({
   getDatabasePath: (mode: string) => join(TEST_DIR, mode, 'sessions.db'),

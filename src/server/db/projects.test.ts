@@ -22,8 +22,8 @@ describe('db projects', () => {
     const config = loadConfig()
     config.database.path = ':memory:'
     initDatabase(config)
-    workdirA = await mkdtemp(join(tmpdir(), 'openfox-project-a-'))
-    workdirB = await mkdtemp(join(tmpdir(), 'openfox-project-b-'))
+    workdirA = await mkdtemp(join(tmpdir(), 'morriscode-project-a-'))
+    workdirB = await mkdtemp(join(tmpdir(), 'morriscode-project-b-'))
   })
 
   afterEach(async () => {
@@ -33,10 +33,10 @@ describe('db projects', () => {
   })
 
   it('creates, fetches, lists, updates, and deletes projects', () => {
-    const projectA = createProject('OpenFox', workdirA)
+    const projectA = createProject('MorrisCode', workdirA)
     const projectB = createProject('Sandbox', workdirB)
 
-    expect(getProject(projectA.id)).toMatchObject({ id: projectA.id, name: 'OpenFox', workdir: workdirA })
+    expect(getProject(projectA.id)).toMatchObject({ id: projectA.id, name: 'MorrisCode', workdir: workdirA })
     expect(getProjectByWorkdir(workdirB)).toMatchObject({ id: projectB.id, name: 'Sandbox' })
     expect(getProject('missing')).toBeNull()
     expect(getProjectByWorkdir('/missing')).toBeNull()
@@ -46,15 +46,15 @@ describe('db projects', () => {
     expect(listed.map((project) => project.id)).toContain(projectA.id)
     expect(listed.map((project) => project.id)).toContain(projectB.id)
 
-    const updated = updateProject(projectA.id, { name: 'OpenFox Renamed', customInstructions: 'Be careful' })
+    const updated = updateProject(projectA.id, { name: 'MorrisCode Renamed', customInstructions: 'Be careful' })
     expect(updated).toMatchObject({
       id: projectA.id,
-      name: 'OpenFox Renamed',
+      name: 'MorrisCode Renamed',
       customInstructions: 'Be careful',
     })
 
     const cleared = updateProject(projectA.id, { customInstructions: null })
-    expect(cleared).toMatchObject({ id: projectA.id, name: 'OpenFox Renamed' })
+    expect(cleared).toMatchObject({ id: projectA.id, name: 'MorrisCode Renamed' })
     expect(cleared && 'customInstructions' in cleared).toBe(false)
 
     const withDangerLevel = updateProject(projectB.id, { dangerLevel: 'dangerous' })

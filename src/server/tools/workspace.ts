@@ -25,7 +25,7 @@ export const workspaceTool = createTool<WorkspaceArgs>(
         'If the requested branch does not exist, it will be created. By default it is based on the\n' +
         'default branch of the project (origin/HEAD). You can specify sourceBranch to base the new\n' +
         'branch on a different existing branch.\n\n' +
-        'Setup commands (e.g. npm install) are configured via .openfox/workspace.json.\n\n' +
+        'Setup commands (e.g. npm install) are configured via .morriscode/workspace.json.\n\n' +
         'Actions:\n' +
         '- switch: Switch to a workspace (target: "original" or a name, optional branch for new workspaces)\n' +
         '- list: List all workspaces with their current branch and active status\n' +

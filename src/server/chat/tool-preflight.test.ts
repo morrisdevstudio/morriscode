@@ -10,7 +10,7 @@ describe('tool-preflight', () => {
   let workdir: string
 
   beforeEach(async () => {
-    workdir = join(tmpdir(), `openfox-preflight-${Date.now()}`)
+    workdir = join(tmpdir(), `morriscode-preflight-${Date.now()}`)
     await mkdir(workdir, { recursive: true })
   })
 

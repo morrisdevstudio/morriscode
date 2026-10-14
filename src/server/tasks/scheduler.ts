@@ -1,7 +1,7 @@
 /**
  * Periodic task scheduler.
  *
- * Runs the given tick immediately on `start()` (so tasks missed while OpenFox
+ * Runs the given tick immediately on `start()` (so tasks missed while MorrisCode
  * was off fire on next boot) and then on a fixed interval. `stop()` clears the
  * timer so the process can shut down cleanly.
  */

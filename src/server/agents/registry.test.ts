@@ -206,7 +206,7 @@ describe('CRUD', () => {
 })
 
 async function createProjectAgentFile(projectDir: string, id: string, name: string): Promise<void> {
-  const agentsDir = join(projectDir, '.openfox', 'agents')
+  const agentsDir = join(projectDir, '.morriscode', 'agents')
   await mkdir(agentsDir, { recursive: true })
   await writeFile(
     join(agentsDir, `${id}.agent.md`),
@@ -230,7 +230,7 @@ describe('loadProjectAgents', () => {
     expect(agents).toEqual([])
   })
 
-  it('should load valid .agent.md files from .openfox/agents/', async () => {
+  it('should load valid .agent.md files from .morriscode/agents/', async () => {
     await createProjectAgentFile(tempDir, 'proj-agent', 'Project Agent')
 
     const agents = await loadProjectAgents(tempDir)

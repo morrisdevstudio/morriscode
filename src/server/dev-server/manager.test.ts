@@ -187,7 +187,9 @@ describe('loadConfig with workspace fallback', () => {
       .mockRejectedValueOnce(new Error('ENOENT'))
       .mockResolvedValueOnce(JSON.stringify({ command: 'npm run dev', url: 'http://localhost:5173' }))
 
-    const config = await devServerManager.loadConfig('C:\\Users\\me\\AppData\\Local\\openfox\\workspaces\\my-feature')
+    const config = await devServerManager.loadConfig(
+      'C:\\Users\\me\\AppData\\Local\\morriscode\\workspaces\\my-feature',
+    )
     expect(config).toMatchObject({ command: 'npm run dev', url: 'http://localhost:5173' })
     expect(readFile).toHaveBeenCalledTimes(2)
   })

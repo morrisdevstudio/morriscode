@@ -1442,7 +1442,7 @@ describe('maxTokens clamping', () => {
 
   it('passes the session project workdir (not the workspace) to getEnabledSkillMetadata', async () => {
     const projectRoot = '/actual/project/dir'
-    const workspacePath = '/workspaces/openfox/review-branch'
+    const workspacePath = '/workspaces/morriscode/review-branch'
 
     mockSessionManager = {
       enterPauseGate: vi.fn().mockResolvedValue('released'),

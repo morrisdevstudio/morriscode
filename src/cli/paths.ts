@@ -5,18 +5,18 @@ import type { Mode } from './main.js'
 
 export function getGlobalConfigDir(mode: Mode): string {
   if (mode === 'test') {
-    return join(process.cwd(), 'e2e', '.openfox-test')
+    return join(process.cwd(), 'e2e', '.morriscode-test')
   }
   const suffix = mode === 'development' ? '-dev' : ''
   const home = homedir()
 
   switch (platform()) {
     case 'darwin':
-      return join(home, 'Library', 'Application Support', `openfox${suffix}`)
+      return join(home, 'Library', 'Application Support', `morriscode${suffix}`)
     case 'win32':
-      return join(process.env['APPDATA'] ?? join(home, 'AppData', 'Roaming'), `openfox${suffix}`)
+      return join(process.env['APPDATA'] ?? join(home, 'AppData', 'Roaming'), `morriscode${suffix}`)
     default:
-      return join(process.env['XDG_CONFIG_HOME'] ?? join(home, '.config'), `openfox${suffix}`)
+      return join(process.env['XDG_CONFIG_HOME'] ?? join(home, '.config'), `morriscode${suffix}`)
   }
 }
 
@@ -38,11 +38,11 @@ export function getGlobalDataDir(mode: Mode): string {
 
   switch (platform()) {
     case 'darwin':
-      return join(home, 'Library', 'Application Support', `openfox${suffix}`)
+      return join(home, 'Library', 'Application Support', `morriscode${suffix}`)
     case 'win32':
-      return join(process.env['LOCALAPPDATA'] ?? join(home, 'AppData', 'Local'), `openfox${suffix}`)
+      return join(process.env['LOCALAPPDATA'] ?? join(home, 'AppData', 'Local'), `morriscode${suffix}`)
     default:
-      return join(process.env['XDG_DATA_HOME'] ?? join(home, '.local', 'share'), `openfox${suffix}`)
+      return join(process.env['XDG_DATA_HOME'] ?? join(home, '.local', 'share'), `morriscode${suffix}`)
   }
 }
 

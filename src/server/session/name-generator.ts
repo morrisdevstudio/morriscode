@@ -239,7 +239,7 @@ export interface GenerateSessionNameForSessionDeps {
   }
   /** Optional factory to get an LLM client. When provided (e.g. from QueueProcessor),
    *  it's used instead of creating a new client via dynamic import. This ensures the
-   *  mock LLM client is used in e2e tests (OPENFOX_MOCK_LLM=true). */
+   *  mock LLM client is used in e2e tests (MORRISCODE_MOCK_LLM=true). */
   getLLMClient?: () => LLMClientWithModel
   getLLMClientForProvider?: (
     providerId: string,

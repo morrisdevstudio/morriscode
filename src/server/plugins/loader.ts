@@ -154,7 +154,7 @@ export async function loadPluginFromDirectory(options: {
   const diagnostic = baseDiagnostic(manifest, packageDir)
 
   if (manifest.openfox.apiVersion !== 1 && manifest.openfox.apiVersion !== 2) {
-    diagnostic.error = `Unsupported OpenFox plugin API version: ${manifest.openfox.apiVersion}`
+    diagnostic.error = `Unsupported MorrisCode plugin API version: ${manifest.openfox.apiVersion}`
     return diagnostic
   }
 

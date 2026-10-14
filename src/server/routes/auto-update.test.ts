@@ -31,11 +31,11 @@ describe('Auto Update Routes', () => {
 
   beforeEach(async () => {
     mockSpawn.mockReset()
-    // Default: npm view returns a version, openfox update succeeds
+    // Default: npm view returns a version, morriscode update succeeds
     mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
       // auto-update.ts spawns npm as a shell string on win32 (npm.cmd there,
       // CVE-2024-27980) and as argv elsewhere — match both.
-      if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+      if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
         return makeMockChild({ stdout: '1.2.3\n' })
       }
       // git fetch returns nothing
@@ -140,7 +140,7 @@ describe('Auto Update Routes', () => {
 
     it('parses the version from English CLI output', async () => {
       mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
-        if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+        if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
           return makeMockChild({ stdout: '1.2.3\n' })
         }
         return makeMockChild({ stdout: 'Updated: 1.2.3\n' })
@@ -154,7 +154,7 @@ describe('Auto Update Routes', () => {
 
     it('parses the version from French CLI output', async () => {
       mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
-        if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+        if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
           return makeMockChild({ stdout: '1.2.3\n' })
         }
         return makeMockChild({ stdout: 'Mis à jour : 1.2.3\n' })

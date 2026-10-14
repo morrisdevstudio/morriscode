@@ -44,26 +44,26 @@ describe('cli/mcp', () => {
   describe('renderMcpClientConfig', () => {
     it('renders a paste-ready client config with auth headers', () => {
       const output = renderMcpClientConfig({
-        name: 'openfox',
+        name: 'morriscode',
         transport: 'http',
         url: 'http://127.0.0.1:10469/mcp',
         headers: { Authorization: 'Bearer tok-abc' },
       })
       expect(JSON.parse(output)).toEqual({
         mcpServers: {
-          openfox: { url: 'http://127.0.0.1:10469/mcp', headers: { Authorization: 'Bearer tok-abc' } },
+          morriscode: { url: 'http://127.0.0.1:10469/mcp', headers: { Authorization: 'Bearer tok-abc' } },
         },
       })
     })
 
     it('omits headers in local mode', () => {
       const output = renderMcpClientConfig({
-        name: 'openfox',
+        name: 'morriscode',
         transport: 'http',
         url: 'http://127.0.0.1:10469/mcp',
       })
       expect(JSON.parse(output)).toEqual({
-        mcpServers: { openfox: { url: 'http://127.0.0.1:10469/mcp' } },
+        mcpServers: { morriscode: { url: 'http://127.0.0.1:10469/mcp' } },
       })
     })
   })

@@ -10,7 +10,7 @@ interface TestFile {
 }
 
 async function createTestFile(content: string): Promise<TestFile> {
-  const dir = join(tmpdir(), `openfox-test-${randomUUID()}`)
+  const dir = join(tmpdir(), `morriscode-test-${randomUUID()}`)
   await mkdir(dir, { recursive: true })
   const filePath = join(dir, 'test.txt')
   await writeFile(filePath, content, 'utf-8')

@@ -160,7 +160,7 @@ describe('web_fetch tool', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
     // Second call should use honest UA
     const secondCallHeaders = fetchSpy.mock.calls[1]![1]!.headers as Record<string, string>
-    expect(secondCallHeaders['User-Agent']).toBe('openfox')
+    expect(secondCallHeaders['User-Agent']).toBe('morriscode')
   })
 
   it('returns error on non-403 Cloudflare blocks (no retry)', async () => {

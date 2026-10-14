@@ -49,7 +49,7 @@ describe('command library routes', () => {
   let baseUrl: string
 
   beforeEach(async () => {
-    rootDir = await mkdtemp(join(tmpdir(), 'openfox-command-routes-'))
+    rootDir = await mkdtemp(join(tmpdir(), 'morriscode-command-routes-'))
     const app = express()
     app.use(express.json({ limit: '10mb' }))
     app.use('/api/commands', createCommandRoutes(join(rootDir, 'config'), join(rootDir, 'project')))

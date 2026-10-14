@@ -3,7 +3,7 @@ import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-const TEST_DIR = join(tmpdir(), `openfox-pwa-test-${Date.now()}`)
+const TEST_DIR = join(tmpdir(), `morriscode-pwa-test-${Date.now()}`)
 
 vi.mock('./paths.js', () => ({
   getGlobalConfigDir: (mode: string) => join(TEST_DIR, mode),
@@ -112,11 +112,11 @@ describe('pwa', () => {
 
       expect(mockLog).toHaveBeenCalled()
       const output = mockLog.mock.calls.flat().join('\n')
-      expect(output).toContain('openfox pwa install')
-      expect(output).toContain('openfox pwa uninstall')
-      expect(output).toContain('openfox pwa launch')
-      expect(output).toContain('openfox pwa update')
-      expect(output).toContain('openfox pwa status')
+      expect(output).toContain('morriscode pwa install')
+      expect(output).toContain('morriscode pwa uninstall')
+      expect(output).toContain('morriscode pwa launch')
+      expect(output).toContain('morriscode pwa update')
+      expect(output).toContain('morriscode pwa status')
 
       mockLog.mockRestore()
     })

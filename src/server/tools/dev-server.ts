@@ -16,7 +16,7 @@ export const devServerTool = createTool<DevServerArgs>(
       description:
         'Control the project dev server. Start, stop, restart, check status, or fetch logs with optional pagination. ' +
         'Each workdir (project root or workspace) gets its own independent dev server instance with auto-assigned ports. ' +
-        'The dev server is configured via .openfox/dev.json — searched in the current workdir first, falling back to the project root. ' +
+        'The dev server is configured via .morriscode/dev.json — searched in the current workdir first, falling back to the project root. ' +
         'Fields: command (string, required), url (string, required), hotReload (boolean, optional, default false), disableInspect (boolean, optional, default false). ' +
         'You can use ${PORT} in command and url — it will be replaced with an available port at runtime (auto-assigned if the configured port is taken).',
       parameters: {
@@ -93,7 +93,7 @@ export const devServerTool = createTool<DevServerArgs>(
 
     if (!status.config) {
       return helpers.error(
-        `No .openfox/dev.json config found. Create one in the project root:\n\n${JSON.stringify(
+        `No .morriscode/dev.json config found. Create one in the project root:\n\n${JSON.stringify(
           { command: 'npm run dev', url: 'http://localhost:3000', hotReload: true, disableInspect: false },
           null,
           2,

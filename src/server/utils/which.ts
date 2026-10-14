@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 function getBundledBinPaths(): string[] {
   const paths: string[] = []
 
-  // Primary: use current working directory (where user runs openfox)
+  // Primary: use current working directory (where user runs morriscode)
   paths.push(join(process.cwd(), 'node_modules', '.bin'))
 
   // Fallback: relative to this module (for edge cases)
@@ -64,7 +64,7 @@ async function findInDir(dir: string, command: string): Promise<string | null> {
 /**
  * Find the path to an executable command.
  * Search order:
- * 1. Bundled language servers in @openfox/server's node_modules/.bin
+ * 1. Bundled language servers in @morriscode/server's node_modules/.bin
  * 2. Project-local node_modules/.bin (if workdir provided)
  * 3. System PATH
  *
@@ -78,7 +78,7 @@ export async function which(command: string, workdir?: string): Promise<string |
     return null
   }
 
-  // 1. Check bundled node_modules/.bin first (language servers bundled with @openfox/server)
+  // 1. Check bundled node_modules/.bin first (language servers bundled with @morriscode/server)
   for (const binDir of getBundledBinPaths()) {
     const found = await findInDir(binDir, command)
     if (found) {

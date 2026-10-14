@@ -4,9 +4,9 @@ import express from 'express'
 import type { AddressInfo } from 'node:net'
 import { Client } from '@modelcontextprotocol/sdk/client'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { createOpenFoxMcpRouter } from './endpoint.js'
-import type { OpenFoxMcpRouterOptions } from './endpoint.js'
-import type { OpenFoxMcpToolDeps } from './types.js'
+import { createMorrisCodeMcpRouter } from './endpoint.js'
+import type { MorrisCodeMcpRouterOptions } from './endpoint.js'
+import type { MorrisCodeMcpToolDeps } from './types.js'
 
 const projects = [
   {
@@ -18,7 +18,7 @@ const projects = [
   },
 ]
 
-function makeDeps(): OpenFoxMcpToolDeps {
+function makeDeps(): MorrisCodeMcpToolDeps {
   return {
     sessionManager: {
       getSession: () => undefined,
@@ -59,10 +59,10 @@ interface Started {
   close: () => Promise<void>
 }
 
-function startRouter(options: OpenFoxMcpRouterOptions): Promise<Started> {
+function startRouter(options: MorrisCodeMcpRouterOptions): Promise<Started> {
   const app = express()
   app.use(express.json())
-  app.use('/mcp', createOpenFoxMcpRouter(options))
+  app.use('/mcp', createMorrisCodeMcpRouter(options))
   const server = app.listen(0)
   return new Promise((resolve, reject) => {
     server.on('listening', () => {
@@ -81,13 +81,13 @@ function startRouter(options: OpenFoxMcpRouterOptions): Promise<Started> {
 
 async function connectClient(url: string, headers?: Record<string, string>) {
   const transport = new StreamableHTTPClientTransport(new URL(url), headers ? { requestInit: { headers } } : undefined)
-  const client = new Client({ name: 'openfox-mcp-endpoint-test', version: '0.0.1' })
+  const client = new Client({ name: 'morriscode-mcp-endpoint-test', version: '0.0.1' })
   await client.connect(transport as any)
   return client
 }
 
-describe('openfox MCP endpoint', () => {
-  it('exposes the openfox tool set to an MCP client (local mode, no auth)', async () => {
+describe('morriscode MCP endpoint', () => {
+  it('exposes the morriscode tool set to an MCP client (local mode, no auth)', async () => {
     const started = await startRouter({
       resolveDeps: () => makeDeps(),
       isAuthRequired: () => false,
@@ -100,29 +100,29 @@ describe('openfox MCP endpoint', () => {
       const names = tools.map((t) => t.name).sort()
       expect(names).toEqual(
         [
-          'openfox_answer',
-          'openfox_confirm',
-          'openfox_continue',
-          'openfox_create_project',
-          'openfox_create_session',
-          'openfox_delete_project',
-          'openfox_launch_workflow',
-          'openfox_projects',
-          'openfox_resume_workflow',
-          'openfox_send_message',
-          'openfox_session_detail',
-          'openfox_session_metadata',
-          'openfox_session_status',
-          'openfox_sessions',
-          'openfox_set_mode',
-          'openfox_stop',
-          'openfox_stop_workflow',
-          'openfox_wait',
-          'openfox_workflows',
+          'morriscode_answer',
+          'morriscode_confirm',
+          'morriscode_continue',
+          'morriscode_create_project',
+          'morriscode_create_session',
+          'morriscode_delete_project',
+          'morriscode_launch_workflow',
+          'morriscode_projects',
+          'morriscode_resume_workflow',
+          'morriscode_send_message',
+          'morriscode_session_detail',
+          'morriscode_session_metadata',
+          'morriscode_session_status',
+          'morriscode_sessions',
+          'morriscode_set_mode',
+          'morriscode_stop',
+          'morriscode_stop_workflow',
+          'morriscode_wait',
+          'morriscode_workflows',
         ].sort(),
       )
 
-      const result = await client.callTool({ name: 'openfox_projects', arguments: {} })
+      const result = await client.callTool({ name: 'morriscode_projects', arguments: {} })
       const text = (result.content as Array<{ type: string; text?: string }>)
         .filter((c) => c.type === 'text')
         .map((c) => c.text)

@@ -83,7 +83,7 @@ describe('project tasks service', () => {
     config.database.path = ':memory:'
     initDatabase(config)
 
-    root = await mkdtemp(join(tmpdir(), 'openfox-tasks-'))
+    root = await mkdtemp(join(tmpdir(), 'morriscode-tasks-'))
     await mkdir(join(root, 'nested'), { recursive: true })
     projectId = createProject('Tasks Test', root).id
 
@@ -556,7 +556,7 @@ describe('project tasks service', () => {
       })
 
       // A due task in another project (no gates there) must still trigger.
-      const otherRoot = await mkdtemp(join(tmpdir(), 'openfox-tasks-other-'))
+      const otherRoot = await mkdtemp(join(tmpdir(), 'morriscode-tasks-other-'))
       const otherProjectId = createProject('Other', otherRoot).id
       const otherTask = service.create(
         otherProjectId,

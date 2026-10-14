@@ -78,7 +78,7 @@ describe('POST /api/workspace/config/validate', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-ws-config-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-ws-config-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
 
     app = express()
@@ -357,7 +357,7 @@ describe('POST /api/workspace/config/validate', () => {
       const origXdg = process.env[dataDirEnv]
       process.env[dataDirEnv] = testDir
       try {
-        const defaultDir = join(testDir, 'openfox', 'workspaces', 'my-project')
+        const defaultDir = join(testDir, 'morriscode', 'workspaces', 'my-project')
         const ws1 = join(defaultDir, 'fix-bug')
         await mkdir(join(ws1, '.git'), { recursive: true })
         await writeFile(join(ws1, '.git', 'HEAD'), 'ref: refs/heads/main\n')
@@ -408,7 +408,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-ws-config-save-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-ws-config-save-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
 
     app = express()
@@ -541,7 +541,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
     })
 
     expect(res.status).toBe(200)
-    await expect(stat(join(testDir, '.openfox', 'workspace.json'))).rejects.toThrow()
+    await expect(stat(join(testDir, '.morriscode', 'workspace.json'))).rejects.toThrow()
   })
 
   it('does not create workspace.json when saving empty setup and rootDir', async () => {
@@ -552,7 +552,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
     })
 
     expect(res.status).toBe(200)
-    await expect(stat(join(testDir, '.openfox', 'workspace.json'))).rejects.toThrow()
+    await expect(stat(join(testDir, '.morriscode', 'workspace.json'))).rejects.toThrow()
   })
 
   it('creates workspace.json when setup is provided', async () => {
@@ -563,7 +563,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
     })
 
     expect(res.status).toBe(200)
-    const configPath = join(testDir, '.openfox', 'workspace.json')
+    const configPath = join(testDir, '.morriscode', 'workspace.json')
     const st = await stat(configPath)
     expect(st.isFile()).toBe(true)
     const raw = await readFile(configPath, 'utf-8')
@@ -577,7 +577,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
       body: JSON.stringify({ setup: ['npm install'] }),
     })
     expect(seed.status).toBe(200)
-    await expect(stat(join(testDir, '.openfox', 'workspace.json'))).resolves.toBeDefined()
+    await expect(stat(join(testDir, '.morriscode', 'workspace.json'))).resolves.toBeDefined()
 
     const res = await fetch(`${baseUrl}/api/workspace/config?workdir=${encodeURIComponent(testDir)}`, {
       method: 'POST',
@@ -586,7 +586,7 @@ describe('POST /api/workspace/config (existing endpoint)', () => {
     })
 
     expect(res.status).toBe(200)
-    await expect(stat(join(testDir, '.openfox', 'workspace.json'))).rejects.toThrow()
+    await expect(stat(join(testDir, '.morriscode', 'workspace.json'))).rejects.toThrow()
   })
 })
 
@@ -601,7 +601,7 @@ describe('POST /api/workspace/config with MCP overrides', () => {
   const FROZEN_TIME = '2024-01-01T00:00:00.000Z'
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-ws-config-mcp-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-ws-config-mcp-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
 
     mockDb = new Database(':memory:')
@@ -750,6 +750,6 @@ describe('POST /api/workspace/config with MCP overrides', () => {
     })
 
     expect(res.status).toBe(200)
-    await expect(stat(join(testDir, '.openfox', 'workspace.json'))).rejects.toThrow()
+    await expect(stat(join(testDir, '.morriscode', 'workspace.json'))).rejects.toThrow()
   })
 })

@@ -12,7 +12,7 @@ function getAuthConfigPath(): string {
   if (mode === 'test') {
     const cwd = process.cwd()
     const base = basename(cwd) === 'e2e' ? cwd : join(cwd, 'e2e')
-    const testAuthPath = join(base, '.openfox-test', 'auth.json')
+    const testAuthPath = join(base, '.morriscode-test', 'auth.json')
     return testAuthPath
   }
 
@@ -21,7 +21,7 @@ function getAuthConfigPath(): string {
 
   const suffix = mode === 'development' ? '-dev' : ''
 
-  return `${basePath}/openfox${suffix}/auth.json`
+  return `${basePath}/morriscode${suffix}/auth.json`
 }
 
 function getKeyPath(): string {

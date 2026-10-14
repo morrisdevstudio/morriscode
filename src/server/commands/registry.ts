@@ -23,7 +23,7 @@ function getCommandsDir(configDir: string): string {
 }
 
 function getProjectCommandsDir(projectDir: string): string {
-  return join(projectDir, '.openfox', 'commands')
+  return join(projectDir, '.morriscode', 'commands')
 }
 
 export async function loadDefaultCommands(): Promise<CommandDefinition[]> {

@@ -96,21 +96,21 @@ export function setMcpOAuthServerPort(port: number): void {
  *
  * The loopback default is what makes this work with no configuration: the browser and the server sit
  * on the same machine for most installs, and authorization servers treat loopback redirects leniently
- * because native apps rely on them. When OpenFox is reached through a tunnel, the loopback URL is not
- * reachable from the browser, so either point OPENFOX_PUBLIC_URL at the public origin and allow that
+ * because native apps rely on them. When MorrisCode is reached through a tunnel, the loopback URL is not
+ * reachable from the browser, so either point MORRISCODE_PUBLIC_URL at the public origin and allow that
  * redirect URI at the provider, or paste the callback URL back by hand.
  */
 export function getMcpOAuthRedirectUri(): string {
-  const publicUrl = process.env['OPENFOX_PUBLIC_URL']
+  const publicUrl = process.env['MORRISCODE_PUBLIC_URL']
   if (!publicUrl) return `http://127.0.0.1:${serverPort}${CALLBACK_PATH}`
   let base: URL
   try {
     base = new URL(publicUrl)
   } catch {
-    throw new Error('OPENFOX_PUBLIC_URL is not a valid URL')
+    throw new Error('MORRISCODE_PUBLIC_URL is not a valid URL')
   }
   if (base.protocol !== 'http:' && base.protocol !== 'https:') {
-    throw new Error('OPENFOX_PUBLIC_URL must be an http or https URL')
+    throw new Error('MORRISCODE_PUBLIC_URL must be an http or https URL')
   }
   // Appended rather than resolved, so a subpath deployment keeps its prefix.
   base.pathname = `${base.pathname.replace(/\/+$/, '')}${CALLBACK_PATH}`
@@ -151,7 +151,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
   get clientMetadata(): OAuthClientMetadata {
     // No token_endpoint_auth_method on purpose: the SDK picks one from what the server advertises.
     return {
-      client_name: 'OpenFox',
+      client_name: 'MorrisCode',
       redirect_uris: [this.redirectUri],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],

@@ -9,7 +9,7 @@ import type {
 } from '../../../shared/types.js'
 import { projectSessionStatus } from '../../routes/session-status.js'
 import type { WorkflowLaunchPayload } from '../../runner/launch.js'
-import type { OpenFoxMcpTool, OpenFoxMcpToolDeps, OpenFoxMcpToolResult } from './types.js'
+import type { MorrisCodeMcpTool, MorrisCodeMcpToolDeps, MorrisCodeMcpToolResult } from './types.js'
 
 const CONTINUE_PROMPT = 'Continue working on the acceptance criteria.'
 const MAX_DETAIL_CONTENT_LENGTH_DEFAULT = 400
@@ -92,7 +92,7 @@ function workflowPayload(execution: WorkflowExecution | null): Record<string, un
     ...(execution.pendingChoices ? { pendingChoices: execution.pendingChoices } : {}),
     ...(execution.subGroup ? { subGroup: execution.subGroup } : {}),
     ...(pausedAtUserStep
-      ? { resumeHint: 'Call openfox_resume_workflow with choice set to one of the pendingChoices ids above.' }
+      ? { resumeHint: 'Call morriscode_resume_workflow with choice set to one of the pendingChoices ids above.' }
       : {}),
   }
 }
@@ -110,11 +110,11 @@ function resolveWaitTimeout(value: unknown): number {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function ok(payload: unknown): OpenFoxMcpToolResult {
+function ok(payload: unknown): MorrisCodeMcpToolResult {
   return { content: [{ type: 'text', text: JSON.stringify(payload) }] }
 }
 
-function fail(message: string): OpenFoxMcpToolResult {
+function fail(message: string): MorrisCodeMcpToolResult {
   return { content: [{ type: 'text', text: JSON.stringify({ error: message }) }], isError: true }
 }
 
@@ -127,7 +127,7 @@ function resolveMaxContentLength(value: unknown): number {
   return Math.max(MIN_DETAIL_CONTENT_LENGTH, Math.min(MAX_DETAIL_CONTENT_LENGTH_HARD_CAP, Math.floor(value)))
 }
 
-function buildSessionStatusPayload(sessionId: string, deps: OpenFoxMcpToolDeps): Record<string, unknown> | null {
+function buildSessionStatusPayload(sessionId: string, deps: MorrisCodeMcpToolDeps): Record<string, unknown> | null {
   const session = deps.sessionManager.getSession(sessionId)
   if (!session) return null
   const pendingQuestions = deps.pendingQuestions(sessionId)
@@ -148,7 +148,7 @@ function buildSessionStatusPayload(sessionId: string, deps: OpenFoxMcpToolDeps):
   }
 }
 
-export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[] {
+export function createMorrisCodeMcpTools(deps: MorrisCodeMcpToolDeps): MorrisCodeMcpTool[] {
   const { sessionManager } = deps
 
   const requireSession = (sessionId: unknown): { ok: true; session: Session } | { ok: false; error: string } => {
@@ -185,10 +185,10 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
     return { kind: 'found', callId }
   }
 
-  const tools: OpenFoxMcpTool[] = [
+  const tools: MorrisCodeMcpTool[] = [
     {
-      name: 'openfox_projects',
-      description: 'List all OpenFox projects.',
+      name: 'morriscode_projects',
+      description: 'List all MorrisCode projects.',
       inputSchema: {},
       handler: async () => {
         const projects: Project[] = deps.listProjects()
@@ -196,9 +196,9 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_create_project',
+      name: 'morriscode_create_project',
       description:
-        'Create a new OpenFox project at the given directory. Creates the directory and registers the project, initializing git if missing (unless auto git init is disabled in config).',
+        'Create a new MorrisCode project at the given directory. Creates the directory and registers the project, initializing git if missing (unless auto git init is disabled in config).',
       inputSchema: {
         name: z.string().describe('Project name (letters, numbers, hyphens, underscores, dots, spaces)'),
         workdir: z.string().describe('Absolute path of the project directory'),
@@ -221,8 +221,8 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_delete_project',
-      description: 'Delete an OpenFox project and all its sessions by id.',
+      name: 'morriscode_delete_project',
+      description: 'Delete an MorrisCode project and all its sessions by id.',
       inputSchema: {
         projectId: z.string().describe('Project id to delete'),
       },
@@ -236,9 +236,9 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_create_session',
+      name: 'morriscode_create_session',
       description:
-        'Create a new OpenFox session in a project, optionally selecting an agent (e.g. planner or builder) as the session mode.',
+        'Create a new MorrisCode session in a project, optionally selecting an agent (e.g. planner or builder) as the session mode.',
       inputSchema: {
         projectId: z.string().describe('Project to create the session in'),
         title: z.string().optional().describe('Optional session title'),
@@ -279,7 +279,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_set_mode',
+      name: 'morriscode_set_mode',
       description:
         'Switch an existing session to a different mode (agent, e.g. planner or builder) at any time. The mode is validated against the session project\u2019s top-level agents.',
       inputSchema: {
@@ -307,7 +307,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_sessions',
+      name: 'morriscode_sessions',
       description: 'List sessions, optionally scoped to a project, with running state and pending interaction counts.',
       inputSchema: {
         projectId: z.string().optional().describe('Scope the listing to a project'),
@@ -337,7 +337,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_session_status',
+      name: 'morriscode_session_status',
       description:
         'Read a session state snapshot: projected status, running flag, active workflow execution (including a paused user step with its choices), pending questions and confirmations, last activity, and a UI link.',
       inputSchema: {
@@ -352,7 +352,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_session_detail',
+      name: 'morriscode_session_detail',
       description:
         'Read the most recent messages of a session (content truncated) so progress can be followed without a live WebSocket.',
       inputSchema: {
@@ -385,7 +385,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_session_metadata',
+      name: 'morriscode_session_metadata',
       description:
         'Manage structured session data by key (criteria, todos, review_findings, ...). Actions: get (list entries for a key), list (keys), add, update, remove, schema. Writes land in the same store as the agent\u2019s session_metadata tool, so they drive workflow transitions.',
       inputSchema: {
@@ -480,7 +480,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_send_message',
+      name: 'morriscode_send_message',
       description:
         'Queue a message for a session. Safe on running sessions (queued, processed at the next turn boundary) and starts a new turn on idle sessions. Returns the queue state.',
       inputSchema: {
@@ -504,9 +504,9 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_continue',
+      name: 'morriscode_continue',
       description:
-        'Continue an idle or blocked session: a blocked session is reset to the build phase and an auto-prompt is queued; an idle session is acknowledged (use openfox_send_message to drive it with content).',
+        'Continue an idle or blocked session: a blocked session is reset to the build phase and an auto-prompt is queued; an idle session is acknowledged (use morriscode_send_message to drive it with content).',
       inputSchema: {
         sessionId: z.string().describe('Session to continue'),
       },
@@ -525,12 +525,12 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
         }
         return ok({
           accepted: true,
-          note: `Session ${sessionId} is idle — use openfox_send_message to give it work.`,
+          note: `Session ${sessionId} is idle — use morriscode_send_message to give it work.`,
         })
       },
     },
     {
-      name: 'openfox_wait',
+      name: 'morriscode_wait',
       description:
         'Block until a session settles: it finishes (completed), blocks (blocked), or pauses for the user (waiting — a pending question, path confirmation, or a paused workflow user step). Returns the outcome and a full status snapshot, or times out.',
       inputSchema: {
@@ -589,7 +589,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_stop',
+      name: 'morriscode_stop',
       description:
         'Stop a session completely: drains the queue, aborts the active execution, and cancels pending interactions.',
       inputSchema: {
@@ -603,7 +603,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_workflows',
+      name: 'morriscode_workflows',
       description:
         'List the workflows available to a project (builtin, user, and project scope) with their parameters.',
       inputSchema: {
@@ -615,7 +615,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_launch_workflow',
+      name: 'morriscode_launch_workflow',
       description:
         'Launch (or resume) a workflow run in a session. On idle sessions the run starts immediately; on running sessions it is queued as a workflow-launch marker. Supports resuming paused user steps via resumeFrom/userChoice.',
       inputSchema: {
@@ -678,12 +678,12 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_resume_workflow',
+      name: 'morriscode_resume_workflow',
       description:
-        'Resolve a paused workflow user step by picking one of its choices (e.g. "Work in current workspace"). The session must be paused at a user step \u2014 see openfox_session_status \u2192 workflow.pendingChoices (and the resumeHint there). Accepts the choice id or its label.',
+        'Resolve a paused workflow user step by picking one of its choices (e.g. "Work in current workspace"). The session must be paused at a user step \u2014 see morriscode_session_status \u2192 workflow.pendingChoices (and the resumeHint there). Accepts the choice id or its label.',
       inputSchema: {
         sessionId: z.string().describe('Session paused at a workflow user step'),
-        choice: z.string().describe('One of the pendingChoices surfaced by openfox_session_status (id or label)'),
+        choice: z.string().describe('One of the pendingChoices surfaced by morriscode_session_status (id or label)'),
       },
       handler: async (args) => {
         const check = requireSession(args['sessionId'])
@@ -691,7 +691,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
         const sessionId = check.session.id
         const choice = args['choice']
         if (typeof choice !== 'string' || choice.trim().length === 0) {
-          return fail('choice is required — pick one of the pendingChoices surfaced by openfox_session_status')
+          return fail('choice is required — pick one of the pendingChoices surfaced by morriscode_session_status')
         }
 
         const execution = sessionManager.getActiveWorkflowExecution(sessionId)
@@ -721,7 +721,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_stop_workflow',
+      name: 'morriscode_stop_workflow',
       description:
         'Abort the active workflow run of a session (task/MCP-launched runs): aborts a live run or cancels a paused user-step execution, and errors when nothing is active. Does not stop plain chat turns.',
       inputSchema: {
@@ -736,7 +736,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_answer',
+      name: 'morriscode_answer',
       description:
         'Answer or skip a pending ask_user question of a session by callId. Without a callId, lists the session pending questions.',
       inputSchema: {
@@ -770,7 +770,7 @@ export function createOpenFoxMcpTools(deps: OpenFoxMcpToolDeps): OpenFoxMcpTool[
       },
     },
     {
-      name: 'openfox_confirm',
+      name: 'morriscode_confirm',
       description:
         'Resolve a pending path confirmation of a session (approve/deny, optionally always-allow the paths). Without a callId, lists the session pending confirmations.',
       inputSchema: {

@@ -375,7 +375,7 @@ export class SessionManager {
   /**
    * Get the project root working directory for a session.
    * Ignores any active workspace — session.workdir is always the project root,
-   * which is where project-scoped .openfox/ content (agents, skills, commands,
+   * which is where project-scoped .morriscode/ content (agents, skills, commands,
    * workflows) lives and is managed from.
    */
   getProjectWorkdir(sessionId: string): string {

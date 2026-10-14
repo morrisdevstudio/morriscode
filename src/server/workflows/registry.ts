@@ -36,7 +36,7 @@ function getWorkflowsDir(configDir: string): string {
 }
 
 function getProjectWorkflowsDir(projectDir: string): string {
-  return join(projectDir, '.openfox', 'workflows')
+  return join(projectDir, '.morriscode', 'workflows')
 }
 
 async function pathExists(path: string): Promise<boolean> {

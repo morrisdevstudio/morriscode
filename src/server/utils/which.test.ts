@@ -10,8 +10,8 @@ describe('which', () => {
   let oldPath: string | undefined
 
   beforeEach(async () => {
-    workdir = await mkdtemp(join(tmpdir(), 'openfox-which-workdir-'))
-    pathDir = await mkdtemp(join(tmpdir(), 'openfox-which-path-'))
+    workdir = await mkdtemp(join(tmpdir(), 'morriscode-which-workdir-'))
+    pathDir = await mkdtemp(join(tmpdir(), 'morriscode-which-path-'))
     oldPath = process.env['PATH']
   })
 

@@ -292,7 +292,7 @@ export class LspServer {
       // stdio. If spawn fails (e.g. ENOENT), sending initialize would leave an
       // in-flight write on a destroyed stdin, and vscode-jsonrpc's sendRequest
       // (async promise executor, connection.js) turns that write failure into
-      // an unhandled rejection that crashes the whole OpenFox process.
+      // an unhandled rejection that crashes the whole MorrisCode process.
       await new Promise<void>((resolve, reject) => {
         this.process!.once('spawn', resolve)
         this.process!.once('error', reject)

@@ -47,8 +47,8 @@ describe('db sessions', () => {
     config.database.path = ':memory:'
     initDatabase(config)
 
-    rootA = await mkdtemp(join(tmpdir(), 'openfox-session-a-'))
-    rootB = await mkdtemp(join(tmpdir(), 'openfox-session-b-'))
+    rootA = await mkdtemp(join(tmpdir(), 'morriscode-session-a-'))
+    rootB = await mkdtemp(join(tmpdir(), 'morriscode-session-b-'))
     await mkdir(join(rootA, 'nested'), { recursive: true })
 
     projectAId = createProject('Project A', rootA).id
@@ -259,7 +259,7 @@ describe('db sessions', () => {
   })
 
   it('prevents session leakage between projects with similar names', () => {
-    // Simulate the bug scenario: projects with similar names (e.g., "openfox" and "openfox-agent2")
+    // Simulate the bug scenario: projects with similar names (e.g., "morriscode" and "morriscode-agent2")
     // Create sessions in both projects
     const sessionA1 = createSession(projectAId, rootA, 'Session A1')
     const sessionA2 = createSession(projectAId, rootA, 'Session A2')

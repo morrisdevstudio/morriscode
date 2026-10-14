@@ -656,7 +656,11 @@ describe('createWebSocketServer', () => {
   it('handles project and settings management messages', async () => {
     const harness = await createHarness()
 
-    harness.send({ id: 'pc-deprecated', type: 'project.create', payload: { name: 'OpenFox', workdir: '/tmp/project' } })
+    harness.send({
+      id: 'pc-deprecated',
+      type: 'project.create',
+      payload: { name: 'MorrisCode', workdir: '/tmp/project' },
+    })
     expect(await harness.nextMessage((message) => message.id === 'pc-deprecated')).toMatchObject({
       type: 'error',
       payload: { code: 'DEPRECATED_MESSAGE_TYPE' },

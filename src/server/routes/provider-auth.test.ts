@@ -35,7 +35,7 @@ describe('provider auth routes', () => {
   )
 
   async function start(withAdapter: boolean | Record<string, unknown> = true) {
-    const registry = new ProviderRegistry({ mode: 'production', configDirectory: '/tmp/openfox-test' })
+    const registry = new ProviderRegistry({ mode: 'production', configDirectory: '/tmp/morriscode-test' })
     if (withAdapter)
       registry.registerAuth({
         id: 'external-auth',

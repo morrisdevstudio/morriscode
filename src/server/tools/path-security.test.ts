@@ -35,7 +35,7 @@ import { getPlatformShell } from '../utils/platform.js'
 
 // Test fixtures directory - use a unique subdir that's NOT in /tmp's allowed root
 // We create workdir INSIDE /tmp but treat sibling tests specially
-const TEST_DIR = join(tmpdir(), 'openfox-path-security-test')
+const TEST_DIR = join(tmpdir(), 'morriscode-path-security-test')
 const WORKDIR = join(TEST_DIR, 'project', 'workdir') // Nested to allow sibling tests
 const OUTSIDE_DIR = join(TEST_DIR, 'project', 'outside') // Sibling of workdir but still in /tmp
 // For true outside-workdir tests, we use paths that aren't in /tmp
@@ -85,7 +85,7 @@ async function canonicalOrResolved(path: string): Promise<string> {
 /** Symlink creation needs a privilege/Developer Mode on Windows — probe once. */
 const CAN_SYMLINK = (() => {
   if (process.platform !== 'win32') return true
-  const probe = join(tmpdir(), `openfox-symlink-probe-${process.pid}`)
+  const probe = join(tmpdir(), `morriscode-symlink-probe-${process.pid}`)
   try {
     symlinkSync('probe-target', probe, 'file')
     rmSync(probe)
@@ -266,7 +266,7 @@ describe('path-security', () => {
       })
 
       it('allows symlink inside workdir pointing to /tmp', async () => {
-        const tmpFile = join(tmpdir(), 'openfox-test-target.txt')
+        const tmpFile = join(tmpdir(), 'morriscode-test-target.txt')
         await writeFile(tmpFile, 'tmp content')
         const linkPath = join(WORKDIR, 'link-to-tmp')
         await symlink(tmpFile, linkPath)
@@ -781,9 +781,9 @@ describe('path-security', () => {
 
       it('does not extract false paths from the reported sed-range command', () => {
         const cmd =
-          'cd /home/conrad/.local/share/openfox/workspaces/openfox/split-view && npx -y @playwright/cli snapshot 2>&1 | sed -n \'/heading "Add session"/,/Add all running/p\' | grep -E "button|paragraph" | head -30'
+          'cd /home/conrad/.local/share/morriscode/workspaces/morriscode/split-view && npx -y @playwright/cli snapshot 2>&1 | sed -n \'/heading "Add session"/,/Add all running/p\' | grep -E "button|paragraph" | head -30'
         const paths = extractAbsolutePathsFromCommand(cmd)
-        expect(paths).toEqual(['/home/conrad/.local/share/openfox/workspaces/openfox/split-view'])
+        expect(paths).toEqual(['/home/conrad/.local/share/morriscode/workspaces/morriscode/split-view'])
       })
 
       it('does not extract awk pattern-only addresses', () => {
@@ -872,9 +872,9 @@ describe('path-security', () => {
 
       it('handles cd + sed -i with regex-like quoted strings', () => {
         const cmd =
-          "cd /home/conrad/dev/openfox && sed -i \"s/it('updates mode, phase, running state, and summary while emitting events'/it('updates phase, running state, and summary while emitting events'/\" src/server/session/manager.test.ts"
+          "cd /home/conrad/dev/morriscode && sed -i \"s/it('updates mode, phase, running state, and summary while emitting events'/it('updates phase, running state, and summary while emitting events'/\" src/server/session/manager.test.ts"
         const paths = extractAbsolutePathsFromCommand(cmd)
-        expect(paths).toContain('/home/conrad/dev/openfox')
+        expect(paths).toContain('/home/conrad/dev/morriscode')
         expect(paths).not.toContain('/it(')
       })
     })
@@ -1717,7 +1717,7 @@ describe('path-security', () => {
 
     it('does not extract false paths from heredoc with JSX content', () => {
       const command = [
-        "cd /home/conrad/dev/openfox && cat > /tmp/test-minimal.tsx << 'EOF'",
+        "cd /home/conrad/dev/morriscode && cat > /tmp/test-minimal.tsx << 'EOF'",
         '// @vitest-environment happy-dom',
         "import { describe, expect, it } from 'vitest'",
         "import { render, screen } from '@testing-library/react'",
@@ -1736,7 +1736,7 @@ describe('path-security', () => {
       const paths = extractAbsolutePathsFromCommand(command)
 
       // Should find the legitimate paths
-      expect(paths).toContain('/home/conrad/dev/openfox')
+      expect(paths).toContain('/home/conrad/dev/morriscode')
       expect(paths).toContain('/tmp/test-minimal.tsx')
 
       // Should NOT contain bare root or empty string
@@ -2606,7 +2606,7 @@ describe('extractAbsolutePathsFromCommand — Windows device names', () => {
 describe('resolveRelativeTraversals', () => {
   // A workspace workdir whose parent is NOT an allowed root (/tmp), so a
   // `..` resolved one level above the workdir is genuinely outside the sandbox.
-  const ws = join(homedir(), '.openfox-path-security-ws', 'openfox', 'feature-branch')
+  const ws = join(homedir(), '.morriscode-path-security-ws', 'morriscode', 'feature-branch')
 
   describe('cd-aware resolution', () => {
     it('resolves ../dist against the cd target, staying inside the sandbox', () => {
@@ -2723,7 +2723,7 @@ describe('resolveRelativeTraversals', () => {
   describe('heredoc handling', () => {
     it('does not extract .. traversals from heredoc bodies', () => {
       const command = [
-        "cd /home/conrad/dev/openfox && cat > tmp/extract-test.ts <<'EOF'",
+        "cd /home/conrad/dev/morriscode && cat > tmp/extract-test.ts <<'EOF'",
         'import {',
         '  extractAbsolutePathsFromCommand,',
         "} from '../src/server/tools/path-security.js'",

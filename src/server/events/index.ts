@@ -2,7 +2,7 @@
  * Event Sourcing Module
  *
  * This module provides the event store - the single source of truth
- * for all session state in OpenFox.
+ * for all session state in MorrisCode.
  *
  * Usage:
  * ```typescript

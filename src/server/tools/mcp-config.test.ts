@@ -445,7 +445,7 @@ describe('mcpConfigTool', () => {
     it('returns a ready-to-paste client config for the running server', async () => {
       setMcpManagerForTools(mockManager)
       const bootstrapFn = vi.fn(async () => ({
-        name: 'openfox',
+        name: 'morriscode',
         transport: 'http',
         url: 'http://127.0.0.1:10469/mcp',
         headers: { Authorization: 'Bearer tok-abc' },
@@ -463,14 +463,14 @@ describe('mcpConfigTool', () => {
       expect(bootstrapFn).toHaveBeenCalledTimes(1)
       expect(result.output).toContain('"url": "http://127.0.0.1:10469/mcp"')
       expect(result.output).toContain('"Authorization": "Bearer tok-abc"')
-      expect(result.output).toContain('"name": "openfox"')
+      expect(result.output).toContain('"name": "morriscode"')
     })
 
     it('omits the auth header in local mode', async () => {
       setMcpManagerForTools(mockManager)
       setMcpBootstrapForTools(
         vi.fn(async () => ({
-          name: 'openfox',
+          name: 'morriscode',
           transport: 'http',
           url: 'http://127.0.0.1:10469/mcp',
         })),

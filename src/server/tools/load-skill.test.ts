@@ -65,12 +65,12 @@ describe('load_skill handler', () => {
     vi.mocked(loadAllSkills).mockResolvedValueOnce([])
     vi.mocked(findSkillById).mockReturnValueOnce(undefined)
 
-    const ctx = makeContext({ workdir: '/workspaces/openfox/review-branch', projectWorkdir: '/original/project' })
+    const ctx = makeContext({ workdir: '/workspaces/morriscode/review-branch', projectWorkdir: '/original/project' })
 
     await loadSkillTool.execute({ skillId: 'nonexistent' }, ctx)
 
     expect(loadAllSkills).toHaveBeenCalledWith('/test/config', '/original/project')
-    expect(loadAllSkills).not.toHaveBeenCalledWith('/test/config', '/workspaces/openfox/review-branch')
+    expect(loadAllSkills).not.toHaveBeenCalledWith('/test/config', '/workspaces/morriscode/review-branch')
     expect(loadAllSkills).not.toHaveBeenCalledWith('/test/config', '/global-server-workdir')
   })
 
@@ -79,7 +79,7 @@ describe('load_skill handler', () => {
       metadata: { id: 'proj-skill', name: 'Project Skill', description: 'A project skill', version: '1.0' },
       prompt: 'Do project things.',
       legacy: false,
-      directory: '/original/project/.openfox/skills/proj-skill',
+      directory: '/original/project/.morriscode/skills/proj-skill',
     }
 
     vi.mocked(isSkillEnabled).mockReturnValueOnce(true)
@@ -88,7 +88,7 @@ describe('load_skill handler', () => {
       skills.find((s) => s.metadata.id === id),
     )
 
-    const ctx = makeContext({ workdir: '/workspaces/openfox/review-branch', projectWorkdir: '/original/project' })
+    const ctx = makeContext({ workdir: '/workspaces/morriscode/review-branch', projectWorkdir: '/original/project' })
 
     const result = await loadSkillTool.execute({ skillId: 'proj-skill' }, ctx)
 

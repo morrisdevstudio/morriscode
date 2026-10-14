@@ -105,7 +105,7 @@ export const webFetchTool = createTool<WebFetchArgs>(
 
     const response =
       initial.status === 403 && initial.headers.get('cf-mitigated') === 'challenge'
-        ? await fetch(url, { signal, headers: { ...headers, 'User-Agent': 'openfox' } })
+        ? await fetch(url, { signal, headers: { ...headers, 'User-Agent': 'morriscode' } })
         : initial
 
     if (!response.ok) {

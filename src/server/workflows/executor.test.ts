@@ -427,7 +427,7 @@ describe('formatCriteriaList', () => {
 
 describe('formatModifiedFiles', () => {
   it('returns (none) outside a git repo', async () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'openfox-test-'))
+    const tmp = mkdtempSync(join(tmpdir(), 'morriscode-test-'))
     try {
       expect(await formatModifiedFiles(tmp)).toBe('(none)')
     } finally {
@@ -436,7 +436,7 @@ describe('formatModifiedFiles', () => {
   })
 
   it('returns (none) when no files are modified', async () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'openfox-test-'))
+    const tmp = mkdtempSync(join(tmpdir(), 'morriscode-test-'))
     try {
       const gitEnv = { ...process.env, GIT_INDEX_FILE: undefined, GIT_DIR: undefined, GIT_WORK_TREE: undefined }
       execSync('git init', { cwd: tmp, stdio: 'pipe', env: gitEnv })
@@ -451,7 +451,7 @@ describe('formatModifiedFiles', () => {
   })
 
   it('lists modified and untracked files', async () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'openfox-test-'))
+    const tmp = mkdtempSync(join(tmpdir(), 'morriscode-test-'))
     try {
       const gitEnv = { ...process.env, GIT_INDEX_FILE: undefined, GIT_DIR: undefined, GIT_WORK_TREE: undefined }
       execSync('git init', { cwd: tmp, stdio: 'pipe', env: gitEnv })

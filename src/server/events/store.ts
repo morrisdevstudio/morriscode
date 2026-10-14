@@ -28,7 +28,7 @@ import { SETTINGS_KEYS } from '../db/settings.js'
 const SNAPSHOT_BACKUP_RETENTION_MS = 10 * 24 * 60 * 60 * 1000
 
 /**
- * Detect a UNIQUE constraint violation (e.g. another openfox instance writing
+ * Detect a UNIQUE constraint violation (e.g. another morriscode instance writing
  * to the same database concurrently). Used to retry appends with the next seq.
  */
 function isUniqueConstraintError(error: unknown): boolean {
@@ -243,7 +243,7 @@ export class EventStore {
        VALUES (?, ?, ?, ?, ?)`,
     )
 
-    // Multi-process safety: another openfox instance may have taken our
+    // Multi-process safety: another morriscode instance may have taken our
     // computed seq between the MAX read and the INSERT. Probe forward.
     let seq = this.getNextSeq(sessionId)
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -284,7 +284,7 @@ export class EventStore {
        VALUES (?, ?, ?, ?, ?)`,
     )
 
-    // Multi-process safety: another openfox instance may have taken part of
+    // Multi-process safety: another morriscode instance may have taken part of
     // our seq range between the MAX read and the INSERTs. The transaction
     // rolls back on the first collision; retry the whole batch from the next
     // free slot.

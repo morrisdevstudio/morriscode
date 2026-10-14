@@ -19,7 +19,7 @@ const MAX_PORT_SCAN = 200
 const PROBE_TIMEOUT_MS = 300
 
 const getDevServerConfigPath = (workdir: string) => {
-  return join(resolve(workdir), '.openfox', 'dev.json')
+  return join(resolve(workdir), '.morriscode', 'dev.json')
 }
 
 // Patterns that indicate the server crashed even if the watcher stays alive
@@ -242,7 +242,7 @@ class DevServerManager {
 
     throw new Error(
       `No free port found in range ${preferred}-${maxPort} on ${host}. ` +
-        `Close some applications or configure a different port in .openfox/dev.json`,
+        `Close some applications or configure a different port in .morriscode/dev.json`,
     )
   }
 
@@ -292,7 +292,7 @@ class DevServerManager {
 
   async saveConfig(workdir: string, config: DevServerConfig): Promise<void> {
     const resolved = this.resolveWorkdir(workdir)
-    const dirPath = join(resolved, '.openfox')
+    const dirPath = join(resolved, '.morriscode')
     await mkdir(dirPath, { recursive: true })
     const configPath = getDevServerConfigPath(workdir)
     await writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8')
