@@ -8,8 +8,8 @@
  * or observed the update.
  */
 
-const LAST_VERSION_KEY = 'openfox_last_version'
-export const PREVIOUS_VERSION_KEY = 'openfox_previous_version'
+const LAST_VERSION_KEY = 'morriscode_last_version'
+export const PREVIOUS_VERSION_KEY = 'morriscode_previous_version'
 
 export function getStoredLastVersion(): string | null {
   return localStorage.getItem(LAST_VERSION_KEY)

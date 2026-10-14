@@ -233,7 +233,7 @@ function InstalledPluginCard({ plugin }: { plugin: PluginInfo }) {
               </Button>
             ) : (
               <span className="text-[10px] text-text-muted self-center max-w-[9rem] text-right">
-                {t({ en: 'Managed outside OpenFox', fr: 'Géré hors d’OpenFox' })}
+                {t({ en: 'Managed outside MorrisCode', fr: 'Géré hors d’MorrisCode' })}
               </span>
             )}
           </div>

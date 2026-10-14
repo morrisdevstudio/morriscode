@@ -27,11 +27,11 @@ function resolvePollingOverride(value: string | undefined): boolean | undefined 
 export function createViteWatchOptions(options: ViteWatchRuntimeOptions = {}): WatchOptions {
   const platform = options.platform ?? process.platform
   const env = options.env ?? process.env
-  const explicitPolling = resolvePollingOverride(env.OPENFOX_VITE_USE_POLLING)
+  const explicitPolling = resolvePollingOverride(env.MORRISCODE_VITE_USE_POLLING)
   const usePolling = explicitPolling ?? platform === 'linux'
 
   return {
-    ignored: ['**/.git/**', '**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.openfox/**'],
+    ignored: ['**/.git/**', '**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.morriscode/**'],
     usePolling,
     ...(usePolling
       ? {

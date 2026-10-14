@@ -10,7 +10,7 @@ import { fuzzyMatch, handleModalNavigation } from '../../lib/modal-utils'
 import { useResetSearchOnOpen } from '../../hooks/useResetSearchOnOpen'
 import type { DisplayItem } from './groupMessages'
 
-const STORAGE_KEY = 'openfox-message-search-filters'
+const STORAGE_KEY = 'morriscode-message-search-filters'
 
 export const FILTER_CATEGORIES = [
   { key: 'user', label: 'User prompts' },

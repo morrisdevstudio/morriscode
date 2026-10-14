@@ -25,7 +25,7 @@ export class WebSocketClient {
   }
 
   private getUrl(): string {
-    const token = localStorage.getItem('openfox_token')
+    const token = localStorage.getItem('morriscode_token')
     if (token) {
       const separator = this.baseUrl.includes('?') ? '&' : '?'
       return `${this.baseUrl}${separator}token=${encodeURIComponent(token)}`
@@ -34,15 +34,15 @@ export class WebSocketClient {
   }
 
   setToken(token: string): void {
-    localStorage.setItem('openfox_token', token)
+    localStorage.setItem('morriscode_token', token)
   }
 
   clearToken(): void {
-    localStorage.removeItem('openfox_token')
+    localStorage.removeItem('morriscode_token')
   }
 
   hasToken(): boolean {
-    return !!localStorage.getItem('openfox_token')
+    return !!localStorage.getItem('morriscode_token')
   }
 
   getLastCloseCode(): number {

@@ -177,8 +177,8 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
             </>
           ) : (
             t({
-              en: 'Check for a new OpenFox version.',
-              fr: 'Vérifiez si une nouvelle version d’OpenFox est disponible.',
+              en: 'Check for a new MorrisCode version.',
+              fr: 'Vérifiez si une nouvelle version d’MorrisCode est disponible.',
             })
           )}
         </p>
@@ -371,8 +371,8 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
           {proxyTestError && <p className="text-xs text-red-500 mt-1">{proxyTestError}</p>}
           <p className="text-xs text-text-muted mt-1">
             {t({
-              en: 'Proxy server all OpenFox network requests (AI, model fetching, web search, terminal). Leave empty for direct connection.',
-              fr: 'Passe toutes les requêtes réseau d’OpenFox par le serveur proxy (IA, téléchargement de modèles, recherche web, terminal). Laissez vide pour une connexion directe.',
+              en: 'Proxy server all MorrisCode network requests (AI, model fetching, web search, terminal). Leave empty for direct connection.',
+              fr: 'Passe toutes les requêtes réseau d’MorrisCode par le serveur proxy (IA, téléchargement de modèles, recherche web, terminal). Laissez vide pour une connexion directe.',
             })}
           </p>
         </div>

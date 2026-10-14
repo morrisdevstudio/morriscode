@@ -294,7 +294,7 @@ export function PlanPanel({
     setInput('')
     setAttachments([])
     if (session?.id) {
-      localStorage.removeItem(`openfox:draft:${session.id}`)
+      localStorage.removeItem(`morriscode:draft:${session.id}`)
     }
   }
 

@@ -212,8 +212,8 @@ function setViewportWidth(width: number) {
 
 async function renderAppAt(width: number): Promise<HTMLElement> {
   setViewportWidth(width)
-  localStorage.removeItem('openfox:leftSidebar')
-  localStorage.removeItem('openfox:rightSidebar')
+  localStorage.removeItem('morriscode:leftSidebar')
+  localStorage.removeItem('morriscode:rightSidebar')
   return renderAppAsync()
 }
 
@@ -221,9 +221,9 @@ beforeEach(() => {
   sessionState.connectionStatus = 'connected'
   sessionState.showPasswordModal = false
   sessionState.passwordModalRetry = false
-  localStorage.removeItem('openfox_token')
-  localStorage.removeItem('openfox:leftSidebar')
-  localStorage.removeItem('openfox:rightSidebar')
+  localStorage.removeItem('morriscode_token')
+  localStorage.removeItem('morriscode:leftSidebar')
+  localStorage.removeItem('morriscode:rightSidebar')
   document.body.innerHTML = ''
   layoutProps.sidebar.isOpen = undefined
   layoutProps.sidebar.overlay = undefined
@@ -246,7 +246,7 @@ describe('App - Password modal rendering', () => {
   it('does not render PasswordModal during reconnect when no token and server does not require auth', async () => {
     sessionState.connectionStatus = 'reconnecting'
     sessionState.showPasswordModal = false
-    localStorage.removeItem('openfox_token')
+    localStorage.removeItem('morriscode_token')
 
     const container = await renderAppAsync()
 
@@ -258,7 +258,7 @@ describe('App - Password modal rendering', () => {
   it('renders PasswordModal via showPasswordModal state after /api/auth confirms auth required', async () => {
     sessionState.connectionStatus = 'reconnecting'
     sessionState.showPasswordModal = true
-    localStorage.removeItem('openfox_token')
+    localStorage.removeItem('morriscode_token')
 
     const container = await renderAppAsync()
 
@@ -269,7 +269,7 @@ describe('App - Password modal rendering', () => {
   it('does not fetch per-key settings while unauthenticated (no pre-login 401 noise)', async () => {
     sessionState.connectionStatus = 'disconnected'
     sessionState.showPasswordModal = true
-    localStorage.removeItem('openfox_token')
+    localStorage.removeItem('morriscode_token')
 
     await renderAppAsync()
 

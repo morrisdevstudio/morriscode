@@ -123,12 +123,12 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
     // previous one, since a reloaded window may already report it.
     const previous = getStoredLastVersion() ?? versionInfoRef.current?.current ?? null
     if (previous && previous !== version) stampPreviousVersion(previous)
-    localStorage.setItem('openfox_updated_to', version)
+    localStorage.setItem('morriscode_updated_to', version)
     localStorage.setItem('update_pending', 'true')
   }, [])
 
   // Shared restart + confirmation routine used by both the manual
-  // "Restart OpenFox now" button and the auto-restart checkbox path.
+  // "Restart MorrisCode now" button and the auto-restart checkbox path.
   const restartAndPoll = useCallback(
     async (installedVersion: string) => {
       setState('restarting')
@@ -157,8 +157,8 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
           clearPoll()
           enterRestartFailed(
             t({
-              en: 'OpenFox could not be reached after restart within 30 seconds. Please restart OpenFox manually.',
-              fr: 'OpenFox est resté injoignable pendant 30 secondes après le redémarrage. Veuillez redémarrer OpenFox manuellement.',
+              en: 'MorrisCode could not be reached after restart within 30 seconds. Please restart MorrisCode manually.',
+              fr: 'MorrisCode est resté injoignable pendant 30 secondes après le redémarrage. Veuillez redémarrer MorrisCode manuellement.',
             }),
           )
           return
@@ -287,8 +287,8 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
           : state === 'restartFailed'
             ? t({ en: 'Restart Not Confirmed', fr: 'Redémarrage non confirmé' })
             : isDev
-              ? t({ en: 'New OpenFox (dev) version available', fr: 'Nouvelle version OpenFox (dev) disponible' })
-              : t({ en: 'New OpenFox version available', fr: 'Nouvelle version d’OpenFox disponible' })
+              ? t({ en: 'New MorrisCode (dev) version available', fr: 'Nouvelle version MorrisCode (dev) disponible' })
+              : t({ en: 'New MorrisCode version available', fr: 'Nouvelle version d’MorrisCode disponible' })
 
   return (
     <Modal
@@ -305,7 +305,7 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
               onClick={handleUpdate}
               className="w-full px-3 py-2 text-sm rounded bg-accent-primary hover:brightness-110 transition-all text-white font-medium"
             >
-              {t({ en: 'Update OpenFox', fr: 'Mettre à jour OpenFox' })}
+              {t({ en: 'Update MorrisCode', fr: 'Mettre à jour MorrisCode' })}
             </button>
           )}
 
@@ -327,7 +327,7 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
                 onClick={handleRestartNow}
                 className="w-full px-3 py-2 text-sm rounded bg-accent-primary hover:brightness-110 transition-all text-white font-medium"
               >
-                {t({ en: 'Restart OpenFox now', fr: 'Redémarrer OpenFox maintenant' })}
+                {t({ en: 'Restart MorrisCode now', fr: 'Redémarrer MorrisCode maintenant' })}
               </button>
               <button
                 onClick={onClose}
@@ -391,19 +391,19 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
             <div className="bg-bg-tertiary rounded px-3 py-2 text-xs text-text-secondary">
               {t(
                 {
-                  en: 'OpenFox has been updated to v{{version}}.',
-                  fr: 'OpenFox a été mis à jour vers la v{{version}}.',
+                  en: 'MorrisCode has been updated to v{{version}}.',
+                  fr: 'MorrisCode a été mis à jour vers la v{{version}}.',
                 },
                 { version: updatedVersion ?? modalVersionInfo?.latest ?? '' },
               )}{' '}
               {restartAvailable
                 ? t({
-                    en: 'Click "Restart OpenFox now" to apply the update.',
-                    fr: 'Cliquez sur « Redémarrer OpenFox maintenant » pour appliquer la mise à jour.',
+                    en: 'Click "Restart MorrisCode now" to apply the update.',
+                    fr: 'Cliquez sur « Redémarrer MorrisCode maintenant » pour appliquer la mise à jour.',
                   })
                 : t({
-                    en: 'Please restart OpenFox to use the new version.',
-                    fr: 'Veuillez redémarrer OpenFox pour utiliser la nouvelle version.',
+                    en: 'Please restart MorrisCode to use the new version.',
+                    fr: 'Veuillez redémarrer MorrisCode pour utiliser la nouvelle version.',
                   })}
             </div>
           </div>
@@ -412,7 +412,7 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
         {state === 'failed' && (
           <FallbackPanel
             message={errorMessage}
-            command="openfox update"
+            command="morriscode update"
             hint={{
               en: 'Run this command in your terminal to complete the update.',
               fr: 'Exécutez cette commande dans votre terminal pour terminer la mise à jour.',
@@ -423,10 +423,10 @@ export function AutoUpdateModal({ isOpen, onClose, versionInfo }: AutoUpdateModa
         {state === 'restartFailed' && (
           <FallbackPanel
             message={errorMessage}
-            command="openfox service restart"
+            command="morriscode service restart"
             hint={{
-              en: 'Run this command in your terminal to restart OpenFox.',
-              fr: 'Exécutez cette commande dans votre terminal pour redémarrer OpenFox.',
+              en: 'Run this command in your terminal to restart MorrisCode.',
+              fr: 'Exécutez cette commande dans votre terminal pour redémarrer MorrisCode.',
             }}
           />
         )}

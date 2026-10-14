@@ -33,8 +33,8 @@ export function DeleteProjectConfirmationModal({
           {t({ en: 'This will permanently delete the project', fr: 'Cela supprimera définitivement le projet' })}{' '}
           <span className="font-semibold text-text-primary">{projectName}</span>{' '}
           {t({
-            en: 'and all its sessions from OpenFox. The project files on disk will remain untouched.',
-            fr: 'et toutes ses sessions d’OpenFox. Les fichiers du projet sur le disque resteront intacts.',
+            en: 'and all its sessions from MorrisCode. The project files on disk will remain untouched.',
+            fr: 'et toutes ses sessions d’MorrisCode. Les fichiers du projet sur le disque resteront intacts.',
           })}
         </>
       }

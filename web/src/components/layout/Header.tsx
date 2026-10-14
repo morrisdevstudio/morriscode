@@ -248,7 +248,7 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
               href="/"
               className="text-accent-primary font-semibold text-sm hover:underline flex-shrink-0 hidden md:inline"
             >
-              OpenFox
+              MorrisCode
             </Link>
           </PluginZone>
 

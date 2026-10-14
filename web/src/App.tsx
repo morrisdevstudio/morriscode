@@ -249,11 +249,11 @@ function App() {
     const serverFollowSystem = followSystemSetting
 
     if (serverPresets) {
-      localStorage.setItem('openfox:userPresets', serverPresets)
+      localStorage.setItem('morriscode:userPresets', serverPresets)
     }
 
     if (serverTheme) {
-      localStorage.setItem('openfox:theme', serverTheme)
+      localStorage.setItem('morriscode:theme', serverTheme)
       try {
         const parsed = JSON.parse(serverTheme) as { preset?: string; tokens?: Record<string, string> }
         if (parsed.preset && parsed.tokens) {
@@ -332,12 +332,12 @@ function App() {
   }, [showChangelogSetting, configFetched])
 
   const getInitialLeftSidebar = () => {
-    const saved = localStorage.getItem('openfox:leftSidebar')
+    const saved = localStorage.getItem('morriscode:leftSidebar')
     return saved !== null ? saved === 'true' : true
   }
 
   const getInitialRightSidebar = () => {
-    const saved = localStorage.getItem('openfox:rightSidebar')
+    const saved = localStorage.getItem('morriscode:rightSidebar')
     return saved !== null ? saved === 'true' : true
   }
 
@@ -464,13 +464,13 @@ function App() {
 
   useEffect(() => {
     if (!isMobile) {
-      localStorage.setItem('openfox:leftSidebar', String(leftSidebarOpen))
+      localStorage.setItem('morriscode:leftSidebar', String(leftSidebarOpen))
     }
   }, [leftSidebarOpen, isMobile])
 
   useEffect(() => {
     if (!isMobile) {
-      localStorage.setItem('openfox:rightSidebar', String(rightSidebarOpen))
+      localStorage.setItem('morriscode:rightSidebar', String(rightSidebarOpen))
     }
   }, [rightSidebarOpen, isMobile])
 

@@ -456,7 +456,7 @@ export function HomePage() {
       <div className="max-w-5xl mx-auto w-full p-4 md:p-8">
         <div className="mb-6 md:mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-accent-primary">OpenFox</h1>
+            <h1 className="text-3xl font-bold text-accent-primary">MorrisCode</h1>
             <p className="text-text-secondary">
               {t({
                 en: 'Local LLM-powered coding assistant with contract-driven execution',

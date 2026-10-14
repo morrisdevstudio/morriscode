@@ -43,7 +43,7 @@
   overlay.id = '__fox-overlay'
   overlay.innerHTML =
     '<div id="__fox-widget">' +
-    '<span class="__fox-label">OpenFox</span>' +
+    '<span class="__fox-label">MorrisCode</span>' +
     '<button id="__fox-toggle">Send feedback</button>' +
     '</div>'
 
@@ -221,7 +221,7 @@
       clearHighlights()
       setInspectMode(false)
 
-      fetch('/__openfox_feedback', {
+      fetch('/__morriscode_feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -292,7 +292,7 @@
   })
 
   function fetchSessions() {
-    fetch('/__openfox_sessions')
+    fetch('/__morriscode_sessions')
       .then(function (res) {
         if (!res.ok) throw new Error('Failed to fetch sessions')
         return res.json()

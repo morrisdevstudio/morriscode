@@ -43,16 +43,16 @@ vi.mock('../../../hooks/useResource', () => ({
           data: {
             plugins: [
               {
-                name: 'openfox-demo',
+                name: 'morriscode-demo',
                 displayName: 'Demo plugin registry entry',
                 description: 'Installed demo plugin',
-                githubUrl: 'https://github.com/user/openfox-demo',
+                githubUrl: 'https://github.com/user/morriscode-demo',
               },
               {
-                name: 'openfox-registry-only',
+                name: 'morriscode-registry-only',
                 displayName: 'Registry plugin',
                 description: 'Available from the registry',
-                githubUrl: 'https://github.com/user/openfox-registry-only',
+                githubUrl: 'https://github.com/user/morriscode-registry-only',
               },
             ],
           },
@@ -88,7 +88,7 @@ vi.mock('../../../lib/api', () => ({
 
 function makePlugin(overrides: Partial<PluginInfo> = {}): PluginInfo {
   return {
-    id: 'openfox-demo',
+    id: 'morriscode-demo',
     displayName: 'Demo plugin',
     description: 'A demo plugin',
     version: '1.2.3',
@@ -174,14 +174,14 @@ describe('PluginsTab', () => {
     render(<PluginsTab />)
     const toggle = screen.getByRole('switch')
     await userEvent.setup().click(toggle)
-    await waitFor(() => expect(setPluginEnabled).toHaveBeenCalledWith('openfox-demo', false))
+    await waitFor(() => expect(setPluginEnabled).toHaveBeenCalledWith('morriscode-demo', false))
     expect(refresh).toHaveBeenCalled()
   })
 
   it('opens the schema-driven settings form when a section is declared', async () => {
     render(<PluginsTab />)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Settings' }))
-    expect(screen.getByText('settings-form:openfox-demo')).toBeDefined()
+    expect(screen.getByText('settings-form:morriscode-demo')).toBeDefined()
   })
 
   it('uninstalls after confirmation', async () => {
@@ -189,7 +189,7 @@ describe('PluginsTab', () => {
     render(<PluginsTab />)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Remove' }))
     await userEvent.setup().click(screen.getByRole('button', { name: 'Confirm' }))
-    await waitFor(() => expect(uninstallPlugin).toHaveBeenCalledWith('openfox-demo'))
+    await waitFor(() => expect(uninstallPlugin).toHaveBeenCalledWith('morriscode-demo'))
   })
 
   it('installs a registry plugin', async () => {
@@ -198,7 +198,7 @@ describe('PluginsTab', () => {
     const installButtons = screen.getAllByRole('button', { name: 'Install' })
     await userEvent.setup().click(installButtons[installButtons.length - 1]!)
     await waitFor(() =>
-      expect(installPlugin).toHaveBeenCalledWith({ githubUrl: 'https://github.com/user/openfox-registry-only' }),
+      expect(installPlugin).toHaveBeenCalledWith({ githubUrl: 'https://github.com/user/morriscode-registry-only' }),
     )
   })
 
@@ -240,18 +240,18 @@ describe('PluginsTab', () => {
     expect(screen.getByText('Intentional failure')).toBeDefined()
   })
 
-  it('hides Remove for plugins managed outside OpenFox', () => {
+  it('hides Remove for plugins managed outside MorrisCode', () => {
     pluginsRef.current = [makePlugin({ removable: false })]
     render(<PluginsTab />)
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull()
-    expect(screen.getByText('Managed outside OpenFox')).toBeDefined()
+    expect(screen.getByText('Managed outside MorrisCode')).toBeDefined()
   })
 
   it('reinstalls an installed plugin via reinstallPlugin', async () => {
     reinstallPlugin.mockResolvedValue({ ok: true })
     render(<PluginsTab />)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Reinstall' }))
-    await waitFor(() => expect(reinstallPlugin).toHaveBeenCalledWith('openfox-demo'))
+    await waitFor(() => expect(reinstallPlugin).toHaveBeenCalledWith('morriscode-demo'))
   })
 
   it('omits developer line in installed card when author is not available and not in registry', () => {

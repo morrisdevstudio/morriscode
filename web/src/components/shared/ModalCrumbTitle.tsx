@@ -6,7 +6,7 @@ interface ModalCrumbTitleProps {
   children: ReactNode
 }
 
-/** Modal title in "project › action" breadcrumb form, e.g. "openfox › Tasks". */
+/** Modal title in "project › action" breadcrumb form, e.g. "morriscode › Tasks". */
 export function ModalCrumbTitle({ projectName, children }: ModalCrumbTitleProps) {
   return (
     <span className="inline-flex items-center gap-1.5 min-w-0">

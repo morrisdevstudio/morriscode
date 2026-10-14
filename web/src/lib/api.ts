@@ -2,16 +2,16 @@ import { appUrl } from './basePath'
 import type { Attachment } from '@shared/types.js'
 
 export function getSessionToken(): string | null {
-  return localStorage.getItem('openfox_token')
+  return localStorage.getItem('morriscode_token')
 }
 
 export function hasStoredToken(): boolean {
   if (typeof window === 'undefined') return false
-  return localStorage.getItem('openfox_token') !== null
+  return localStorage.getItem('morriscode_token') !== null
 }
 
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = localStorage.getItem('openfox_token')
+  const token = localStorage.getItem('morriscode_token')
   const headers = {
     ...(options.headers instanceof Headers ? Object.fromEntries(options.headers.entries()) : options.headers),
     ...(token ? { 'x-session-token': token } : {}),
@@ -97,7 +97,7 @@ export async function downloadSessionExport(sessionId: string, fallbackTitle?: s
     if (!res.ok) return false
     const payload = (await res.json()) as SessionExportDocument
     const title = payload.session?.title ?? fallbackTitle ?? 'session'
-    const filename = `${title.replace(/[^a-zA-Z0-9-_]+/g, '_')}.openfox-session.json`
+    const filename = `${title.replace(/[^a-zA-Z0-9-_]+/g, '_')}.morriscode-session.json`
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')

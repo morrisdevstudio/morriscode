@@ -240,7 +240,7 @@ export function ChatInput({
 
   useEffect(() => {
     if (!sessionId) return
-    const draftKey = `openfox:draft:${sessionId}`
+    const draftKey = `morriscode:draft:${sessionId}`
     const savedDraft = localStorage.getItem(draftKey)
     if (savedDraft !== null) {
       setInput(savedDraft)
@@ -254,7 +254,7 @@ export function ChatInput({
 
   useEffect(() => {
     if (!sessionId) return
-    const draftKey = `openfox:draft:${sessionId}`
+    const draftKey = `morriscode:draft:${sessionId}`
     const timeoutId = setTimeout(() => {
       if (input) {
         localStorage.setItem(draftKey, input)

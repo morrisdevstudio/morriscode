@@ -15,7 +15,7 @@ describe('createViteWatchOptions', () => {
     expect(
       createViteWatchOptions({
         platform: 'linux',
-        env: { OPENFOX_VITE_USE_POLLING: '0' },
+        env: { MORRISCODE_VITE_USE_POLLING: '0' },
       }),
     ).toMatchObject({
       usePolling: false,
@@ -26,7 +26,7 @@ describe('createViteWatchOptions', () => {
     expect(
       createViteWatchOptions({
         platform: 'darwin',
-        env: { OPENFOX_VITE_USE_POLLING: 'true' },
+        env: { MORRISCODE_VITE_USE_POLLING: 'true' },
       }),
     ).toMatchObject({
       usePolling: true,

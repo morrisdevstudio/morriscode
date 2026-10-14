@@ -1,2 +1,2 @@
-export const FEED_REVEAL_EVENT = 'openfox:feed-reveal'
-export const AUTOSCROLL_REARM_EVENT = 'openfox:autoscroll-rearm'
+export const FEED_REVEAL_EVENT = 'morriscode:feed-reveal'
+export const AUTOSCROLL_REARM_EVENT = 'morriscode:autoscroll-rearm'

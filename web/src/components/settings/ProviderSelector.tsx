@@ -1185,8 +1185,8 @@ export function ProviderSelector() {
                       fr: 'Si le navigateur a bloqué ou fermé l’onglet, rouvrez l’autorisation.',
                     })
                   : t({
-                      en: 'OpenFox stays open while you complete authorization in the other tab.',
-                      fr: 'OpenFox reste ouvert pendant que vous finalisez l’autorisation dans l’autre onglet.',
+                      en: 'MorrisCode stays open while you complete authorization in the other tab.',
+                      fr: 'MorrisCode reste ouvert pendant que vous finalisez l’autorisation dans l’autre onglet.',
                     })}
               </p>
             </>

@@ -230,7 +230,7 @@ export function StatsModal({ isOpen, onClose, summary, sessionId }: StatsModalPr
 
       // Download
       const link = document.createElement('a')
-      link.download = `openfox-stats-${new Date().toISOString().slice(0, 10)}.png`
+      link.download = `morriscode-stats-${new Date().toISOString().slice(0, 10)}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     } catch (err) {

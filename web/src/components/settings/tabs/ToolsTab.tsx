@@ -173,7 +173,7 @@ function McpOAuthPanel({ serverName, onChanged }: McpOAuthPanelProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const bc = new BroadcastChannel('openfox-oauth')
+    const bc = new BroadcastChannel('morriscode-oauth')
     bc.onmessage = (e) => {
       if (e.data?.type === 'oauth-callback-complete') {
         setRedirectUri('')
@@ -859,8 +859,8 @@ export function ToolsTab() {
         </div>
         <p className="text-sm text-text-muted mb-3">
           {t({
-            en: "MCP servers provide external tools that extend OpenFox's capabilities.",
-            fr: 'Les serveurs MCP fournissent des outils externes qui étendent les capacités d’OpenFox.',
+            en: "MCP servers provide external tools that extend MorrisCode's capabilities.",
+            fr: 'Les serveurs MCP fournissent des outils externes qui étendent les capacités d’MorrisCode.',
           })}
         </p>
         <div className="flex items-center justify-between py-2">

@@ -104,7 +104,7 @@ describe('TaskEditor', () => {
   })
 
   it('restores an unsaved draft when editing (edit-mode draft preservation)', async () => {
-    localStorage.setItem('openfox:task-draft:proj-1:t-edit', JSON.stringify({ prompt: 'Draft prompt content' }))
+    localStorage.setItem('morriscode:task-draft:proj-1:t-edit', JSON.stringify({ prompt: 'Draft prompt content' }))
     render(<TaskEditor projectId="proj-1" initialTask={task()} onClose={() => {}} onSaved={() => {}} />)
     await waitFor(() => {
       expect((screen.getByPlaceholderText(/Describe the task/i) as HTMLTextAreaElement).value).toBe(
@@ -118,7 +118,7 @@ describe('TaskEditor', () => {
     const promptEl = screen.getByPlaceholderText(/Describe the task/i) as HTMLTextAreaElement
     fireEvent.change(promptEl, { target: { value: 'Unsaved edit text' } })
     await waitFor(() => {
-      const raw = localStorage.getItem('openfox:task-draft:proj-1:t-edit')
+      const raw = localStorage.getItem('morriscode:task-draft:proj-1:t-edit')
       expect(raw).toBeTruthy()
       expect(JSON.parse(raw!).prompt).toBe('Unsaved edit text')
     })
@@ -143,7 +143,7 @@ describe('TaskEditor', () => {
     fireEvent.change(promptEl, { target: { value: 'Save me' } })
     fireEvent.keyDown(promptEl, { key: 'Enter', ctrlKey: true })
     await waitFor(() => {
-      expect(localStorage.getItem('openfox:task-draft:proj-1:t-edit')).toBeNull()
+      expect(localStorage.getItem('morriscode:task-draft:proj-1:t-edit')).toBeNull()
     })
   })
 

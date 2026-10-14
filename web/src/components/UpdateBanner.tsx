@@ -3,7 +3,7 @@ import { CheckIcon } from './shared/icons/CheckIcon'
 import { XCloseSmallIcon } from './shared/icons/XCloseIcon'
 import { useT } from '../hooks/useT'
 
-const STORAGE_KEY = 'openfox_updated_to'
+const STORAGE_KEY = 'morriscode_updated_to'
 const PENDING_KEY = 'update_pending'
 
 export function UpdateBanner() {
@@ -42,7 +42,7 @@ export function UpdateBanner() {
       </div>
       <div className="flex flex-col">
         <span className="text-sm font-medium text-text-primary">
-          {t({ en: 'OpenFox updated successfully', fr: 'OpenFox mis à jour avec succès' })}
+          {t({ en: 'MorrisCode updated successfully', fr: 'MorrisCode mis à jour avec succès' })}
         </span>
         <span className="text-xs text-text-muted">
           {t({ en: 'Now running {{version}}', fr: 'Version {{version}} active' }, { version })}

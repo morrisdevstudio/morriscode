@@ -826,7 +826,7 @@ export async function fetchDevServerConfig(workdir: string): Promise<DevServerCo
   return data.config ?? null
 }
 
-/** Per-workdir `.openfox/dev.json` config; saves POST then write through. */
+/** Per-workdir `.morriscode/dev.json` config; saves POST then write through. */
 export const devServerConfigResource = resource<DevServerConfig | null, [string]>({
   key: (workdir) => `dev-server:config:${workdir}`,
   fetch: fetchDevServerConfig,
@@ -879,7 +879,7 @@ export const pluginSettingsResource = resource<PluginSettingsData, [string, Plug
   maxAgeMs: 0,
 })
 
-/** Curated plugin registry shipped with OpenFox (core-controlled). */
+/** Curated plugin registry shipped with MorrisCode (core-controlled). */
 export const pluginRegistryResource = resource<{ plugins: RegistryPlugin[] }, []>({
   key: () => 'plugins:registry',
   fetch: fetchPluginRegistry,
