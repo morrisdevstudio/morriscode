@@ -1,6 +1,7 @@
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 @import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource-variable/inter';
 
 @import './theme.css';
 @import 'overlayscrollbars/styles/overlayscrollbars.css';
@@ -21,13 +22,13 @@
 
   /* Gutter: invisible idle, visible on hover/active */
   --os-track-bg: transparent;
-  --os-track-bg-hover: rgb(var(--color-text-primary) / 0.25);
-  --os-track-bg-active: rgb(var(--color-text-primary) / 0.25);
+  --os-track-bg-hover: rgb(var(--color-text-muted) / 0.14);
+  --os-track-bg-active: rgb(var(--color-text-muted) / 0.14);
 
   /* Handle: muted on content hover, primary on gutter hover & active */
-  --os-handle-bg: rgb(var(--color-text-primary) / 0.75);
-  --os-handle-bg-hover: rgb(var(--color-accent-primary) / 1);
-  --os-handle-bg-active: rgb(var(--color-accent-primary) / 1);
+  --os-handle-bg: rgb(var(--color-text-muted) / 0.55);
+  --os-handle-bg-hover: rgb(var(--color-text-muted) / 0.9);
+  --os-handle-bg-active: rgb(var(--color-text-muted) / 1);
 }
 
 /* Remove built-in OS transitions */
@@ -57,8 +58,21 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-primary text-text-primary text-sm;
+    @apply bg-primary font-sans text-sm text-text-primary;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-semibold text-text-heading;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -74,27 +88,27 @@
     display: none;
   }
   .panel {
-    @apply bg-bg-secondary border border-border rounded;
+    @apply rounded-lg border border-border bg-bg-secondary;
   }
 
   .btn {
-    @apply px-3 py-1.5 rounded text-sm font-medium transition-colors;
+    @apply rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
   }
 
   .btn-primary {
-    @apply bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40;
+    @apply bg-text-primary text-bg-primary hover:opacity-90;
   }
 
   .btn-secondary {
-    @apply bg-bg-tertiary text-text-primary hover:bg-border;
+    @apply border border-border bg-bg-tertiary text-text-primary hover:bg-border;
   }
 
   .btn-danger {
-    @apply bg-accent-error text-white hover:bg-accent-error/80;
+    @apply bg-accent-error text-white hover:opacity-90;
   }
 
   .input {
-    @apply bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary;
+    @apply rounded-md border border-border bg-bg-tertiary px-2.5 py-1.5 text-sm placeholder-text-muted focus:border-accent-primary/60 focus:outline-none focus:ring-1 focus:ring-accent-primary/40;
   }
 
   .feed-item {
@@ -119,7 +133,6 @@
 
   .shiki .line {
     display: block;
-    padding-left: 3.25rem;
     position: relative;
     line-height: 1.35;
     margin-bottom: -0.65em;
@@ -127,7 +140,12 @@
     counter-increment: shiki-line;
   }
 
-  .shiki .line::before {
+  /* Line numbers are opt-in: the feed renders code without a gutter, diffs keep it. */
+  .shiki-numbered .shiki .line {
+    padding-left: 3.25rem;
+  }
+
+  .shiki-numbered .shiki .line::before {
     content: counter(shiki-line);
     position: absolute;
     left: 0;

@@ -637,7 +637,7 @@ export function ChatInput({
       disabled={!input.trim() && attachments.length === 0}
       data-testid={mobile ? 'chat-send-button-touch' : 'chat-send-button'}
       {...(mobile ? { 'aria-label': t({ en: 'Send', fr: 'Envoyer' }), onMouseDown: keepComposerFocus } : {})}
-      className={`rounded-l bg-accent-primary/20 text-sm text-accent-primary font-medium hover:bg-accent-primary/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors ${
+      className={`rounded-l bg-text-primary text-sm text-bg-primary font-medium hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors ${
         mobile ? 'flex items-center justify-center px-4 py-2' : 'px-4 py-1.5'
       }`}
     >
@@ -791,8 +791,8 @@ export function ChatInput({
 
           <div
             ref={composerWrapRef}
-            className={`flex items-end gap-3 p-3 rounded transition-colors ${
-              dragOver ? 'bg-accent-primary/10' : 'bg-primary'
+            className={`flex items-end gap-3 p-3 rounded-lg transition-colors ${
+              dragOver ? 'bg-accent-primary/10' : 'bg-bg-primary'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

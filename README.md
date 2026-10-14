@@ -147,12 +147,12 @@ _Vision Fallback — Image processing configuration_
 
 ## Environment Variables
 
-| Variable                             | Default                    | Description                                                     |
-| ------------------------------------ | -------------------------- | --------------------------------------------------------------- |
+| Variable                                | Default                    | Description                                                     |
+| --------------------------------------- | -------------------------- | --------------------------------------------------------------- |
 | `MORRISCODE_LLM_URL`                    | `http://localhost:8000/v1` | LLM API base URL                                                |
-| `MORRISCODE_VLLM_URL`                   | —                          | Deprecated alias for `MORRISCODE_LLM_URL`                          |
+| `MORRISCODE_VLLM_URL`                   | —                          | Deprecated alias for `MORRISCODE_LLM_URL`                       |
 | `MORRISCODE_BACKEND`                    | `unknown`                  | Backend type: `vllm`, `sglang`, `ollama`, `llamacpp`, `unknown` |
-| `MORRISCODE_BASE_PATH`                  | `/`                        | Web app base path for subpath deployments (e.g. `/morriscode/`)    |
+| `MORRISCODE_BASE_PATH`                  | `/`                        | Web app base path for subpath deployments (e.g. `/morriscode/`) |
 | `MORRISCODE_MODEL_NAME`                 | `''`                       | Override default model name                                     |
 | `MORRISCODE_MAX_CONTEXT`                | `200000`                   | Max context window in tokens                                    |
 | `MORRISCODE_LLM_TIMEOUT`                | `300000`                   | LLM request timeout in ms                                       |
@@ -161,7 +161,7 @@ _Vision Fallback — Image processing configuration_
 | `MORRISCODE_HOST`                       | `127.0.0.1`                | Server bind host                                                |
 | `MORRISCODE_PUBLIC_URL`                 | —                          | Public origin used to build the MCP OAuth redirect URI          |
 | `MORRISCODE_WORKDIR`                    | `cwd`                      | Working directory                                               |
-| `MORRISCODE_DB_PATH`                    | `./morriscode.db`             | SQLite database path                                            |
+| `MORRISCODE_DB_PATH`                    | `./morriscode.db`          | SQLite database path                                            |
 | `MORRISCODE_LOG_LEVEL`                  | `info`                     | Log level: `debug`, `info`, `warn`, `error`                     |
 | `MORRISCODE_REASONING_EFFORT`           | —                          | Reasoning effort (e.g. `none`, `low`, `medium`, `high`)         |
 | `MORRISCODE_DEV`                        | `false`                    | Enable dev mode                                                 |

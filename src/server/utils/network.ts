@@ -99,7 +99,7 @@ export function displayStartupBanner(config: {
   const isLocalhost = host === '127.0.0.1'
 
   // eslint-disable-next-line no-console
-  console.log(`\n🦊 MorrisCode v${VERSION}\n`)
+  console.log(`\nMorrisCode v${VERSION}\n`)
 
   if (isLocalhost) {
     // eslint-disable-next-line no-console

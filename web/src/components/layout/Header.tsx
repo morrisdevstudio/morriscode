@@ -216,7 +216,7 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
         ...(session?.id ? { sessionId: session.id } : {}),
       }}
     >
-      <header className="h-8 bg-secondary border-b border-border flex items-center justify-between px-2">
+      <header className="h-11 bg-secondary border-b border-border flex items-center justify-between px-3">
         <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
           {(onMenuClick && isSessionPage) || (onMenuClick && isSplit) ? (
             <button
@@ -246,7 +246,7 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
           <PluginZone id="header.brand">
             <Link
               href="/"
-              className="text-accent-primary font-semibold text-sm hover:underline flex-shrink-0 hidden md:inline"
+              className="text-text-primary font-semibold text-sm tracking-tight hover:text-text-secondary flex-shrink-0 hidden md:inline"
             >
               MorrisCode
             </Link>
@@ -450,7 +450,7 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
                 clearAutoLaunch()
                 setLocation(`/p/${targetProjectId}/s/${sessionId}`)
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-accent-primary/25 hover:bg-accent-primary/40 font-medium transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-text-primary text-bg-primary hover:opacity-90 font-medium transition-colors"
             >
               {t({ en: 'Open session', fr: 'Ouvrir la session' })} <ArrowRightIcon className="w-3 h-3" />
             </button>

@@ -324,7 +324,7 @@ export function HomePage() {
                 </span>
                 {isSearching && matchType && matchType !== 'title' && (
                   <span className="flex flex-wrap items-center gap-1.5 shrink-0">
-                    <span className="text-[10px] font-medium text-accent-primary border border-accent-primary/30 bg-accent-primary/8 rounded px-1 py-0.5 leading-none">
+                    <span className="text-[10px] font-medium text-text-secondary border border-border bg-bg-tertiary rounded px-1 py-0.5 leading-none">
                       {matchType === 'prompts'
                         ? t({ en: 'prompts', fr: 'invites' })
                         : t({ en: 'project', fr: 'projet' })}
@@ -421,7 +421,7 @@ export function HomePage() {
                   </Button>
                   <Link
                     href={`/p/${project.id}/new`}
-                    className="rounded font-medium transition-colors bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 px-1.5 py-1 text-xs"
+                    className="rounded-md font-medium transition-colors bg-text-primary text-bg-primary hover:opacity-90 px-1.5 py-1 text-xs"
                   >
                     {t({ en: '+ New Session', fr: '+ Nouvelle session' })}
                   </Link>
@@ -456,7 +456,7 @@ export function HomePage() {
       <div className="max-w-5xl mx-auto w-full p-4 md:p-8">
         <div className="mb-6 md:mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-accent-primary">MorrisCode</h1>
+            <h1 className="text-2xl font-semibold text-text-primary">MorrisCode</h1>
             <p className="text-text-secondary">
               {t({
                 en: 'Local LLM-powered coding assistant with contract-driven execution',

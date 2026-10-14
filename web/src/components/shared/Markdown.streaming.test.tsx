@@ -8,7 +8,7 @@ const highlightCodeMock = vi.hoisted(() => vi.fn())
 
 vi.mock('../../lib/syntax-highlighter', () => ({
   highlightCode: highlightCodeMock,
-  useShikiTheme: () => 'github-dark-default',
+  useShikiTheme: () => 'vesper',
 }))
 
 const settingsMock = vi.hoisted(() => ({ deferCodeHighlightWhileStreaming: false }))

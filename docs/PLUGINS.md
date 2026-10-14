@@ -806,13 +806,13 @@ the plugin's contribution summary.
 
 ## 7. Troubleshooting
 
-| Symptom                                                              | Cause                                                                           |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Symptom                                                                 | Cause                                                                           |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Plugin shows **Error** with `Unsupported MorrisCode plugin API version` | `openfox.apiVersion` is missing or not `1`/`2`                                  |
-| `Plugin does not export register(registry)`                          | Entry point must export a named `register` function                             |
-| `Plugin tool 'x' collides with a built-in tool`                      | Rename the tool; built-ins cannot be shadowed                                   |
-| `Plugin <kind> 'x' is already registered by 'y'`                     | Two plugins claim the same id; ids must be unique per kind                      |
-| Action/panel missing in the UI                                       | Check the plugin is enabled and the `slot` value is one of the documented slots |
-| RPC returns `no RPC method`                                          | The method name must match `registerRpc` exactly and the plugin must be enabled |
-| RPC returns `does not declare the 'rpc' capability`                  | Add `"rpc"` to `openfox.capabilities`, or omit the array entirely               |
-| Settings save fails with `must be a number`                          | Values are validated against your schema server-side                            |
+| `Plugin does not export register(registry)`                             | Entry point must export a named `register` function                             |
+| `Plugin tool 'x' collides with a built-in tool`                         | Rename the tool; built-ins cannot be shadowed                                   |
+| `Plugin <kind> 'x' is already registered by 'y'`                        | Two plugins claim the same id; ids must be unique per kind                      |
+| Action/panel missing in the UI                                          | Check the plugin is enabled and the `slot` value is one of the documented slots |
+| RPC returns `no RPC method`                                             | The method name must match `registerRpc` exactly and the plugin must be enabled |
+| RPC returns `does not declare the 'rpc' capability`                     | Add `"rpc"` to `openfox.capabilities`, or omit the array entirely               |
+| Settings save fails with `must be a number`                             | Values are validated against your schema server-side                            |

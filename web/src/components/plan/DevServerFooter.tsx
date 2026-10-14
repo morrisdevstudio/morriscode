@@ -228,7 +228,7 @@ export const DevServerFooter = memo(function DevServerFooter({
               {status?.url && (
                 <button
                   onClick={() => openInspectWindow()}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded font-medium text-sm px-3 py-1.5 bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-md font-medium text-sm px-3 py-1.5 bg-text-primary text-bg-primary hover:opacity-90 transition-colors"
                   title={status.url}
                 >
                   <OpenExternalIcon />
@@ -240,7 +240,7 @@ export const DevServerFooter = memo(function DevServerFooter({
             /* Start button — full width */
             <button
               onClick={handleAction}
-              className="w-full rounded font-medium text-sm px-3 py-1.5 bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 transition-colors"
+              className="w-full rounded-md font-medium text-sm px-3 py-1.5 bg-text-primary text-bg-primary hover:opacity-90 transition-colors"
             >
               {t({ en: 'Start', fr: 'Démarrer' })}
             </button>

@@ -243,8 +243,8 @@ Need to trace through a session, understand why the agent did something, or find
 
 ## Database & Config Locations
 
-|                | Production                           | Development                              |
-| -------------- | ------------------------------------ | ---------------------------------------- |
+|                | Production                              | Development                                 |
+| -------------- | --------------------------------------- | ------------------------------------------- |
 | **Config dir** | `~/.config/morriscode/`                 | `~/.config/morriscode-dev/`                 |
 | **Database**   | `~/.local/share/morriscode/sessions.db` | `~/.local/share/morriscode-dev/sessions.db` |
 

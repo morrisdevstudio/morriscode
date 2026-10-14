@@ -4,8 +4,8 @@
 
 ## Database Locations
 
-| Environment | Path                                     |
-| ----------- | ---------------------------------------- |
+| Environment | Path                                        |
+| ----------- | ------------------------------------------- |
 | Production  | `~/.local/share/morriscode/sessions.db`     |
 | Development | `~/.local/share/morriscode-dev/sessions.db` |
 
