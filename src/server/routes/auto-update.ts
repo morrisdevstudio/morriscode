@@ -33,7 +33,7 @@ export function resetVersionCache(): void {
 }
 
 function isRunningAsService(): boolean {
-  return process.env['OPENFOX_SERVICE'] === 'true'
+  return process.env['MORRISCODE_SERVICE'] === 'true'
 }
 
 const UPDATE_TIMEOUT = 120_000
@@ -167,11 +167,15 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
             // On Windows npm is npm.cmd, not directly spawnable (CVE-2024-27980):
             // go through the shell as a single string (fixed args, avoids DEP0190).
             const win = process.platform === 'win32'
-            const child = spawn(win ? 'npm view openfox version' : 'npm', win ? [] : ['view', 'openfox', 'version'], {
-              stdio: ['ignore', 'pipe', 'pipe'],
-              shell: win,
-              windowsHide: true,
-            })
+            const child = spawn(
+              win ? 'npm view morriscode version' : 'npm',
+              win ? [] : ['view', 'morriscode', 'version'],
+              {
+                stdio: ['ignore', 'pipe', 'pipe'],
+                shell: win,
+                windowsHide: true,
+              },
+            )
             let stdout = ''
             child.stdout?.on('data', (data) => {
               stdout += data.toString()
@@ -201,7 +205,11 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
 
       res.json({ current, latest: latestVersion, isUpdateAvailable, isService })
     } catch (err) {
-      logger.error('[auto-update] Error in version check', { error: err instanceof Error ? err.message : String(err) })
+      // An unpublished package name (or a missing npm CLI) is the expected state for
+      // this fork rather than a server failure, so keep it below the default log level.
+      logger.debug('[auto-update] Version check unavailable', {
+        error: err instanceof Error ? err.message : String(err),
+      })
       const currentVersion = isDev ? current.replace(/-dev$/, '') : current
       res.json({ current, latest: currentVersion, isUpdateAvailable: false, isService })
     }
@@ -221,9 +229,9 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
 
     try {
       const isService = isRunningAsService()
-      // Single command string through the shell: resolves openfox on PATH on
+      // Single command string through the shell: resolves morriscode on PATH on
       // every platform (was hardcoded `bash -c`, broken on Windows).
-      const child = spawn('openfox update', {
+      const child = spawn('morriscode update', {
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: true,
         windowsHide: true,
@@ -276,7 +284,7 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
     if (!(await requireAuth(req, res, options))) return
 
     try {
-      const child = spawn('openfox service restart', {
+      const child = spawn('morriscode service restart', {
         detached: true,
         stdio: 'ignore',
         shell: true,

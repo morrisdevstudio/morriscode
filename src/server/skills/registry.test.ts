@@ -87,7 +87,7 @@ ${prompt}
 }
 
 async function createProjectSkillFile(projectDir: string, id: string, name: string, prompt: string): Promise<void> {
-  const skillsDir = join(projectDir, '.openfox', 'skills')
+  const skillsDir = join(projectDir, '.morriscode', 'skills')
   await mkdir(skillsDir, { recursive: true })
   await writeFile(
     join(skillsDir, `${id}.skill.md`),
@@ -160,7 +160,7 @@ describe('loadUserSkills', () => {
       },
       prompt: 'Use scripts/run.sh.',
       legacy: false,
-      source: 'global-openfox',
+      source: 'global-morriscode',
     })
     expect(skills[0]!.entrypoint).toBe(join(tempDir, 'skills', 'portable-test', 'SKILL.md'))
     expect(skills[0]!.directory).toBe(await realpath(join(tempDir, 'skills', 'portable-test')))
@@ -252,7 +252,7 @@ describe('loadProjectSkills', () => {
     expect(skills).toEqual([])
   })
 
-  it('should load valid .skill.md files from .openfox/skills/', async () => {
+  it('should load valid .skill.md files from .morriscode/skills/', async () => {
     await createProjectSkillFile(tempDir, 'proj-skill', 'Project Skill', 'Do the project thing.')
 
     const skills = await loadProjectSkills(tempDir)
@@ -348,17 +348,17 @@ Custom prompt.
     const projectDir = join(tempDir, 'project')
     const selectedDir = join(tempDir, 'selected skills')
     await createPortableInRoot(join(homeDir, '.agents', 'skills'), 'shared', 'global shared')
-    await createPortableInRoot(join(configDir, 'skills'), 'shared', 'global openfox')
+    await createPortableInRoot(join(configDir, 'skills'), 'shared', 'global morriscode')
     await createPortableInRoot(selectedDir, 'shared', 'selected')
     await createPortableInRoot(join(projectDir, '.agents', 'skills'), 'shared', 'project shared')
-    await createPortableInRoot(join(projectDir, '.openfox', 'skills'), 'shared', 'project openfox')
+    await createPortableInRoot(join(projectDir, '.morriscode', 'skills'), 'shared', 'project morriscode')
     mockStore.set('skills.directories', JSON.stringify([selectedDir]))
 
     const skills = await loadAllSkills(configDir, projectDir, { homeDir })
 
     expect(skills.find((skill) => skill.metadata.id === 'shared')).toMatchObject({
-      prompt: 'project openfox',
-      source: 'project-openfox',
+      prompt: 'project morriscode',
+      source: 'project-morriscode',
     })
   })
 
@@ -372,7 +372,7 @@ Custom prompt.
     const result = await loadAllSkillsWithDiagnostics(configDir, undefined, { homeDir: join(tempDir, 'home') })
 
     expect(result.skills.find((skill) => skill.metadata.id === 'duplicate')?.prompt).toBe('selected version')
-    expect(result.diagnostics).toContain('Skill "duplicate" from selected overrides global-openfox')
+    expect(result.diagnostics).toContain('Skill "duplicate" from selected overrides global-morriscode')
   })
 
   it('expands tilde in selected skill directories', async () => {

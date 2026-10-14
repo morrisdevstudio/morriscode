@@ -2,7 +2,7 @@
   "metadata": {
     "id": "review",
     "name": "PR Review",
-    "description": "PR Review + Merge workflow for OpenFox",
+    "description": "PR Review + Merge workflow for MorrisCode",
     "version": "1.1.0",
     "color": "#10b981",
     "parameters": [
@@ -26,7 +26,7 @@
       "type": "agent",
       "phase": "build",
       "agentId": "builder",
-      "prompt": "Set up the review workspace for PR #{{pr_number}}:\n\n1. Use the `workspace` tool to switch to a new workspace named `review-pr-{{pr_number}}`\n2. Point origin to GitHub: `git remote set-url origin git@github.com:co-l/openfox.git`\n3. Fetch and sync with develop: `git fetch origin && git reset --hard origin/develop`\n4. Checkout the PR branch: `gh pr checkout {{pr_number}}`\n\nIf `gh pr checkout` fails because the PR head branch name collides with a local branch (e.g. the PR head is also named `develop`), fetch the PR head ref directly instead:\n`git fetch origin refs/pull/{{pr_number}}/head && git checkout -b pr-{{pr_number}}-head FETCH_HEAD`\n\nIf any step fails, report the error and call step_done(). Otherwise call step_done().",
+      "prompt": "Set up the review workspace for PR #{{pr_number}}:\n\n1. Use the `workspace` tool to switch to a new workspace named `review-pr-{{pr_number}}`\n2. Point origin to GitHub: `git remote set-url origin git@github.com:co-l/morriscode.git`\n3. Fetch and sync with develop: `git fetch origin && git reset --hard origin/develop`\n4. Checkout the PR branch: `gh pr checkout {{pr_number}}`\n\nIf `gh pr checkout` fails because the PR head branch name collides with a local branch (e.g. the PR head is also named `develop`), fetch the PR head ref directly instead:\n`git fetch origin refs/pull/{{pr_number}}/head && git checkout -b pr-{{pr_number}}-head FETCH_HEAD`\n\nIf any step fails, report the error and call step_done(). Otherwise call step_done().",
       "transitions": [
         {
           "when": {
@@ -42,7 +42,7 @@
       "type": "agent",
       "phase": "build",
       "agentId": "builder",
-      "prompt": "Verify the PR #{{pr_number}} targets develop:\n\n1. Check the base branch: `PR_BASE=$(gh pr view {{pr_number}} --json baseRefName --jq '.baseRefName')`\n2. If it's not \"develop\", retarget it: `gh api repos/co-l/openfox/pulls/{{pr_number}} -X PATCH -f base=develop && git fetch origin`\n3. Rebase onto latest develop: `git rebase origin/develop`\n\nIf rebase has conflicts, abort with `git rebase --abort` and report them. Otherwise call step_done().",
+      "prompt": "Verify the PR #{{pr_number}} targets develop:\n\n1. Check the base branch: `PR_BASE=$(gh pr view {{pr_number}} --json baseRefName --jq '.baseRefName')`\n2. If it's not \"develop\", retarget it: `gh api repos/co-l/morriscode/pulls/{{pr_number}} -X PATCH -f base=develop && git fetch origin`\n3. Rebase onto latest develop: `git rebase origin/develop`\n\nIf rebase has conflicts, abort with `git rebase --abort` and report them. Otherwise call step_done().",
       "transitions": [
         {
           "when": {
@@ -180,7 +180,7 @@
       "type": "agent",
       "phase": "build",
       "agentId": "builder",
-      "prompt": "Squash-merge PR #{{pr_number}} via API:\n\n1. `gh api repos/co-l/openfox/pulls/{{pr_number}}/merge -X PUT -f merge_method=squash -f commit_title=\"PR #{{pr_number}}: $(gh pr view {{pr_number}} --json title --jq '.title')\"`\n2. Call step_done().",
+      "prompt": "Squash-merge PR #{{pr_number}} via API:\n\n1. `gh api repos/co-l/morriscode/pulls/{{pr_number}}/merge -X PUT -f merge_method=squash -f commit_title=\"PR #{{pr_number}}: $(gh pr view {{pr_number}} --json title --jq '.title')\"`\n2. Call step_done().",
       "transitions": [
         {
           "when": {

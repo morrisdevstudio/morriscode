@@ -90,7 +90,7 @@ async function moduleGitDiff(cwd: string): Promise<{ hash: string; files: GitDif
 
 const moduleWorkdirLastHash = new Map<string, string>()
 const moduleWorkdirInterval = new Map<string, ReturnType<typeof setInterval>>()
-const gitPollInterval = parseInt(process.env['OPENFOX_GIT_POLL_INTERVAL'] ?? '', 10) || 10_000
+const gitPollInterval = parseInt(process.env['MORRISCODE_GIT_POLL_INTERVAL'] ?? '', 10) || 10_000
 let moduleClients: Map<WebSocket, ClientConnection> | null = null
 let moduleEnqueueSend: ((client: ClientConnection, data: string, seq: number) => void) | null = null
 
@@ -264,7 +264,7 @@ const MAX_SEND_QUEUE_SIZE = 1000 // Maximum messages to queue before dropping
  * 4. Queue Size Limit: MAX_SEND_QUEUE_SIZE prevents memory leaks on
  *    slow or disconnected clients. Messages are dropped if queue is full.
  *
- * @see https://github.com/conrad/openfox/issues/XXX
+ * @see https://github.com/conrad/morriscode/issues/XXX
  */
 
 export function createWebSocketServer(

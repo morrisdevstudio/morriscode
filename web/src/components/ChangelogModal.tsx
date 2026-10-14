@@ -41,7 +41,7 @@ export function ChangelogModal({ isOpen, onClose, since }: ChangelogModalProps) 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t({ en: "What's New in OpenFox", fr: 'Nouveautés d’OpenFox' })}
+      title={t({ en: "What's New in MorrisCode", fr: 'Nouveautés d’MorrisCode' })}
       size="xl"
       closeOnBackdropClick
       showCloseButton

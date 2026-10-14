@@ -53,7 +53,7 @@ describe('PluginHost', () => {
     const config = loadConfig()
     config.database.path = ':memory:'
     initDatabase(config)
-    configDirectory = await mkdtemp(join(tmpdir(), 'openfox-plugin-host-'))
+    configDirectory = await mkdtemp(join(tmpdir(), 'morriscode-plugin-host-'))
     vi.clearAllMocks()
   })
 
@@ -304,7 +304,7 @@ describe('PluginHost', () => {
     const info = host.getPlugins().find((plugin) => plugin.id === 'external-plugin')
     expect(info).toBeDefined()
     expect(info!.removable).toBe(false)
-    await expect(host.uninstall('external-plugin')).rejects.toThrow('cannot be removed by OpenFox')
+    await expect(host.uninstall('external-plugin')).rejects.toThrow('cannot be removed by MorrisCode')
     expect(host.getPlugins().some((plugin) => plugin.id === 'external-plugin')).toBe(true)
   })
 

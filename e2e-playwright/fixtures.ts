@@ -9,13 +9,13 @@ export interface TestFixtures {
 }
 
 async function readConfig() {
-  const tempFile = join(tmpdir(), 'openfox-test-project-id.json')
+  const tempFile = join(tmpdir(), 'morriscode-test-project-id.json')
   const content = await readFile(tempFile, 'utf-8')
   return JSON.parse(content) as { projectId: string; serverUrl: string; workdir: string }
 }
 
 async function writeConfig(data: { projectId: string; serverUrl: string; workdir: string }) {
-  const tempFile = join(tmpdir(), 'openfox-test-project-id.json')
+  const tempFile = join(tmpdir(), 'morriscode-test-project-id.json')
   await writeFile(tempFile, JSON.stringify(data))
 }
 

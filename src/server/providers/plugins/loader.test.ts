@@ -11,7 +11,7 @@ describe('loadProviderPlugins', () => {
   let registry: ProviderRegistry
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'openfox-plugin-test-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'morriscode-plugin-test-'))
     pluginDir = join(tempDir, 'plugins')
     registry = new ProviderRegistry({ mode: 'production', configDirectory: tempDir })
   })
@@ -48,7 +48,7 @@ describe('loadProviderPlugins', () => {
     const diagnostics = await loadProviderPlugins({ registry, configDirectory: tempDir, cwd: '/nonexistent' })
     expect(diagnostics).toHaveLength(1)
     expect(diagnostics[0]!.loaded).toBe(false)
-    expect(diagnostics[0]!.error).toContain('Unsupported OpenFox plugin API version: 99')
+    expect(diagnostics[0]!.error).toContain('Unsupported MorrisCode plugin API version: 99')
   })
 
   it('loads a plugin that exports register()', async () => {

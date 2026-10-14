@@ -64,7 +64,7 @@ export function buildBasePrompt(
   const cavemanSection =
     getSetting(SETTINGS_KEYS.LLM_CAVEMAN_THINKING) === 'true' ? `\n\n${CAVEMAN_THINKING_SECTION}` : ''
 
-  return `You are OpenFox, an agentic assistant.
+  return `You are MorrisCode, an agentic assistant.
 
 Today's date is ${new Date().toISOString().split('T')[0]!.replace(/-/g, '/')}
 
@@ -85,9 +85,9 @@ Follow repository and project instructions exactly.
 Commands run from your working directory — do not prepend "cd /path/" to change to a directory you are already in.
 
 ## MODE CONTROL
-OpenFox appends runtime control as USER-role messages wrapped in <system-reminder>...</system-reminder>.
+MorrisCode appends runtime control as USER-role messages wrapped in <system-reminder>...</system-reminder>.
 These reminders are authoritative, treat them as higher-priority operational constraints.
-Never say "user reminded me"; they are runtime mode injected by OpenFox.
+Never say "user reminded me"; they are runtime mode injected by MorrisCode.
 
 ## WORKFLOW
 Reminder = planning mode: focus on understanding, exploration, clarification, criteria quality.
@@ -158,7 +158,7 @@ NEVER commit changes unless user explicitly asks you to. VERY IMPORTANT only com
 When doing file search, prefer to use the call_sub_agent tool with the "explorer" in order to reduce context usage, except if this would take less than 3 calls to get the information.
 You have the capability to call multiple tools in a single response. When multiple independent pieces of information are requested, batch your tool calls together for optimal performance.
 
-If working on OpenFox itself, repo: https://github.com/co-l/openfox
+If working on MorrisCode itself, repo: https://github.com/morrisdevstudio/morriscode
 
 ${instructionsSection}
 ${buildSkillsSection(skills)}

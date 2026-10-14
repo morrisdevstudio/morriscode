@@ -1,8 +1,10 @@
-# OpenFox
+# MorrisCode
 
 **Local-LLM-first agentic coding assistant**
 
-Autonomous coding agent for local LLMs with contract-driven execution.
+MorrisCode is a fork of [OpenFox](https://github.com/co-l/openfox). The agent engine, the
+WebSocket protocol, workflows, plugins and the whole server side are upstream OpenFox; the
+product name, the configuration paths and the web interface are MorrisCode's own.
 
 _Session — Criteria tracking, tool calls, and streaming responses_
 ![Session](docs/screenshots/session.png)
@@ -16,11 +18,25 @@ _Workflows — Contract-driven execution pipeline_
 ## Quick Start
 
 ```bash
-npm i -g openfox
-openfox
+npm ci
+npm run build
+npm start
 ```
 
-On first run, OpenFox automatically detects your local LLM backend (vLLM, sglang, ollama, llamacpp) and configures itself.
+MorrisCode is not published to npm — run it from a clone. For development, `npm run dev`
+starts the CLI dev server (port 10469, password `password`). On first run, MorrisCode
+detects your local LLM backend (vLLM, sglang, ollama, llamacpp) and configures itself.
+
+## Migrating from OpenFox
+
+```bash
+node scripts/migrate-from-openfox.mjs
+```
+
+The script copies `config.json`, `auth.json`, `auth.key`, `plugins/`, `skills/` and
+`workflows/` from the OpenFox configuration directory into MorrisCode's, and copies a
+project's `.openfox/` directory to `.morriscode/` when you pass a project path with
+`--project`. It never deletes or rewrites the OpenFox originals.
 
 ## What's New in 2.0
 
@@ -37,22 +53,22 @@ On first run, OpenFox automatically detects your local LLM backend (vLLM, sglang
 
 ```bash
 # Start server for current project
-openfox
+morriscode
 
 # Start on custom port
-openfox --port 8080
+morriscode --port 8080
 
 # Start without opening browser
-openfox --no-browser
+morriscode --no-browser
 
 # Show current configuration
-openfox config
+morriscode config
 
 # Manage LLM providers
-openfox provider add      # Add new provider
-openfox provider list     # List configured providers
-openfox provider use      # Switch active provider
-openfox provider remove   # Remove provider
+morriscode provider add      # Add new provider
+morriscode provider list     # List configured providers
+morriscode provider use      # Switch active provider
+morriscode provider remove   # Remove provider
 ```
 
 ## CLI Options
@@ -84,15 +100,15 @@ openfox provider remove   # Remove provider
 
 ## Plugins
 
-OpenFox supports plugins loaded from the `plugins` directory inside its configuration folder. A plugin can contribute LLM providers (auth, transport, presets), model metadata, tools, slash commands, skills, workflow transitions, schema-driven settings, notifications, and declarative UI (header/message/composer actions, session badges, panels).
+MorrisCode supports plugins loaded from the `plugins` directory inside its configuration folder. A plugin can contribute LLM providers (auth, transport, presets), model metadata, tools, slash commands, skills, workflow transitions, schema-driven settings, notifications, and declarative UI (header/message/composer actions, session badges, panels).
 
-You can install a plugin from the UI by curated registry entry, GitHub URL, npm package name, or local path — then enable, disable, configure, or remove it without restarting OpenFox.
+You can install a plugin from the UI by curated registry entry, GitHub URL, npm package name, or local path — then enable, disable, configure, or remove it without restarting MorrisCode.
 
 Default plugin directories:
 
-- macOS: `~/Library/Application Support/openfox/plugins`
-- Linux: `${XDG_CONFIG_HOME:-~/.config}/openfox/plugins`
-- Windows: `%APPDATA%\openfox\plugins`
+- macOS: `~/Library/Application Support/morriscode/plugins`
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/morriscode/plugins`
+- Windows: `%APPDATA%\morriscode\plugins`
 
 Authoring guide: [docs/PLUGINS.md](docs/PLUGINS.md) — working reference plugin in [examples/hello-plugin](examples/hello-plugin).
 
@@ -131,29 +147,30 @@ _Vision Fallback — Image processing configuration_
 
 ## Environment Variables
 
-| Variable                             | Default                    | Description                                                     |
-| ------------------------------------ | -------------------------- | --------------------------------------------------------------- |
-| `OPENFOX_LLM_URL`                    | `http://localhost:8000/v1` | LLM API base URL                                                |
-| `OPENFOX_VLLM_URL`                   | —                          | Deprecated alias for `OPENFOX_LLM_URL`                          |
-| `OPENFOX_BACKEND`                    | `unknown`                  | Backend type: `vllm`, `sglang`, `ollama`, `llamacpp`, `unknown` |
-| `OPENFOX_BASE_PATH`                  | `/`                        | Web app base path for subpath deployments (e.g. `/openfox/`)    |
-| `OPENFOX_MODEL_NAME`                 | `''`                       | Override default model name                                     |
-| `OPENFOX_MAX_CONTEXT`                | `200000`                   | Max context window in tokens                                    |
-| `OPENFOX_LLM_TIMEOUT`                | `300000`                   | LLM request timeout in ms                                       |
-| `OPENFOX_LLM_IDLE_TIMEOUT`           | `300000`                   | LLM stream idle timeout in ms                                   |
-| `OPENFOX_PORT`                       | `10369`                    | Server listen port                                              |
-| `OPENFOX_HOST`                       | `127.0.0.1`                | Server bind host                                                |
-| `OPENFOX_PUBLIC_URL`                 | —                          | Public origin used to build the MCP OAuth redirect URI          |
-| `OPENFOX_WORKDIR`                    | `cwd`                      | Working directory                                               |
-| `OPENFOX_DB_PATH`                    | `./openfox.db`             | SQLite database path                                            |
-| `OPENFOX_LOG_LEVEL`                  | `info`                     | Log level: `debug`, `info`, `warn`, `error`                     |
-| `OPENFOX_REASONING_EFFORT`           | —                          | Reasoning effort (e.g. `none`, `low`, `medium`, `high`)         |
-| `OPENFOX_DEV`                        | `false`                    | Enable dev mode                                                 |
-| `OPENFOX_MODE`                       | `production`               | Force mode: `production`, `development`, `test`                 |
-| `OPENFOX_SERVICE`                    | `false`                    | Run as systemd service (suppresses browser open)                |
-| `OPENFOX_GIT_POLL_INTERVAL`          | `10000`                    | Git status poll interval in ms                                  |
-| `OPENFOX_DISABLE_AUTO_SESSION_TITLE` | `false`                    | Disable automatic session title generation                      |
+| Variable                                | Default                    | Description                                                     |
+| --------------------------------------- | -------------------------- | --------------------------------------------------------------- |
+| `MORRISCODE_LLM_URL`                    | `http://localhost:8000/v1` | LLM API base URL                                                |
+| `MORRISCODE_VLLM_URL`                   | —                          | Deprecated alias for `MORRISCODE_LLM_URL`                       |
+| `MORRISCODE_BACKEND`                    | `unknown`                  | Backend type: `vllm`, `sglang`, `ollama`, `llamacpp`, `unknown` |
+| `MORRISCODE_BASE_PATH`                  | `/`                        | Web app base path for subpath deployments (e.g. `/morriscode/`) |
+| `MORRISCODE_MODEL_NAME`                 | `''`                       | Override default model name                                     |
+| `MORRISCODE_MAX_CONTEXT`                | `200000`                   | Max context window in tokens                                    |
+| `MORRISCODE_LLM_TIMEOUT`                | `300000`                   | LLM request timeout in ms                                       |
+| `MORRISCODE_LLM_IDLE_TIMEOUT`           | `300000`                   | LLM stream idle timeout in ms                                   |
+| `MORRISCODE_PORT`                       | `10369`                    | Server listen port                                              |
+| `MORRISCODE_HOST`                       | `127.0.0.1`                | Server bind host                                                |
+| `MORRISCODE_PUBLIC_URL`                 | —                          | Public origin used to build the MCP OAuth redirect URI          |
+| `MORRISCODE_WORKDIR`                    | `cwd`                      | Working directory                                               |
+| `MORRISCODE_DB_PATH`                    | `./morriscode.db`          | SQLite database path                                            |
+| `MORRISCODE_LOG_LEVEL`                  | `info`                     | Log level: `debug`, `info`, `warn`, `error`                     |
+| `MORRISCODE_REASONING_EFFORT`           | —                          | Reasoning effort (e.g. `none`, `low`, `medium`, `high`)         |
+| `MORRISCODE_DEV`                        | `false`                    | Enable dev mode                                                 |
+| `MORRISCODE_MODE`                       | `production`               | Force mode: `production`, `development`, `test`                 |
+| `MORRISCODE_SERVICE`                    | `false`                    | Run as systemd service (suppresses browser open)                |
+| `MORRISCODE_GIT_POLL_INTERVAL`          | `10000`                    | Git status poll interval in ms                                  |
+| `MORRISCODE_DISABLE_AUTO_SESSION_TITLE` | `false`                    | Disable automatic session title generation                      |
 
 ## License
 
-MIT
+MIT, inherited from [OpenFox](https://github.com/co-l/openfox) (MIT, © co-l and
+contributors). MorrisCode's own changes are released under the same terms.

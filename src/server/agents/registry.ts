@@ -29,7 +29,7 @@ function getAgentsDir(configDir: string): string {
 }
 
 function getProjectAgentsDir(projectDir: string): string {
-  return join(projectDir, '.openfox', 'agents')
+  return join(projectDir, '.morriscode', 'agents')
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -262,7 +262,7 @@ export async function getOverrideAgentIds(configDir: string, projectDir?: string
  * Resolution chain:
  * 1. Project default (`projects.default_agent`) — project-scoped override via project settings
  * 2. DB setting (`agent.defaultAgent`) — global runtime override via settings UI
- * 3. Global config file (`defaultAgent`) / environment variable (`OPENFOX_DEFAULT_AGENT`) —
+ * 3. Global config file (`defaultAgent`) / environment variable (`MORRISCODE_DEFAULT_AGENT`) —
  *    persistent config, with the env var folded in at config load time
  * 4. Fallback to `'planner'`
  */

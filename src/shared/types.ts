@@ -53,7 +53,7 @@ export interface WorkflowParameter {
   required?: boolean
 }
 
-/** Where a workflow definition lives: bundled defaults, global config, or the project's .openfox/. */
+/** Where a workflow definition lives: bundled defaults, global config, or the project's .morriscode/. */
 export type WorkflowScope = 'builtin' | 'user' | 'project'
 
 /** Launch scope: an explicit bucket to resolve from, or 'auto' for server precedence (project > user > builtin). */
@@ -186,13 +186,13 @@ export type MessageSegment =
   { type: 'text'; content: string } | { type: 'thinking'; content: string } | { type: 'tool_call'; toolCallId: string }
 
 // ============================================================================
-// Token Usage (provider cache attribution — generic OpenFox contract)
+// Token Usage (provider cache attribution — generic MorrisCode contract)
 // ============================================================================
 
 /** Provenance of cache numbers reported by a provider.
  *  - `provider`:  value is reported by the provider's API response
  *                  (e.g. `prompt_tokens_details.cached_tokens`).
- *  - `estimated`: value is computed by OpenFox from context tracking
+ *  - `estimated`: value is computed by MorrisCode from context tracking
  *                  (heuristic, lower bound).
  *  - `unavailable`: no cache info available; absence is not zero cache. */
 export type CacheSource = 'provider' | 'estimated' | 'unavailable'
@@ -842,7 +842,7 @@ export type ProviderBackend = LlmBackend
 
 /** Model configuration with context window */
 export interface ModelConfig {
-  id: string // Model ID exposed in OpenFox (may be a projected mode such as "gpt-5.6-sol-fast")
+  id: string // Model ID exposed in MorrisCode (may be a projected mode such as "gpt-5.6-sol-fast")
   /** Human-readable model name from the provider catalog. */
   name?: string
   /** Actual model ID sent to the provider when `id` is a projected catalog mode. */
@@ -963,7 +963,7 @@ export interface Config {
     level: 'debug' | 'info' | 'warn' | 'error'
   }
   mode?: 'development' | 'production' | 'test'
-  dev?: boolean // true when running in dev mode (OPENFOX_DEV=true or mode='development')
+  dev?: boolean // true when running in dev mode (MORRISCODE_DEV=true or mode='development')
   /** Configured providers (loaded from global config) */
   providers?: Provider[] | undefined
   /** Default model selection in format "providerId/modelName" */
@@ -1016,7 +1016,7 @@ export interface ElementData {
 // Event-derived session rollup
 // ============================================================================
 //
-// Generic OpenFox data derived from the EventStore stream. Plugins consume
+// Generic MorrisCode data derived from the EventStore stream. Plugins consume
 // this via `SessionStats.events` (server-computed by
 // `buildSessionStatsEventRollup`) or via the live plugin hooks
 // `context.compacted` / `retry.triggered`. The rollup is computed lazily

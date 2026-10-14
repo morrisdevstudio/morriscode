@@ -176,20 +176,20 @@ afterEach(() => {
 })
 
 describe('AutoUpdateModal — restart-after-update flow', () => {
-  it('service mode: update succeeds without auto-restart and shows Restart OpenFox now + Later', async () => {
+  it('service mode: update succeeds without auto-restart and shows Restart MorrisCode now + Later', async () => {
     mockCheckService(true)
     mockUpdateSuccess(true)
     const onClose = vi.fn()
     const { container } = await renderModal({ onClose })
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
     expect(mockAuthFetch.mock.calls.map((c) => c[0])).toEqual(['/api/auto-update'])
     expect(mockAuthFetch).toHaveBeenCalledTimes(1)
-    expect(bodyText()).toContain('Restart OpenFox now')
+    expect(bodyText()).toContain('Restart MorrisCode now')
     expect(bodyText()).toContain('Later')
   })
 
@@ -199,20 +199,20 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     const onClose = vi.fn()
     const { container } = await renderModal({ onClose })
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(bodyText()).not.toContain('Restart OpenFox now')
-    expect(bodyText()).toContain('Please restart OpenFox')
+    expect(bodyText()).not.toContain('Restart MorrisCode now')
+    expect(bodyText()).toContain('Please restart MorrisCode')
     expect(bodyText()).toContain('Close')
 
     clickButton(container, 'Close')
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('clicking Restart OpenFox now: calls /restart, polls /check, triggers reload when current matches installed version', async () => {
+  it('clicking Restart MorrisCode now: calls /restart, polls /check, triggers reload when current matches installed version', async () => {
     vi.useFakeTimers()
     mockUpdateSuccess(true)
     mockRestartSuccess()
@@ -223,12 +223,12 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     const reloadMock = (window.location as unknown as { reload: () => void }).reload
     const { container } = await renderModal()
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    clickButton(container, 'Restart OpenFox now')
+    clickButton(container, 'Restart MorrisCode now')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
@@ -247,7 +247,7 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     vi.useRealTimers()
   })
 
-  it('clicking Restart OpenFox now with explicit HTTP error on POST /restart still enters polling state', async () => {
+  it('clicking Restart MorrisCode now with explicit HTTP error on POST /restart still enters polling state', async () => {
     vi.useFakeTimers()
     mockUpdateSuccess(true)
     mockRestartHttpError()
@@ -256,12 +256,12 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     const reloadMock = (window.location as unknown as { reload: () => void }).reload
     const { container } = await renderModal()
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    clickButton(container, 'Restart OpenFox now')
+    clickButton(container, 'Restart MorrisCode now')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_000)
     })
@@ -280,12 +280,12 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     const reloadMock = (window.location as unknown as { reload: () => void }).reload
     const { container, root } = await renderModal({ onClose: vi.fn() })
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    clickButton(container, 'Restart OpenFox now')
+    clickButton(container, 'Restart MorrisCode now')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
@@ -313,12 +313,12 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
 
     const { container, root } = await renderModal()
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    clickButton(container, 'Restart OpenFox now')
+    clickButton(container, 'Restart MorrisCode now')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
@@ -372,7 +372,7 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     mockCheckCurrent('2.0.110')
     mockCheckRejected()
     mockCheckCurrent('2.0.111', '2.0.111')
-    localStorage.setItem('openfox_last_version', '2.0.110')
+    localStorage.setItem('morriscode_last_version', '2.0.110')
 
     const reloadMock = (window.location as unknown as { reload: () => void }).reload
     const { container } = await renderModal()
@@ -382,14 +382,14 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     })
 
     clickCheckbox()
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    // Went straight to restarting — no "Restart OpenFox now" click required.
+    // Went straight to restarting — no "Restart MorrisCode now" click required.
     expect(bodyText()).toContain('Restarting')
-    expect(bodyText()).not.toContain('Restart OpenFox now')
+    expect(bodyText()).not.toContain('Restart MorrisCode now')
     expect(mockAuthFetch.mock.calls.map((c) => c[0])).toContain('/api/auto-update/restart')
 
     for (let i = 0; i < 3; i++) {
@@ -401,9 +401,9 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1)
     // Truthful announcement: the applied-version flags are set only at reload.
     expect(localStorage.getItem('update_pending')).toBe('true')
-    expect(localStorage.getItem('openfox_updated_to')).toBe('2.0.111')
+    expect(localStorage.getItem('morriscode_updated_to')).toBe('2.0.111')
     // The pre-update version is pinned as the changelog trim boundary.
-    expect(localStorage.getItem('openfox_previous_version')).toBe('2.0.110')
+    expect(localStorage.getItem('morriscode_previous_version')).toBe('2.0.110')
 
     vi.useRealTimers()
   })
@@ -424,7 +424,7 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
       await vi.advanceTimersByTimeAsync(0)
     })
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
@@ -451,7 +451,7 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     }
 
     expect(reloadMock).toHaveBeenCalledTimes(1)
-    expect(localStorage.getItem('openfox_updated_to')).toBe('2.0.111')
+    expect(localStorage.getItem('morriscode_updated_to')).toBe('2.0.111')
 
     vi.useRealTimers()
   })
@@ -461,15 +461,15 @@ describe('AutoUpdateModal — restart-after-update flow', () => {
     mockUpdateSuccess(true)
     const { container } = await renderModal({ onClose: vi.fn() })
 
-    clickButton(container, 'Update OpenFox')
+    clickButton(container, 'Update MorrisCode')
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(bodyText()).toContain('Restart OpenFox now')
+    expect(bodyText()).toContain('Restart MorrisCode now')
     clickButton(container, 'Later')
 
     expect(localStorage.getItem('update_pending')).toBeNull()
-    expect(localStorage.getItem('openfox_updated_to')).toBeNull()
+    expect(localStorage.getItem('morriscode_updated_to')).toBeNull()
   })
 })

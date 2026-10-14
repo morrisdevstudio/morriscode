@@ -6,7 +6,7 @@ describe('sessionPrefetch', () => {
   const originalFetch = globalThis.fetch
 
   beforeEach(() => {
-    localStorage.setItem('openfox_token', 'test-token')
+    localStorage.setItem('morriscode_token', 'test-token')
     globalThis.fetch = vi.fn()
   })
 
@@ -45,7 +45,7 @@ describe('sessionPrefetch', () => {
   })
 
   it('fires without a token when auth is not required', async () => {
-    localStorage.removeItem('openfox_token')
+    localStorage.removeItem('morriscode_token')
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({}) } as Response)
 
     prefetchSession('s1')

@@ -251,7 +251,7 @@ export class PluginHost {
     if (!record) throw new Error(`Plugin '${pluginId}' is not installed`)
     if (!this.isRemovable(record.diagnostic.source)) {
       throw new Error(
-        `Plugin '${pluginId}' was discovered outside ${this.pluginsDir()} and cannot be removed by OpenFox`,
+        `Plugin '${pluginId}' was discovered outside ${this.pluginsDir()} and cannot be removed by MorrisCode`,
       )
     }
     await this.runDeactivate(pluginId, record)
@@ -328,7 +328,7 @@ export class PluginHost {
 
   private async installFromDirectory(dir: string): Promise<PluginDiagnostic> {
     const manifest = await readPluginManifest(dir)
-    if (!manifest) throw new Error('Installed package is not an OpenFox plugin (missing openfox manifest)')
+    if (!manifest) throw new Error('Installed package is not a MorrisCode plugin (missing openfox manifest)')
     const diagnostic = await loadPluginFromDirectory({
       registry: this.registry,
       packageDir: dir,
@@ -591,7 +591,7 @@ const EVENT_HOOK_MAP: Partial<Record<string, PluginHookEvent>> = {
   'tool.result': 'tool.completed',
   'criterion.updated': 'criterion.updated',
   'workflow.execution_changed': 'workflow.execution.changed',
-  // OpenFox-internal events (Plugin API v2). Mapped 1:1 from the
+  // MorrisCode-internal events (Plugin API v2). Mapped 1:1 from the
   // TurnEvent names so plugins can correlate hook payloads with the
   // session's EventStore stream.
   'context.compacted': 'context.compacted',

@@ -178,7 +178,7 @@ export function DestinationSelector({ value, onChange }: DestinationSelectorProp
         className="px-2 py-1 bg-bg-tertiary border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-accent-primary"
       >
         <option value="user">{t({ en: 'Global config', fr: 'Configuration globale' })}</option>
-        <option value="project">{t({ en: 'Project (.openfox/)', fr: 'Projet (.openfox/)' })}</option>
+        <option value="project">{t({ en: 'Project (.morriscode/)', fr: 'Projet (.morriscode/)' })}</option>
       </select>
     </div>
   )

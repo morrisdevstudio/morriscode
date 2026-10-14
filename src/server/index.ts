@@ -50,9 +50,9 @@ import { createAgentRoutes } from './routes/agents.js'
 import { loadAllAgentsDefault, getTopLevelAgents } from './agents/registry.js'
 import { createWorkflowRoutes } from './routes/workflows.js'
 import { listAvailableWorkflows } from './workflows/registry.js'
-import { createOpenFoxMcpRouter, extractSessionToken } from './mcp/server/endpoint.js'
-import { buildOpenFoxMcpBootstrap } from './mcp/server/bootstrap.js'
-import type { OpenFoxMcpToolDeps } from './mcp/server/types.js'
+import { createMorrisCodeMcpRouter, extractSessionToken } from './mcp/server/endpoint.js'
+import { buildMorrisCodeMcpBootstrap } from './mcp/server/bootstrap.js'
+import type { MorrisCodeMcpToolDeps } from './mcp/server/types.js'
 import { createDevServerRoutes } from './routes/dev-server.js'
 import { createWorkspaceConfigRoutes } from './routes/workspace-config.js'
 import { createTerminalRoutes } from './routes/terminals.js'
@@ -172,8 +172,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   // Wire sessionManager to devServerManager for inspect proxy feedback
   devServerManager.setSessionManager(sessionManager)
 
-  // Create LLM client - use mock if OPENFOX_MOCK_LLM is set
-  const useMock = process.env['OPENFOX_MOCK_LLM'] === 'true'
+  // Create LLM client - use mock if MORRISCODE_MOCK_LLM is set
+  const useMock = process.env['MORRISCODE_MOCK_LLM'] === 'true'
   // For mock mode, we bypass the provider manager
   const getMockClient = useMock ? createMockLLMClient : null
   const getLLMClient = () => (getMockClient ? getMockClient() : providerManager.getLLMClient())
@@ -275,7 +275,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   setMcpOAuthStorePath(config.globalConfigPath ? join(dirname(config.globalConfigPath), 'mcp-auth.json') : undefined)
   const mcpServers = (config.mcpServers ?? {}) as Record<string, import('./mcp/types.js').McpServerConfig>
   // Connect configured MCP servers only once the HTTP server is listening:
-  // a self-referencing server (OpenFox as its own MCP client) would otherwise
+  // a self-referencing server (MorrisCode as its own MCP client) would otherwise
   // race the listen and land in an error state. Invoked from start() below.
   async function connectMcpServers(): Promise<void> {
     await Promise.all(
@@ -329,7 +329,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   // Streamable HTTP MCP endpoint. Mounted before the SPA catch-all so /mcp is
   // never swallowed; tool deps are resolved lazily per request and filled in
   // once the WebSocket/queue plumbing exists below (requests only flow after start()).
-  let mcpToolDeps: OpenFoxMcpToolDeps | null = null
+  let mcpToolDeps: MorrisCodeMcpToolDeps | null = null
   const mcpAuth = {
     isAuthRequired: (): boolean => {
       const cfg = getAuthConfig()
@@ -342,7 +342,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   }
   app.use(
     '/mcp',
-    createOpenFoxMcpRouter({
+    createMorrisCodeMcpRouter({
       resolveDeps: () => mcpToolDeps,
       isAuthRequired: mcpAuth.isAuthRequired,
       isAuthorized: mcpAuth.isAuthorized,
@@ -574,7 +574,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   })
   setTasksService(tasksService)
   // Periodic tick for scheduled tasks: runs once at boot (catch-up for tasks
-  // missed while OpenFox was off) then every 30s. Stopped in close().
+  // missed while MorrisCode was off) then every 30s. Stopped in close().
   const { createTaskScheduler } = await import('./tasks/scheduler.js')
   const taskScheduler = createTaskScheduler({ run: () => tasksService.runScheduled() })
   taskScheduler.start()
@@ -1847,7 +1847,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     try {
       const { buildSessionExport } = await import('./session/export-import.js')
       const payload = buildSessionExport(sessionManager, sessionId)
-      const filename = `${(payload.session.title ?? 'session').replace(/[^a-zA-Z0-9-_]/g, '_')}.openfox-session.json`
+      const filename = `${(payload.session.title ?? 'session').replace(/[^a-zA-Z0-9-_]/g, '_')}.morriscode-session.json`
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
       return res.json(payload)
     } catch (err) {
@@ -3200,7 +3200,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   /** Rendered on the OAuth callback. The message is always one of ours, never anything the caller sent. */
   function oauthCallbackPage(message: string): string {
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>OpenFox</title></head><body style="font-family:system-ui;padding:2rem"><p>${message}</p><script>try{new BroadcastChannel('openfox-oauth').postMessage({type:'oauth-callback-complete'})}catch{}</script></body></html>`
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MorrisCode</title></head><body style="font-family:system-ui;padding:2rem"><p>${message}</p><script>try{new BroadcastChannel('morriscode-oauth').postMessage({type:'oauth-callback-complete'})}catch{}</script></body></html>`
   }
 
   /** Accepts the whole callback URL or just its query string. Anything else yields no state and is refused. */
@@ -3309,10 +3309,12 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     }
     try {
       await completeMcpOAuth(pending.name, pending.entry.serverUrl, code)
-      res.type('html').send(oauthCallbackPage('Authorization complete. You can close this tab and go back to OpenFox.'))
+      res
+        .type('html')
+        .send(oauthCallbackPage('Authorization complete. You can close this tab and go back to MorrisCode.'))
     } catch (error) {
       logger.error('MCP OAuth callback failed', { error: error instanceof Error ? error.message : String(error) })
-      res.status(400).type('html').send(oauthCallbackPage('Authorization failed. See the OpenFox logs for details.'))
+      res.status(400).type('html').send(oauthCallbackPage('Authorization failed. See the MorrisCode logs for details.'))
     }
   })
 
@@ -3334,7 +3336,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     if (!parsed.code || !parsed.state) {
       return res.status(400).json({ error: 'Paste the whole callback URL, both code and state are needed' })
     }
-    // Never optional: the state is what ties this code to the authorization OpenFox actually started.
+    // Never optional: the state is what ties this code to the authorization MorrisCode actually started.
     const { readMcpOAuthEntry } = await import('./mcp/oauth-store.js')
     const entry = await readMcpOAuthEntry(name, serverUrl)
     if (!entry?.state || entry.state !== parsed.state) {
@@ -3514,8 +3516,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     })
 
     // Static files that Vite doesn't handle (after Vite middleware)
-    app.get('/fox.svg', (_req, res) => {
-      readFile(join(webDir, 'fox.svg'))
+    app.get('/morriscode.svg', (_req, res) => {
+      readFile(join(webDir, 'morriscode.svg'))
         .then((content) => {
           res.set('Content-Type', 'image/svg+xml')
           res.send(content)
@@ -3582,8 +3584,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     app.use('/sw.js', express.static(join(distWebDir, 'sw.js')))
 
     // Static files
-    app.get('/fox.svg', (_req, res) => {
-      readFile(join(distWebDir, 'fox.svg'))
+    app.get('/morriscode.svg', (_req, res) => {
+      readFile(join(distWebDir, 'morriscode.svg'))
         .then((content) => {
           res.set('Content-Type', 'image/svg+xml')
           res.send(content)
@@ -3629,7 +3631,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         req.path.startsWith('/manifest.webmanifest') ||
         req.path.startsWith('/registerSW.js') ||
         req.path.startsWith('/sw.js') ||
-        req.path === '/fox.svg'
+        req.path === '/morriscode.svg'
       ) {
         return
       }
@@ -3839,7 +3841,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   setMcpBootstrapForTools(async () => {
     const authRequired = mcpAuth.isAuthRequired()
     const sessionToken = authRequired ? await currentSessionToken() : null
-    return buildOpenFoxMcpBootstrap({
+    return buildMorrisCodeMcpBootstrap({
       host: config.server.host ?? '127.0.0.1',
       port: mcpActualPort ?? config.server.port,
       authRequired,
@@ -3863,7 +3865,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
           setMcpOAuthServerPort(actualPort)
           mcpActualPort = actualPort
           // The /mcp endpoint is only reachable once we're listening, so start
-          // MCP client connections now — a self-referencing server (OpenFox as
+          // MCP client connections now — a self-referencing server (MorrisCode as
           // its own MCP client) would otherwise race the listen and fail.
           // The very first requests may arrive before MCP tools register;
           // connectMcpServers settles shortly after, then signals MCP readiness.
@@ -3873,10 +3875,10 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
             })
           })
           const client = getLLMClient()
-          logger.info(`OpenFox server running at http://${host}:${actualPort}`)
+          logger.info(`MorrisCode server running at http://${host}:${actualPort}`)
           logger.info(`WebSocket available at ws://${host}:${actualPort}/ws`)
           logger.info(
-            `MCP endpoint available at http://${host}:${actualPort}/mcp — run 'openfox mcp' for a paste-ready client config`,
+            `MCP endpoint available at http://${host}:${actualPort}/mcp — run 'morriscode mcp' for a paste-ready client config`,
           )
           logger.info(`LLM backend: ${client.getBackend()}, model: ${client.getModel()}, url: ${config.llm.baseUrl}`)
           resolve({ port: actualPort })

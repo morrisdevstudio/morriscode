@@ -75,8 +75,8 @@ function isOpenCodeEndpoint(baseUrl: string): boolean {
 function openCodeSessionHeaders(sessionId: string): Record<string, string> {
   return {
     'x-opencode-session': sessionId,
-    'x-opencode-client': 'openfox',
-    'User-Agent': 'openfox',
+    'x-opencode-client': 'morriscode',
+    'User-Agent': 'morriscode',
   }
 }
 

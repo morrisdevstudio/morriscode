@@ -4,8 +4,8 @@ import { logger } from '../utils/logger.js'
 import type { SessionManager } from '../session/manager.js'
 import { getProjectByWorkdir } from '../db/projects.js'
 
-const OPENFOX_BASE_PORT = Number(process.env['OPENFOX_PORT'] ?? 10369)
-const INJECT_SCRIPT = `<script src="http://127.0.0.1:${OPENFOX_BASE_PORT}/__inspect__.js"></script>`
+const MORRISCODE_BASE_PORT = Number(process.env['MORRISCODE_PORT'] ?? 10369)
+const INJECT_SCRIPT = `<script src="http://127.0.0.1:${MORRISCODE_BASE_PORT}/__inspect__.js"></script>`
 
 function buildHttpHeaders(
   resHeaders: Record<string, string>,
@@ -142,7 +142,7 @@ export async function startInspectProxy(
       const isWS = headers['upgrade'] === 'websocket'
       clientParsed = true
 
-      if (url === '/__openfox_sessions' && method === 'GET') {
+      if (url === '/__morriscode_sessions' && method === 'GET') {
         let sessions = sessionManager.listSessions()
         // Filter by project if workdir is known
         if (workdir) {
@@ -165,7 +165,7 @@ export async function startInspectProxy(
         return
       }
 
-      if (url === '/__openfox_feedback' && method === 'POST') {
+      if (url === '/__morriscode_feedback' && method === 'POST') {
         const contentLength = parseInt(headers['content-length'] || '0', 10)
         let bodyData = chunk.slice(he + 4)
         let bodyTotal = bodyData.length

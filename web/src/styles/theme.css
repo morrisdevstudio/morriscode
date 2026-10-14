@@ -1,30 +1,30 @@
 :root {
   /* Theme tokens - defaults (Dark). Actual values injected by JS from presets/custom */
-  --color-bg-primary: 13 17 23;
-  --color-bg-secondary: 22 27 34;
-  --color-bg-tertiary: 33 38 45;
-  --color-primary: 10 10 10;
-  --color-secondary: 20 20 20;
+  --color-bg-primary: 16 16 16;
+  --color-bg-secondary: 24 24 24;
+  --color-bg-tertiary: 32 32 32;
+  --color-primary: 16 16 16;
+  --color-secondary: 26 26 26;
 
-  --color-text-primary: 255 255 255;
-  --color-text-secondary: 139 148 158;
-  --color-text-muted: 72 79 88;
+  --color-text-primary: 237 237 237;
+  --color-text-secondary: 161 161 161;
+  --color-text-muted: 110 110 110;
 
-  --color-accent-primary: 88 166 255;
-  --color-accent-success: 63 185 80;
-  --color-accent-warning: 210 153 34;
-  --color-accent-error: 248 81 73;
+  --color-accent-primary: 106 142 255;
+  --color-accent-success: 78 179 122;
+  --color-accent-warning: 214 158 76;
+  --color-accent-error: 231 94 94;
 
-  --color-border: 40 46 54;
+  --color-border: 42 42 42;
 
-  --color-text-heading: 56 189 248;
-  --color-text-bold: 251 191 36;
-  --color-text-code: 88 166 255;
-  --color-text-link: 88 166 255;
-  --color-bg-system: 40 35 28;
-  --color-border-system: 65 55 25;
-  --color-text-system: 253 230 138;
-  --color-text-thinking: 192 132 252;
-  --color-text-truncated: 251 191 36;
-  --color-text-tool-error: 248 81 73;
+  --color-text-heading: 237 237 237;
+  --color-text-bold: 237 237 237;
+  --color-text-code: 226 226 226;
+  --color-text-link: 138 170 255;
+  --color-bg-system: 28 28 28;
+  --color-border-system: 48 48 48;
+  --color-text-system: 168 168 168;
+  --color-text-thinking: 150 150 150;
+  --color-text-truncated: 150 150 150;
+  --color-text-tool-error: 231 94 94;
 }

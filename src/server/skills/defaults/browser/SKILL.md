@@ -3,7 +3,7 @@ name: browser
 description: Interactive browser control via playwright-cli commands (open, snapshot, click, fill, screenshot, etc.)
 metadata:
   version: 1.2.0
-  openfox:
+  morriscode:
     displayName: Browser
 ---
 

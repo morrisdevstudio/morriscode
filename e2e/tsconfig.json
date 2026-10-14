@@ -17,8 +17,8 @@
     "types": ["node"],
     "noEmit": true,
     "paths": {
-      "@openfox/shared/protocol": ["../src/shared/protocol.ts"],
-      "@openfox/shared": ["../src/shared/index.ts"]
+      "@morriscode/shared/protocol": ["../src/shared/protocol.ts"],
+      "@morriscode/shared": ["../src/shared/index.ts"]
     }
   },
   "include": ["**/*.ts"],

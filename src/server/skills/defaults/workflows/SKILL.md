@@ -1,15 +1,15 @@
 ---
 name: workflows
-description: 'Author and manage OpenFox workflow files (.workflow.json): step types, transition conditions, template variables, and storage locations.'
+description: 'Author and manage MorrisCode workflow files (.workflow.json): step types, transition conditions, template variables, and storage locations.'
 metadata:
   version: 1.0.0
-  openfox:
+  morriscode:
     displayName: Workflows
 ---
 
-# OpenFox Workflows — Authoring Reference
+# MorrisCode Workflows — Authoring Reference
 
-Authoritative reference for creating and editing OpenFox workflow files (`.workflow.json`).
+Authoritative reference for creating and editing MorrisCode workflow files (`.workflow.json`).
 Executor implementation: `src/server/workflows/` (`types.ts`, `executor.ts`, `registry.ts`)
 and `src/server/routes/workflows.ts`.
 
@@ -30,12 +30,12 @@ tiers, merged **by `metadata.id`** with later tiers overriding earlier ones:
 | ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | **Default** | `src/server/workflows/defaults/{id}.workflow.json` (bundled → `dist/workflow-defaults/`) | Ships with the product. Not editable, not deletable.                                       |
 | **User**    | `{configDir}/workflows/{id}.workflow.json`                                               | Per-user, machine-local.                                                                   |
-| **Project** | `{projectDir}/.openfox/workflows/{id}.workflow.json`                                     | Committed to the repo, shared with the team. **Recommended for agent-authored workflows.** |
+| **Project** | `{projectDir}/.morriscode/workflows/{id}.workflow.json`                                  | Committed to the repo, shared with the team. **Recommended for agent-authored workflows.** |
 
 **Precedence (highest wins):** `project > user > default`. A project workflow with the same
 `metadata.id` as a bundled default replaces it everywhere.
 
-**Config dirs:** production `~/.config/openfox/`, development `~/.config/openfox-dev/`
+**Config dirs:** production `~/.config/morriscode/`, development `~/.config/morriscode-dev/`
 (other platforms: `XDG_CONFIG_HOME`/`~/.config` on Linux, `~/Library/Application Support`
 on macOS, `%APPDATA%` on Windows).
 
@@ -130,7 +130,7 @@ Every step shares these base fields:
 
 - Runs a full agent turn (LLM + tool loop) with the agent's tool registry.
 - `agentId` defaults to the resolved default agent: DB setting → global config →
-  `OPENFOX_DEFAULT_AGENT` env → `"planner"`. Common values: `"builder"`, `"planner"`.
+  `MORRISCODE_DEFAULT_AGENT` env → `"planner"`. Common values: `"builder"`, `"planner"`.
 - `prompt` is injected as a user message **on first entry**, with
   `"\n\nOnce you're done, call step_done()"` appended. Supports template variables (§6).
 - **Advance rule:** the step only advances after the agent calls **`step_done()`**
@@ -422,7 +422,7 @@ tags are ignored and every step's transitions apply as written.
 
 ## 8. Authoring Checklist (do this every time)
 
-1. **Choose scope.** Project workflows go in `.openfox/workflows/` (commit them — they're
+1. **Choose scope.** Project workflows go in `.morriscode/workflows/` (commit them — they're
    part of the repo contract). User-global workflows go in `{configDir}/workflows/`.
 2. **Slug the ID** — lowercase `[a-z0-9-]`, used as filename `{id}.workflow.json` and as
    the override key.

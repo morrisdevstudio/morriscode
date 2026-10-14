@@ -1,6 +1,6 @@
-# OpenFox Plugins
+# MorrisCode Plugins
 
-Plugins let you extend OpenFox without forking it: new LLM providers, tools,
+Plugins let you extend MorrisCode without forking it: new LLM providers, tools,
 slash commands, skills, workflow transitions, settings, notifications, and
 declarative UI (actions, badges, panels) — all declared through one versioned
 contract, `openfox/plugin`.
@@ -32,11 +32,11 @@ Plugins run **in-process with full Node.js privileges**, exactly like the
 provider plugins that came before them. There is no sandbox.
 
 - Install only plugins you trust.
-- The curated `plugins-registry.json` list is maintained in the OpenFox repo;
+- The curated `plugins-registry.json` list is maintained in the MorrisCode repo;
   arbitrary GitHub URLs, npm packages, and local paths are also accepted.
 - The manifest `capabilities` array is **declarative**: the Plugins tab shows it
   before/after install so users can see what a plugin intends to do.
-- Project-local plugin _code_ (`.openfox/plugins/`) is deliberately **not**
+- Project-local plugin _code_ (`.morriscode/plugins/`) is deliberately **not**
   loaded: cloning a repository must never execute code. Plugin _settings_ can
   still be project-scoped.
 
@@ -122,7 +122,7 @@ Roots are scanned in order, deduplicated by package name:
 2. `{configDir}/plugins/node_modules/<name>` (npm-installed plugins)
 3. `{cwd}/node_modules/<name>`
 
-`configDir` is `~/.config/openfox/` in production and `~/.config/openfox-dev/`
+`configDir` is `~/.config/morriscode/` in production and `~/.config/morriscode-dev/`
 in development. Plugins can be installed, enabled, disabled, and uninstalled at
 runtime from the Plugins tab — no server restart. Disabling removes every
 contribution and calls your optional `deactivate()`; re-enabling re-imports the
@@ -621,7 +621,7 @@ the resolved `command` and `port`, while `devserver.stopped` includes a
 `reason` (`stop`, `exit`, or `error`) plus exit/error details when available.
 `devserver.state.changed` follows the existing state-change path and reports
 `state` (`off`, `running`, `warning`, or `error`), `inspectProxyPort`,
-and `errorMessage` when present. When OpenFox can resolve the owning project,
+and `errorMessage` when present. When MorrisCode can resolve the owning project,
 the normal top-level `projectId` is included so plugins can read project-scoped
 settings. The current hook payload contract keeps `sessionId` as a required
 field, so these workdir-scoped events emit it as an empty string.
@@ -723,8 +723,8 @@ registry.registerVcsProvider({
 ```
 
 - VCS providers override or customize the source control layer (Git diffs, file modifications in `{{modifiedFiles}}`, branch resolution in WebSocket and UI).
-- When a registered VCS provider returns `true` from `detect()`, OpenFox delegates `getDiffFiles()`, `getBranch()`, and `formatModifiedFiles()` to it.
-- If no VCS provider matches or if an error occurs, OpenFox automatically falls back to standard mono-repo Git behavior.
+- When a registered VCS provider returns `true` from `detect()`, MorrisCode delegates `getDiffFiles()`, `getBranch()`, and `formatModifiedFiles()` to it.
+- If no VCS provider matches or if an error occurs, MorrisCode automatically falls back to standard mono-repo Git behavior.
 
 ### Context API
 
@@ -758,14 +758,14 @@ you can validate a manifest yourself (in a CLI, CI check, or your own installer)
 ```ts
 import { PLUGIN_API_VERSION, pluginManifestSchema } from 'openfox/plugin'
 
-PLUGIN_API_VERSION // 2 — the version this OpenFox release implements
+PLUGIN_API_VERSION // 2 — the version this MorrisCode release implements
 const result = pluginManifestSchema.safeParse(pkg)
 if (!result.success) console.error(result.error.issues)
 ```
 
 `pluginManifestSchema` validates the `name`/`version`/`openfox` shape (including
 `apiVersion` being an integer); the host additionally rejects any `apiVersion`
-other than `1` or `2` with `Unsupported OpenFox plugin API version: <n>`.
+other than `1` or `2` with `Unsupported MorrisCode plugin API version: <n>`.
 
 ---
 
@@ -787,7 +787,7 @@ register(registry)
 ```
 
 For integration testing, install the plugin into a scratch config directory and
-start OpenFox with `OPENFOX_DEV=true`; the Plugins tab shows load diagnostics and
+start MorrisCode with `MORRISCODE_DEV=true`; the Plugins tab shows load diagnostics and
 the plugin's contribution summary.
 
 ---
@@ -806,13 +806,13 @@ the plugin's contribution summary.
 
 ## 7. Troubleshooting
 
-| Symptom                                                              | Cause                                                                           |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Plugin shows **Error** with `Unsupported OpenFox plugin API version` | `openfox.apiVersion` is missing or not `1`/`2`                                  |
-| `Plugin does not export register(registry)`                          | Entry point must export a named `register` function                             |
-| `Plugin tool 'x' collides with a built-in tool`                      | Rename the tool; built-ins cannot be shadowed                                   |
-| `Plugin <kind> 'x' is already registered by 'y'`                     | Two plugins claim the same id; ids must be unique per kind                      |
-| Action/panel missing in the UI                                       | Check the plugin is enabled and the `slot` value is one of the documented slots |
-| RPC returns `no RPC method`                                          | The method name must match `registerRpc` exactly and the plugin must be enabled |
-| RPC returns `does not declare the 'rpc' capability`                  | Add `"rpc"` to `openfox.capabilities`, or omit the array entirely               |
-| Settings save fails with `must be a number`                          | Values are validated against your schema server-side                            |
+| Symptom                                                                 | Cause                                                                           |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Plugin shows **Error** with `Unsupported MorrisCode plugin API version` | `openfox.apiVersion` is missing or not `1`/`2`                                  |
+| `Plugin does not export register(registry)`                             | Entry point must export a named `register` function                             |
+| `Plugin tool 'x' collides with a built-in tool`                         | Rename the tool; built-ins cannot be shadowed                                   |
+| `Plugin <kind> 'x' is already registered by 'y'`                        | Two plugins claim the same id; ids must be unique per kind                      |
+| Action/panel missing in the UI                                          | Check the plugin is enabled and the `slot` value is one of the documented slots |
+| RPC returns `no RPC method`                                             | The method name must match `registerRpc` exactly and the plugin must be enabled |
+| RPC returns `does not declare the 'rpc' capability`                     | Add `"rpc"` to `openfox.capabilities`, or omit the array entirely               |
+| Settings save fails with `must be a number`                             | Values are validated against your schema server-side                            |

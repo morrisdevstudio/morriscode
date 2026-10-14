@@ -95,8 +95,8 @@ describe('SessionManager', () => {
     // Initialize EventStore with the database
     initEventStore(getDatabase())
 
-    workdir = await mkdtemp(join(tmpdir(), 'openfox-session-manager-'))
-    projectId = createProject('OpenFox', workdir).id
+    workdir = await mkdtemp(join(tmpdir(), 'morriscode-session-manager-'))
+    projectId = createProject('MorrisCode', workdir).id
     manager = new SessionManager(mockProviderManager as any)
     getLspManagerMock.mockClear()
     shutdownLspManagerMock.mockClear()

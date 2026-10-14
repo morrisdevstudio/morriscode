@@ -5,7 +5,7 @@
  * This allows testing the system without depending on LLM inference.
  *
  * Usage:
- *   OPENFOX_MOCK_LLM=true npx vitest run
+ *   MORRISCODE_MOCK_LLM=true npx vitest run
  *
  * Or import directly in test files:
  *   import { setupMockLLMServer } from './utils/mock-setup.js'
@@ -18,9 +18,9 @@ import { config } from 'dotenv'
 // Load .env from repository root
 config({ path: new URL('../.env', import.meta.url).pathname })
 
-const TEST_PORT = process.env['OPENFOX_TEST_PORT'] ?? '3999'
-const MOCK_MODEL = process.env['OPENFOX_MOCK_MODEL'] ?? 'mock-qwen3.5'
-const MOCK_BACKEND = process.env['OPENFOX_MOCK_BACKEND'] ?? 'mock'
+const TEST_PORT = process.env['MORRISCODE_TEST_PORT'] ?? '3999'
+const MOCK_MODEL = process.env['MORRISCODE_MOCK_MODEL'] ?? 'mock-qwen3.5'
+const MOCK_BACKEND = process.env['MORRISCODE_MOCK_BACKEND'] ?? 'mock'
 
 let serverProcess: ChildProcess | null = null
 
@@ -53,29 +53,29 @@ export async function setupMockLLMServer(): Promise<void> {
   killProcessOnPort(TEST_PORT)
   await sleep(500)
 
-  const verbose = process.env['OPENFOX_TEST_VERBOSE'] === 'true'
+  const verbose = process.env['MORRISCODE_TEST_VERBOSE'] === 'true'
   if (verbose) {
-    console.log('\n🚀 Starting OpenFox server with MOCK LLM...')
+    console.log('\n🚀 Starting MorrisCode server with MOCK LLM...')
     console.log(`   Model: ${MOCK_MODEL}`)
     console.log(`   Backend: ${MOCK_BACKEND}`)
     console.log(`   Port: ${TEST_PORT}`)
   }
 
   // Start the server with mock LLM configuration
-  // The server will use the mock LLM client when OPENFOX_MOCK_LLM is set
+  // The server will use the mock LLM client when MORRISCODE_MOCK_LLM is set
   serverProcess = spawn('node', ['dist/cli/index.js', '--no-browser'], {
     cwd: new URL('..', import.meta.url).pathname,
     env: {
       ...process.env,
-      OPENFOX_PORT: TEST_PORT,
-      OPENFOX_DB_PATH: ':memory:',
+      MORRISCODE_PORT: TEST_PORT,
+      MORRISCODE_DB_PATH: ':memory:',
       // Point to non-existent URL - server will use mock instead
-      OPENFOX_VLLM_URL: 'http://localhost:99999/mock',
-      OPENFOX_BACKEND: MOCK_BACKEND,
-      OPENFOX_MODEL_NAME: MOCK_MODEL,
-      OPENFOX_LOG_LEVEL: 'warn',
-      OPENFOX_HOST: '127.0.0.1',
-      OPENFOX_MOCK_LLM: 'true', // Flag to enable mock mode
+      MORRISCODE_VLLM_URL: 'http://localhost:99999/mock',
+      MORRISCODE_BACKEND: MOCK_BACKEND,
+      MORRISCODE_MODEL_NAME: MOCK_MODEL,
+      MORRISCODE_LOG_LEVEL: 'warn',
+      MORRISCODE_HOST: '127.0.0.1',
+      MORRISCODE_MOCK_LLM: 'true', // Flag to enable mock mode
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,
@@ -107,9 +107,9 @@ export async function setupMockLLMServer(): Promise<void> {
   }
 
   // Store URL for tests to use
-  process.env['OPENFOX_TEST_URL'] = serverUrl
-  process.env['OPENFOX_TEST_WS_URL'] = `ws://localhost:${TEST_PORT}/ws`
-  process.env['OPENFOX_MOCK_LLM_ENABLED'] = 'true'
+  process.env['MORRISCODE_TEST_URL'] = serverUrl
+  process.env['MORRISCODE_TEST_WS_URL'] = `ws://localhost:${TEST_PORT}/ws`
+  process.env['MORRISCODE_MOCK_LLM_ENABLED'] = 'true'
 
   // Cleanup on interrupt
   const cleanup = () => {
@@ -128,7 +128,7 @@ export async function setupMockLLMServer(): Promise<void> {
 
 export async function teardownMockLLMServer(): Promise<void> {
   if (serverProcess && serverProcess.pid) {
-    const verbose = process.env['OPENFOX_TEST_VERBOSE'] === 'true'
+    const verbose = process.env['MORRISCODE_TEST_VERBOSE'] === 'true'
     if (verbose) {
       console.log('\n🛑 Stopping mock LLM server...')
     }

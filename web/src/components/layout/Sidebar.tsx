@@ -3,6 +3,7 @@ import { useLocation, Link } from 'wouter'
 import { useSessionStore } from '../../stores/session'
 import type { PendingPathConfirmation } from '../../stores/session/types'
 import { useCurrentProject } from '../../hooks/useCurrentProject'
+import { useProjects } from '../../hooks/useProjects'
 import { useT } from '../../hooks/useT'
 import type { SessionSummary } from '@shared/types.js'
 import { ProjectSettingsModal } from '../settings/ProjectSettingsModal'
@@ -25,6 +26,16 @@ import {
   GearIcon,
   TrashIcon,
   EditSmallIcon,
+  HomeIcon,
+  ColumnsIcon,
+  TerminalIcon,
+  PuzzleIcon,
+  SettingsIcon,
+  FullscreenIcon,
+  LogoutIcon,
+  FolderIcon,
+  ChevronRightIcon,
+  UserIcon,
 } from '../shared/icons'
 import { groupSessionsByDate, formatDateHeader, formatTime } from '../../lib/format-date.js'
 import { fuzzyMatch, highlightMatches } from '../../lib/modal-utils.js'
@@ -34,8 +45,13 @@ import { hasStoredToken, downloadSessionExport, importSession } from '../../lib/
 import { useResizable } from '../../hooks/useResizable'
 import { ResizeHandle } from '../shared/ResizeHandle'
 import { useSidebarStore } from '../../stores/sidebar'
+import { useTerminalStore } from '../../stores/terminal'
 import { PluginBadges } from '../plugins/PluginBadges'
 import { PluginZone } from '../plugins/PluginZone'
+import { OPEN_SETTINGS_EVENT, type Tab } from '../settings/GlobalSettingsModal'
+
+/** How many sessions a project shows before the "Show more" row appears. */
+const PROJECT_PAGE_SIZE = 5
 
 interface SidebarProps {
   projectId: string
@@ -58,6 +74,8 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   const importFileInputRef = useRef<HTMLInputElement>(null)
 
   const sessions = useSessionStore((state) => state.sessions)
+  const listSessions = useSessionStore((state) => state.listSessions)
+  const logout = useSessionStore((state) => state.logout)
   const currentSession = useSessionStore((state) => state.currentSession)
   const unreadSessionIds = useSessionStore((state) => state.unreadSessionIds)
   const deleteSession = useSessionStore((state) => state.deleteSession)
@@ -73,6 +91,9 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
   const [searchQuery, setSearchQuery] = useState('')
   const [focusedIndex, setFocusedIndex] = useState(-1)
+  const { projects } = useProjects()
+  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
+  const [revealedProjects, setRevealedProjects] = useState<Set<string>>(new Set())
   const searchRef = useRef<HTMLInputElement>(null)
   const sessionListRef = useRef<HTMLDivElement>(null)
 
@@ -128,8 +149,13 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
     return () => observer.disconnect()
   }, [sessionsHasMore, handleLoadMore])
 
-  // Filter sessions to those belonging to the current project by ID
-  const projectSessions = sessions.filter((session) => session.projectId === currentProject?.id)
+  // The tree spans projects, so the cross-project list is loaded on demand.
+  useEffect(() => {
+    void listSessions(undefined, 50)
+  }, [listSessions])
+
+  // Every loaded session takes part in the tree, grouped by project below.
+  const projectSessions = sessions
 
   const [favoriteSessions, otherSessions] = useMemo(() => {
     const favs: SessionSummary[] = []
@@ -157,6 +183,89 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   const filteredOthers = useMemo(() => applySearch(otherSessions), [otherSessions, searchQuery])
 
   const allFiltered = [...filteredFavorites, ...filteredOthers]
+  const allFilteredIds = allFiltered.map((session) => session.id).join(',')
+
+  /**
+   * Sessions of every project, newest first. Row indices stay those of the flat
+   * filtered list so keyboard navigation and the row index attribute keep working.
+   */
+  const sessionsByProject = useMemo(() => {
+    const map = new Map<string, SessionSummary[]>()
+    for (const session of filteredOthers) {
+      const list = map.get(session.projectId)
+      if (list) {
+        list.push(session)
+      } else {
+        map.set(session.projectId, [session])
+      }
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0))
+    }
+    return map
+  }, [filteredOthers])
+
+  const indexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    allFiltered.forEach((session, index) => map.set(session.id, index))
+    return map
+  }, [allFilteredIds])
+
+  /**
+   * Project nodes of the tree: the known projects first, plus any project a
+   * loaded session belongs to. The fallback keeps the tree usable while the
+   * project list is still loading (or when it is unavailable).
+   */
+  const treeProjects = useMemo(() => {
+    const nodes: { id: string; name: string }[] = projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+    }))
+    const known = new Set(nodes.map((node) => node.id))
+    for (const session of filteredOthers) {
+      if (known.has(session.projectId)) continue
+      known.add(session.projectId)
+      nodes.push({ id: session.projectId, name: session.projectId })
+    }
+    return nodes
+  }, [projects, filteredOthers])
+
+  const toggleProject = useCallback((targetId: string) => {
+    setCollapsedProjects((prev) => {
+      const next = new Set(prev)
+      if (next.has(targetId)) {
+        next.delete(targetId)
+      } else {
+        next.add(targetId)
+      }
+      return next
+    })
+  }, [])
+
+  const revealProject = useCallback(
+    (targetId: string) => {
+      setRevealedProjects((prev) => new Set(prev).add(targetId))
+      void listSessions(targetId, 50)
+    },
+    [listSessions],
+  )
+
+  const openSettingsTab = useCallback((tab: Tab) => {
+    window.dispatchEvent(new CustomEvent(OPEN_SETTINGS_EVENT, { detail: { tab } }))
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen()
+    } else {
+      void document.documentElement.requestFullscreen()
+    }
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    void logout()
+    navigate('/')
+  }, [logout, navigate])
 
   const isSearching = searchQuery.length > 0
   const hasNoResults = isSearching && allFiltered.length === 0
@@ -276,7 +385,7 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
         e.preventDefault()
         const session = allFiltered[focusedIndex]
         if (session) {
-          navigate(`/p/${projectId}/s/${session.id}`)
+          navigate(`/p/${session.projectId ?? projectId}/s/${session.id}`)
           if (wasAutoOpenedRef.current) {
             wasAutoOpenedRef.current = false
             onClose?.()
@@ -294,13 +403,148 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
       {/* Sidebar content — shared between desktop and mobile variants */}
       {(() => {
+        const renderProjectNode = (project: { id: string; name: string }) => {
+          const treeSessions = sessionsByProject.get(project.id) ?? []
+          if (isSearching && treeSessions.length === 0) return null
+
+          const isExpanded = !collapsedProjects.has(project.id)
+          const isRevealed = revealedProjects.has(project.id)
+          const visibleSessions = isRevealed ? treeSessions : treeSessions.slice(0, PROJECT_PAGE_SIZE)
+          const hiddenCount = treeSessions.length - visibleSessions.length
+          const isRunning = treeSessions.some((session) => session.isRunning)
+
+          return (
+            <div key={project.id}>
+              <button
+                type="button"
+                onClick={() => toggleProject(project.id)}
+                aria-expanded={isExpanded}
+                title={project.name}
+                className="w-full flex items-center gap-1.5 px-3 py-1.5 text-left text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/40 transition-colors"
+              >
+                <ChevronRightIcon
+                  className={`w-3 h-3 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                />
+                <FolderIcon className="w-4 h-4 flex-shrink-0 text-text-muted" />
+                <span className="truncate text-[13px] font-medium">{project.name}</span>
+                {isRunning && <SpinIcon />}
+              </button>
+
+              {isExpanded && (
+                <>
+                  {treeSessions.length === 0 ? (
+                    <div className="pl-9 pr-3 py-1.5 text-xs text-text-muted">
+                      {t({ en: 'No sessions', fr: 'Aucune session' })}
+                    </div>
+                  ) : (
+                    renderSessionList(
+                      [],
+                      visibleSessions,
+                      currentSession,
+                      unreadSessionIds,
+                      handleDeleteSession,
+                      handleRenameSession,
+                      handleToggleFavorite,
+                      handleExportSession,
+                      project.id,
+                      sessionsWithPendingConfirmations,
+                      pendingPathConfirmations,
+                      searchQuery,
+                      focusedIndex,
+                      t,
+                      { showFavorites: false, groupByDate: false, indent: true, indexMap },
+                    )
+                  )}
+                  {hiddenCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => revealProject(project.id)}
+                      className="w-full pl-9 pr-3 py-1.5 text-left text-xs text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      {t({ en: 'Show more', fr: 'Afficher plus' })}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        }
+
+        const railButtonClass =
+          'flex items-center justify-center w-8 h-8 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors'
+
+        const rail = (
+          <nav className="hidden @md:flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border py-2">
+            <Link href="/" className={railButtonClass} title={t({ en: 'Home', fr: 'Accueil' })}>
+              <HomeIcon className="w-4 h-4" />
+            </Link>
+            <Link href="/split-view" className={railButtonClass} title={t({ en: 'Split view', fr: 'Vue divisée' })}>
+              <ColumnsIcon className="w-4 h-4" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => useTerminalStore.getState().toggleOpen()}
+              className={railButtonClass}
+              title={t({ en: 'Terminal', fr: 'Terminal' })}
+            >
+              <TerminalIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openSettingsTab('plugins')}
+              className={railButtonClass}
+              title={t({ en: 'Plugins', fr: 'Plugins' })}
+            >
+              <PuzzleIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openSettingsTab('instructions')}
+              className={railButtonClass}
+              title={t({ en: 'Settings', fr: 'Paramètres' })}
+            >
+              <SettingsIcon className="w-4 h-4" />
+            </button>
+            <DropdownMenu
+              align="left"
+              items={[
+                {
+                  label: t({ en: 'Enter fullscreen', fr: 'Plein écran' }),
+                  icon: <FullscreenIcon className="w-3.5 h-3.5" />,
+                  onClick: toggleFullscreen,
+                },
+                {
+                  label: t({ en: 'Logout', fr: 'Se déconnecter' }),
+                  icon: <LogoutIcon className="w-3.5 h-3.5" />,
+                  onClick: handleLogout,
+                  danger: true,
+                },
+              ]}
+              trigger={
+                <button type="button" className={railButtonClass} title={t({ en: 'More', fr: 'Plus' })}>
+                  <EllipsisIcon />
+                </button>
+              }
+            />
+            <div className="flex-1" />
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-full border border-border bg-bg-tertiary text-text-muted"
+              title={t({ en: 'Account', fr: 'Compte' })}
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+            </div>
+          </nav>
+        )
+
         const sidebarContent = (
-          <PluginZone id="sidebar" context={{ projectId }}>
+          // The plugin zones render a plain div, so each level has to carry the flex
+          // context itself — otherwise nothing constrains the scroll area's height.
+          <PluginZone id="sidebar" className="flex-1 min-h-0 flex flex-col" context={{ projectId }}>
             <PluginZone id="sidebar.header">
               <div className="p-4 border-b border-border flex gap-2">
                 <Link
                   href={`/p/${projectId}/new`}
-                  className="flex-1 block text-center rounded font-medium transition-colors bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 px-3 py-1.5 text-sm"
+                  className="flex-1 block text-center rounded-md font-medium transition-colors border border-border bg-bg-tertiary text-text-primary hover:bg-border px-3 py-1.5 text-sm"
                   data-testid="sidebar-new-session-button"
                 >
                   {t({ en: '+ New Session', fr: '+ Nouvelle session' })}
@@ -469,8 +713,8 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
               />
             </Modal>
 
-            <PluginZone id="sidebar.sessions_list" context={{ projectId }}>
-              <ScrollArea className="flex-1">
+            <PluginZone id="sidebar.sessions_list" className="flex-1 min-h-0 flex flex-col" context={{ projectId }}>
+              <ScrollArea className="flex-1 min-h-0">
                 {allFiltered.length === 0 ? (
                   <div className="p-4 text-center text-text-muted text-xs">
                     {isSearching
@@ -479,23 +723,37 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
                   </div>
                 ) : (
                   <>
-                    <div className="divide-y divide-border" ref={sessionListRef} onClick={handleSessionListClick}>
-                      {renderSessionList(
-                        filteredFavorites,
-                        filteredOthers,
-                        currentSession,
-                        unreadSessionIds,
-                        handleDeleteSession,
-                        handleRenameSession,
-                        handleToggleFavorite,
-                        handleExportSession,
-                        projectId,
-                        sessionsWithPendingConfirmations,
-                        pendingPathConfirmations,
-                        searchQuery,
-                        focusedIndex,
-                        t,
+                    <div className="pb-3" ref={sessionListRef} onClick={handleSessionListClick}>
+                      {filteredFavorites.length > 0 && (
+                        <section className="mb-2">
+                          <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                            <StarFilledIcon className="w-3 h-3" />
+                            {t({ en: 'Pinned', fr: 'Épinglés' })}
+                          </div>
+                          {renderSessionList(
+                            [],
+                            filteredFavorites,
+                            currentSession,
+                            unreadSessionIds,
+                            handleDeleteSession,
+                            handleRenameSession,
+                            handleToggleFavorite,
+                            handleExportSession,
+                            projectId,
+                            sessionsWithPendingConfirmations,
+                            pendingPathConfirmations,
+                            searchQuery,
+                            focusedIndex,
+                            t,
+                            { showFavorites: false, groupByDate: false, indexMap },
+                          )}
+                        </section>
                       )}
+
+                      <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                        {t({ en: 'Projects', fr: 'Projets' })}
+                      </div>
+                      {treeProjects.map((project) => renderProjectNode(project))}
                     </div>
                     {sessionsPaginationLoading && (
                       <div className="p-4 text-center text-text-muted text-xs">
@@ -512,20 +770,22 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
         return overlay ? (
           <aside
-            className={`fixed z-50 h-[calc(100vh-32px)] w-[300px] bg-secondary border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${
+            className={`fixed z-50 h-[calc(100vh-32px)] w-[352px] bg-secondary border-r border-border flex transition-transform duration-300 ease-in-out ${
               isOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            {sidebarContent}
+            {rail}
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">{sidebarContent}</div>
           </aside>
         ) : (
           <aside
-            className={`relative shrink-0 bg-secondary flex flex-col overflow-hidden ${
-              isOpen ? 'w-[var(--sidebar-w)] border-r border-border' : 'w-0 border-r-0'
+            className={`relative shrink-0 bg-secondary flex overflow-hidden ${
+              isOpen ? 'w-[var(--sidebar-w)] border-r border-border' : 'w-12 border-r border-border'
             }`}
             style={{ '--sidebar-w': `${sidebarWidth}px` } as React.CSSProperties}
           >
-            {sidebarContent}
+            {rail}
+            {isOpen && <div className="flex-1 min-w-0 flex flex-col overflow-hidden">{sidebarContent}</div>}
             {isOpen && <ResizeHandle side="right" onMouseDown={handleResizeMouseDown} />}
           </aside>
         )
@@ -552,11 +812,19 @@ function renderSessionList(
     tx: { en: string | Record<string, string>; fr: string | Record<string, string> },
     vars?: Record<string, string | number>,
   ) => string,
+  options: {
+    showFavorites?: boolean
+    groupByDate?: boolean
+    indent?: boolean
+    indexMap?: Map<string, number>
+  } = {},
 ) {
+  const { showFavorites = true, groupByDate = true, indent = false, indexMap } = options
   let flatIdx = 0
 
   const renderSession = (session: SessionSummary) => {
-    const idx = flatIdx++
+    const idx = indexMap?.get(session.id) ?? flatIdx++
+    const sessionProjectId = session.projectId ?? projectId
     const isActive = currentSession?.id === session.id
     const isFocused = idx === focusedIndex
     const hasUnread = unreadSessionIds.includes(session.id)
@@ -569,16 +837,20 @@ function renderSessionList(
       <div
         key={session.id}
         data-sidx={idx}
-        className={`w-full px-4 py-3 text-left hover:bg-bg-tertiary/50 transition-colors group ${
+        className={`w-full ${indent ? 'pl-9 pr-2 py-1' : 'px-4 py-3'} text-left hover:bg-bg-tertiary/50 transition-colors group ${
           isActive ? 'bg-bg-tertiary' : ''
         } ${isFocused ? 'bg-accent-primary/10' : ''}`}
       >
         <Link
-          href={`/p/${projectId}/s/${session.id}`}
+          href={`/p/${sessionProjectId}/s/${session.id}`}
           className={`block ${isActive ? 'text-accent-primary' : 'text-text-primary'} hover:text-accent-primary`}
         >
-          <div className="flex justify-between items-center mb-1">
-            <span className={`font-medium truncate text-sm ${isActive ? 'text-accent-primary' : 'text-text-primary'}`}>
+          <div className={`flex justify-between items-center ${indent ? 'gap-1' : 'mb-1'}`}>
+            <span
+              className={`truncate ${indent ? 'text-[13px]' : 'font-medium text-sm'} ${
+                isActive ? 'text-accent-primary' : 'text-text-primary'
+              }`}
+            >
               {searchQuery
                 ? highlightMatches(session.title ?? session.id.slice(0, 6), searchQuery)
                 : (session.title ?? session.id.slice(0, 6))}
@@ -636,7 +908,7 @@ function renderSessionList(
             </div>
           </div>
           {/* Time displayed below the title as muted secondary text */}
-          <div className="flex items-center gap-2 mt-1">
+          <div className={`flex items-center gap-2 ${indent ? 'mt-0.5' : 'mt-1'}`}>
             {hasPendingConfirmation ? (
               <span title={t({ en: 'Awaiting confirmation', fr: 'En attente de confirmation' })}>
                 <StopIcon className="w-3 h-3 text-red-400 flex-shrink-0" />
@@ -660,7 +932,11 @@ function renderSessionList(
             </span>
             <PluginBadges
               slot="session.row.badges"
-              context={{ sessionId: session.id, projectId, workdir: session.workspace ?? session.workdir }}
+              context={{
+                sessionId: session.id,
+                projectId: sessionProjectId,
+                workdir: session.workspace ?? session.workdir,
+              }}
             />
           </div>
         </Link>
@@ -688,7 +964,7 @@ function renderSessionList(
   return (
     <>
       {/* Pinned favorites section */}
-      {favoriteSessions.length > 0 && (
+      {showFavorites && favoriteSessions.length > 0 && (
         <div>
           <div className="px-4 py-2 bg-bg-tertiary/50 text-text-primary text-xs font-semibold flex items-center gap-1">
             <StarFilledIcon className="w-3 h-3 text-amber-400" />
@@ -698,8 +974,9 @@ function renderSessionList(
         </div>
       )}
 
-      {/* Regular sessions grouped by date */}
-      {otherSessions.length > 0 && renderGroupedSessions(otherSessions)}
+      {/* Regular sessions: date groups in the flat list, plain rows inside the tree */}
+      {otherSessions.length > 0 &&
+        (groupByDate ? renderGroupedSessions(otherSessions) : otherSessions.map((session) => renderSession(session)))}
     </>
   )
 }

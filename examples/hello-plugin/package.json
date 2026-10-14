@@ -1,7 +1,7 @@
 {
   "name": "openfox-hello-plugin",
   "version": "1.0.0",
-  "description": "Reference OpenFox plugin: tools, commands, UI, settings, hooks, RPC and workflow transitions",
+  "description": "Reference MorrisCode plugin: tools, commands, UI, settings, hooks, RPC and workflow transitions",
   "type": "module",
   "main": "./src/index.js",
   "files": [

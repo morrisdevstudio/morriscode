@@ -1,6 +1,6 @@
 # Reverse Proxy Setup
 
-OpenFox works behind a reverse proxy. The WebSocket connection uses `wss://` (WebSocket over TLS), so the proxy just needs to forward traffic with proper upgrade headers. Unlike plain `ws://`, browsers **do** send the `Authorization` header on `wss://` upgrades, so basic auth works transparently.
+MorrisCode works behind a reverse proxy. The WebSocket connection uses `wss://` (WebSocket over TLS), so the proxy just needs to forward traffic with proper upgrade headers. Unlike plain `ws://`, browsers **do** send the `Authorization` header on `wss://` upgrades, so basic auth works transparently.
 
 The frontend auto-detects the page protocol: `https://` → `wss://`, `http://` → `ws://`.
 
@@ -15,7 +15,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     # Basic auth (optional)
-    auth_basic           "OpenFox";
+    auth_basic           "MorrisCode";
     auth_basic_user_file /path/to/.htpasswd;
 
     location / {
@@ -35,12 +35,12 @@ server {
 ## HAProxy
 
 ```
-backend openfox
+backend morriscode
     bind *:443 ssl crt /path/to/cert.pem
-    http-auth realm OpenFox
+    http-auth realm MorrisCode
     http-auth userfile /path/to/haproxy.htpasswd
 
-    server openfox 127.0.0.1:10369
+    server morriscode 127.0.0.1:10369
     http-request set-header X-Forwarded-Proto https
     http-request set-header X-Forwarded-For %[src]
     http-request set-header Host %[req.hdr(Host)]
@@ -53,9 +53,9 @@ backend openfox
 ```yaml
 http:
   routers:
-    openfox:
+    morriscode:
       rule: 'Host(`yourdomain.com`)'
-      service: openfox
+      service: morriscode
       tls: {}
       middlewares:
         - basicAuth:
@@ -63,7 +63,7 @@ http:
               - 'user:$hash'
 
   services:
-    openfox:
+    morriscode:
       loadBalancer:
         servers:
           - url: 'http://127.0.0.1:10369'
@@ -73,7 +73,7 @@ http:
 ## Key Points
 
 - **Use `npm start` (not `npm run dev`) behind a proxy** — `npm run dev` uses Vite which enforces `localhost` by default
-- **Set `server.host: "127.0.0.1"`** in your OpenFox config so the backend only listens locally
+- **Set `server.host: "127.0.0.1"`** in your MorrisCode config so the backend only listens locally
 - The WebSocket endpoint is `/ws` — the frontend always connects to the same origin as the page (e.g. `wss://yourdomain.com/ws`)
 - For local dev without a proxy, `ws://localhost:10469` is still the default
 

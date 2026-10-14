@@ -1648,8 +1648,8 @@ export function ProviderModal({
                     <InfoIcon className="w-4 h-4 text-accent-primary flex-shrink-0" />
                     <span className="leading-snug">
                       {t({
-                        en: "Can't find your AI provider? Check OpenFox plugins to see if one is available.",
-                        fr: "Vous ne trouvez pas votre fournisseur d'IA ? Consultez les plugins OpenFox qui pourraient le proposer.",
+                        en: "Can't find your AI provider? Check MorrisCode plugins to see if one is available.",
+                        fr: "Vous ne trouvez pas votre fournisseur d'IA ? Consultez les plugins MorrisCode qui pourraient le proposer.",
                       })}
                     </span>
                   </div>

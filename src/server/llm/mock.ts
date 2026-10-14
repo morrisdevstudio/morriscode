@@ -3,7 +3,7 @@
  * Mock LLM Client for E2E Tests
  *
  * Provides deterministic LLM responses for testing without real inference.
- * Activated via OPENFOX_MOCK_LLM=true environment variable.
+ * Activated via MORRISCODE_MOCK_LLM=true environment variable.
  *
  * Pattern-matches prompts to return specific tool calls, enabling fast
  * deterministic testing of the entire system through the WebSocket API.
@@ -820,7 +820,7 @@ function buildMockResponse(request: LLMCompletionRequest): {
 // ============================================================================
 
 export function createMockLLMClient(): LLMClientWithModel {
-  const model = process.env['OPENFOX_MODEL_NAME'] ?? 'mock-model'
+  const model = process.env['MORRISCODE_MODEL_NAME'] ?? 'mock-model'
   const profile = getModelProfile(model)
   let backend: Backend = 'unknown'
 
@@ -839,7 +839,7 @@ export function createMockLLMClient(): LLMClientWithModel {
       if (request.signal?.aborted) throw new Error('Aborted')
       const response = buildMockResponse(request)
 
-      if (process.env['OPENFOX_TEST_VERBOSE'] === 'true') {
+      if (process.env['MORRISCODE_TEST_VERBOSE'] === 'true') {
         logger.debug('MockLLM completion', {
           prompt: prompt.slice(0, 50),
           hasTools: response.toolCalls.length > 0,
@@ -863,7 +863,7 @@ export function createMockLLMClient(): LLMClientWithModel {
       if (request.signal?.aborted) throw new Error('Aborted')
       const response = buildMockResponse(request)
 
-      if (process.env['OPENFOX_TEST_VERBOSE'] === 'true') {
+      if (process.env['MORRISCODE_TEST_VERBOSE'] === 'true') {
         logger.debug('MockLLM stream', {
           prompt: prompt.slice(0, 50),
           hasTools: response.toolCalls.length > 0,

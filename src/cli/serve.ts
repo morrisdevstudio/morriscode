@@ -72,8 +72,8 @@ export async function runServe(options: ServeOptions): Promise<void> {
       openBrowser: openBrowser ?? globalConfig.server.openBrowser,
     },
     database: {
-      // Use env OPENFOX_DB_PATH if explicitly set (e.g., ":memory:" for tests), otherwise use standard path
-      path: env.database.path !== './openfox.db' ? env.database.path : getDatabasePath(mode),
+      // Use env MORRISCODE_DB_PATH if explicitly set (e.g., ":memory:" for tests), otherwise use standard path
+      path: env.database.path !== './morriscode.db' ? env.database.path : getDatabasePath(mode),
     },
     logging: {
       level: globalConfig.logging?.level ?? ('error' as const),
@@ -99,7 +99,7 @@ export async function runServe(options: ServeOptions): Promise<void> {
       | undefined,
     // Workdir precedence: .env override → global config → process.cwd()
     // Normalize: remove trailing slash to prevent double slashes in paths
-    workdir: (process.env['OPENFOX_WORKDIR'] ?? globalConfig.workspace?.workdir ?? process.cwd()).replace(/\/$/, ''),
+    workdir: (process.env['MORRISCODE_WORKDIR'] ?? globalConfig.workspace?.workdir ?? process.cwd()).replace(/\/$/, ''),
     ...((env.disableAutoSessionTitle ?? globalConfig.disableAutoSessionTitle) !== undefined
       ? { disableAutoSessionTitle: env.disableAutoSessionTitle ?? globalConfig.disableAutoSessionTitle }
       : {}),

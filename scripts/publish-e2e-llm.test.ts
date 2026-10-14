@@ -30,25 +30,25 @@ describe('resolveLlmMode', () => {
   })
 
   it('fails fast on an invalid value instead of silently using local', () => {
-    expect(() => resolveLlmMode('prodd')).toThrow(/OPENFOX_PUBLISH_E2E_LLM/)
-    expect(() => resolveLlmMode('true')).toThrow(/OPENFOX_PUBLISH_E2E_LLM/)
+    expect(() => resolveLlmMode('prodd')).toThrow(/MORRISCODE_PUBLISH_E2E_LLM/)
+    expect(() => resolveLlmMode('true')).toThrow(/MORRISCODE_PUBLISH_E2E_LLM/)
   })
 })
 
 describe('resolveProdConfigPath', () => {
   it('defaults to the prod config in the home directory', () => {
-    expect(resolveProdConfigPath({}, '/home/conrad')).toBe('/home/conrad/.config/openfox/config.json')
+    expect(resolveProdConfigPath({}, '/home/conrad')).toBe('/home/conrad/.config/morriscode/config.json')
   })
 
-  it('honours the OPENFOX_PUBLISH_E2E_PROD_CONFIG override', () => {
-    expect(resolveProdConfigPath({ OPENFOX_PUBLISH_E2E_PROD_CONFIG: '/tmp/other.json' }, '/home/conrad')).toBe(
+  it('honours the MORRISCODE_PUBLISH_E2E_PROD_CONFIG override', () => {
+    expect(resolveProdConfigPath({ MORRISCODE_PUBLISH_E2E_PROD_CONFIG: '/tmp/other.json' }, '/home/conrad')).toBe(
       '/tmp/other.json',
     )
   })
 
   it('ignores a blank override', () => {
-    expect(resolveProdConfigPath({ OPENFOX_PUBLISH_E2E_PROD_CONFIG: '  ' }, '/home/conrad')).toBe(
-      '/home/conrad/.config/openfox/config.json',
+    expect(resolveProdConfigPath({ MORRISCODE_PUBLISH_E2E_PROD_CONFIG: '  ' }, '/home/conrad')).toBe(
+      '/home/conrad/.config/morriscode/config.json',
     )
   })
 })

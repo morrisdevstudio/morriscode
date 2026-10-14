@@ -39,9 +39,9 @@ export function getLauncherPath(env: InstallEnvironment = {}): string {
   const home = env.home ?? homedir()
   if (platform === 'win32') {
     const base = env.localAppData ?? process.env['LOCALAPPDATA'] ?? join(home, 'AppData', 'Local')
-    return join(base, 'OpenFox', 'bin', 'openfox.cmd')
+    return join(base, 'MorrisCode', 'bin', 'morriscode.cmd')
   }
-  return join(home, '.local', 'bin', 'openfox')
+  return join(home, '.local', 'bin', 'morriscode')
 }
 
 function quoteShell(value: string): string {
@@ -96,7 +96,7 @@ export async function checkInstall(env: InstallEnvironment = {}): Promise<Instal
 }
 
 function printCheck(check: InstallCheck): void {
-  console.log(cliT({ en: 'OpenFox CLI installation:', fr: 'Installation de l’interface OpenFox :' }))
+  console.log(cliT({ en: 'MorrisCode CLI installation:', fr: 'Installation de l’interface MorrisCode :' }))
   console.log(
     cliT({
       en: `  Current executable: ${check.currentExecutable}`,
@@ -147,8 +147,8 @@ export async function runInstall(
   if (!cliExecutable) {
     console.error(
       cliT({
-        en: 'Unable to determine the OpenFox CLI executable path.',
-        fr: 'Impossible de déterminer le chemin de l’exécutable CLI d’OpenFox.',
+        en: 'Unable to determine the MorrisCode CLI executable path.',
+        fr: 'Impossible de déterminer le chemin de l’exécutable CLI d’MorrisCode.',
       }),
     )
     return 1
@@ -163,8 +163,8 @@ export async function runInstall(
   if (!options.quiet) {
     console.log(
       cliT({
-        en: `Persistent OpenFox launcher installed: ${launcherPath}`,
-        fr: `Lanceur OpenFox persistant installé : ${launcherPath}`,
+        en: `Persistent MorrisCode launcher installed: ${launcherPath}`,
+        fr: `Lanceur MorrisCode persistant installé : ${launcherPath}`,
       }),
     )
   }

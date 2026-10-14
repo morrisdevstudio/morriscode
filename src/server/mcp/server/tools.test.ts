@@ -2,8 +2,8 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import type { Message, Project, Session } from '../../../shared/types.js'
 import type { PendingPathConfirmationPayload, PendingQuestionPayload } from '../../../shared/protocol.js'
-import { createOpenFoxMcpTools, computeSettlement } from './tools.js'
-import type { OpenFoxMcpToolDeps, OpenFoxMcpToolResult } from './types.js'
+import { createMorrisCodeMcpTools, computeSettlement } from './tools.js'
+import type { MorrisCodeMcpToolDeps, MorrisCodeMcpToolResult } from './types.js'
 
 const projects: Project[] = [
   {
@@ -71,9 +71,9 @@ function makeSession() {
   }
 }
 
-function makeDeps(overrides: Partial<OpenFoxMcpToolDeps> = {}): OpenFoxMcpToolDeps {
+function makeDeps(overrides: Partial<MorrisCodeMcpToolDeps> = {}): MorrisCodeMcpToolDeps {
   const session = makeSession()
-  const deps: OpenFoxMcpToolDeps = {
+  const deps: MorrisCodeMcpToolDeps = {
     sessionManager: {
       getSession: () => session,
       getProject: () => ({ id: 'p-1', name: 'proj', workdir: '/tmp/proj' }),
@@ -122,53 +122,53 @@ function makeDeps(overrides: Partial<OpenFoxMcpToolDeps> = {}): OpenFoxMcpToolDe
   return deps
 }
 
-async function call(tools: ReturnType<typeof createOpenFoxMcpTools>, name: string, args: Record<string, unknown>) {
+async function call(tools: ReturnType<typeof createMorrisCodeMcpTools>, name: string, args: Record<string, unknown>) {
   const tool = tools.find((t) => t.name === name)
   if (!tool) throw new Error(`Tool ${name} not found`)
   return tool.handler(args)
 }
 
-function text(result: OpenFoxMcpToolResult): string {
+function text(result: MorrisCodeMcpToolResult): string {
   return result.content[0]?.text ?? ''
 }
 
-function json(result: OpenFoxMcpToolResult): any {
+function json(result: MorrisCodeMcpToolResult): any {
   return JSON.parse(text(result))
 }
 
 describe('openfx MCP tools', () => {
   it('exposes the full session-centric tool set', () => {
-    const tools = createOpenFoxMcpTools(makeDeps())
+    const tools = createMorrisCodeMcpTools(makeDeps())
     const names = tools.map((t) => t.name).sort()
     expect(names).toEqual(
       [
-        'openfox_answer',
-        'openfox_confirm',
-        'openfox_continue',
-        'openfox_create_project',
-        'openfox_create_session',
-        'openfox_delete_project',
-        'openfox_launch_workflow',
-        'openfox_projects',
-        'openfox_resume_workflow',
-        'openfox_send_message',
-        'openfox_session_detail',
-        'openfox_session_metadata',
-        'openfox_session_status',
-        'openfox_sessions',
-        'openfox_set_mode',
-        'openfox_stop',
-        'openfox_stop_workflow',
-        'openfox_wait',
-        'openfox_workflows',
+        'morriscode_answer',
+        'morriscode_confirm',
+        'morriscode_continue',
+        'morriscode_create_project',
+        'morriscode_create_session',
+        'morriscode_delete_project',
+        'morriscode_launch_workflow',
+        'morriscode_projects',
+        'morriscode_resume_workflow',
+        'morriscode_send_message',
+        'morriscode_session_detail',
+        'morriscode_session_metadata',
+        'morriscode_session_status',
+        'morriscode_sessions',
+        'morriscode_set_mode',
+        'morriscode_stop',
+        'morriscode_stop_workflow',
+        'morriscode_wait',
+        'morriscode_workflows',
       ].sort(),
     )
   })
 
-  describe('openfox_projects', () => {
+  describe('morriscode_projects', () => {
     it('lists projects', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_projects', {})
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_projects', {})
       expect(result.isError).toBeUndefined()
       const projects = json(result)
       expect(projects).toHaveLength(2)
@@ -176,10 +176,10 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_create_session', () => {
+  describe('morriscode_create_session', () => {
     it('creates a session in the project', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_session', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_session', {
         projectId: 'p-1',
         title: 'New work',
       })
@@ -190,15 +190,15 @@ describe('openfx MCP tools', () => {
     })
 
     it('requires projectId', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const result = await call(tools, 'openfox_create_session', {})
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const result = await call(tools, 'morriscode_create_session', {})
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('projectId')
     })
 
     it('sets the session mode when a valid agentId is provided', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_session', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_session', {
         projectId: 'p-1',
         agentId: 'builder',
       })
@@ -209,7 +209,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects an unknown agentId', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_session', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_session', {
         projectId: 'p-1',
         agentId: 'ghost',
       })
@@ -221,7 +221,7 @@ describe('openfx MCP tools', () => {
 
     it('skips the mode switch for a blank agentId', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_session', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_session', {
         projectId: 'p-1',
         agentId: '   ',
       })
@@ -240,16 +240,16 @@ describe('openfx MCP tools', () => {
           }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_session', { projectId: 'nope' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_session', { projectId: 'nope' })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('Project not found')
     })
   })
 
-  describe('openfox_sessions', () => {
+  describe('morriscode_sessions', () => {
     it('lists project-scoped sessions with pending counts', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_sessions', { projectId: 'p-1', limit: 5 })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_sessions', { projectId: 'p-1', limit: 5 })
       expect(deps.sessionManager.listSessionsByProject).toHaveBeenCalledWith('p-1', 5, 0)
       const body = json(result)
       expect(body.sessions).toHaveLength(1)
@@ -260,19 +260,19 @@ describe('openfx MCP tools', () => {
 
     it('lists globally when no project is given', async () => {
       const deps = makeDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_sessions', {})
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_sessions', {})
       expect(deps.sessionManager.listSessionsLimited).toHaveBeenCalledWith(20, 0)
     })
 
     it('forwards an offset for project-scoped pagination', async () => {
       const deps = makeDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_sessions', { projectId: 'p-1', limit: 5, offset: 2 })
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_sessions', { projectId: 'p-1', limit: 5, offset: 2 })
       expect(deps.sessionManager.listSessionsByProject).toHaveBeenCalledWith('p-1', 5, 2)
     })
 
     it('forwards an offset for global pagination', async () => {
       const deps = makeDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_sessions', { limit: 10, offset: 3 })
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_sessions', { limit: 10, offset: 3 })
       expect(deps.sessionManager.listSessionsLimited).toHaveBeenCalledWith(10, 3)
     })
 
@@ -280,19 +280,19 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('not found')
     })
   })
 
-  describe('openfox_session_status', () => {
+  describe('morriscode_session_status', () => {
     it('projects status with pending questions and confirmations', async () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQ),
         pendingConfirmations: vi.fn(() => pendingC),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       const body = json(result)
       expect(body.state).toBe('waiting')
       expect(body.waitingForUser).toBe(true)
@@ -310,7 +310,7 @@ describe('openfx MCP tools', () => {
           getActiveWorkflowExecution: vi.fn(() => ({ id: 'exec-1', currentStepName: 'Implement' })),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       const body = json(result)
       expect(body.state).toBe('running')
       expect(body.workflowStep).toBe('Implement')
@@ -347,7 +347,7 @@ describe('openfx MCP tools', () => {
           })),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       const body = json(result)
       expect(body.state).toBe('waiting')
       expect(body.workflowStep).toBe('Where to work')
@@ -361,7 +361,7 @@ describe('openfx MCP tools', () => {
       expect(body.workflow.pendingChoices).toHaveLength(2)
       expect(body.workflow.pendingChoices[0].id).toBe('Work in current workspace')
       expect(body.workflow.stepOutput).toEqual({ task: 'fix it' })
-      expect(body.workflow.resumeHint).toContain('openfox_resume_workflow')
+      expect(body.workflow.resumeHint).toContain('morriscode_resume_workflow')
     })
 
     it('omits resumeHint when the execution is not paused at a user step', async () => {
@@ -378,21 +378,24 @@ describe('openfx MCP tools', () => {
           })),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       expect(json(result).workflow.resumeHint).toBeUndefined()
     })
 
     it('reports workflow null when no execution is active', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_status', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_status', { sessionId: 's-1' })
       expect(json(result).workflow).toBeNull()
     })
   })
 
-  describe('openfox_session_detail', () => {
+  describe('morriscode_session_detail', () => {
     it('returns the most recent messages compactly', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_detail', { sessionId: 's-1', limit: 10 })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_detail', {
+        sessionId: 's-1',
+        limit: 10,
+      })
       expect(deps.recentMessages).toHaveBeenCalledWith('s-1', 10)
       const body = json(result)
       expect(body.messages).toHaveLength(2)
@@ -405,7 +408,7 @@ describe('openfx MCP tools', () => {
 
     it('honors a custom maxContentLength override', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_detail', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_detail', {
         sessionId: 's-1',
         maxContentLength: 100,
       })
@@ -416,7 +419,7 @@ describe('openfx MCP tools', () => {
 
     it('clamps maxContentLength to the allowed bounds', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_detail', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_detail', {
         sessionId: 's-1',
         maxContentLength: 5,
       })
@@ -425,10 +428,10 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_session_metadata', () => {
+  describe('morriscode_session_metadata', () => {
     it('lists metadata keys with counts', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'list',
       })
@@ -442,7 +445,7 @@ describe('openfx MCP tools', () => {
 
     it('returns the schema for a known key', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'schema',
         key: 'criteria',
@@ -455,7 +458,7 @@ describe('openfx MCP tools', () => {
 
     it('falls back to a generic schema for unknown keys', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'schema',
         key: 'notes',
@@ -465,7 +468,7 @@ describe('openfx MCP tools', () => {
 
     it('gets entries for a key, empty for unknown keys', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'get',
         key: 'criteria',
@@ -475,7 +478,7 @@ describe('openfx MCP tools', () => {
       expect(body.entries).toHaveLength(2)
       expect(body.entries[0]).toMatchObject({ id: '1', description: 'Write tests', status: 'completed' })
 
-      const unknown = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const unknown = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'get',
         key: 'notes',
@@ -485,7 +488,7 @@ describe('openfx MCP tools', () => {
 
     it('adds an entry to a key', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'add',
         key: 'criteria',
@@ -507,7 +510,7 @@ describe('openfx MCP tools', () => {
 
     it('defaults review_findings status to open on add', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'add',
         key: 'review_findings',
@@ -518,8 +521,12 @@ describe('openfx MCP tools', () => {
 
     it('requires a description to add', async () => {
       const deps = makeDeps()
-      const tools = createOpenFoxMcpTools(deps)
-      const result = await call(tools, 'openfox_session_metadata', { sessionId: 's-1', action: 'add', key: 'criteria' })
+      const tools = createMorrisCodeMcpTools(deps)
+      const result = await call(tools, 'morriscode_session_metadata', {
+        sessionId: 's-1',
+        action: 'add',
+        key: 'criteria',
+      })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('description')
       expect(deps.setMetadataEntries).not.toHaveBeenCalled()
@@ -527,7 +534,7 @@ describe('openfx MCP tools', () => {
 
     it('updates an entry by id', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'update',
         key: 'criteria',
@@ -545,8 +552,8 @@ describe('openfx MCP tools', () => {
     })
 
     it('requires at least one field when updating', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const result = await call(tools, 'openfox_session_metadata', {
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const result = await call(tools, 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'update',
         key: 'criteria',
@@ -557,7 +564,7 @@ describe('openfx MCP tools', () => {
 
     it('removes an entry by id', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'remove',
         key: 'criteria',
@@ -572,8 +579,8 @@ describe('openfx MCP tools', () => {
     })
 
     it('rejects update/remove for missing keys or items', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const missingKey = await call(tools, 'openfox_session_metadata', {
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const missingKey = await call(tools, 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'update',
         key: 'notes',
@@ -581,7 +588,7 @@ describe('openfx MCP tools', () => {
         status: 'x',
       })
       expect(missingKey.isError).toBe(true)
-      const missingItem = await call(tools, 'openfox_session_metadata', {
+      const missingItem = await call(tools, 'morriscode_session_metadata', {
         sessionId: 's-1',
         action: 'remove',
         key: 'criteria',
@@ -591,11 +598,15 @@ describe('openfx MCP tools', () => {
     })
 
     it('validates key presence and unknown actions', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const noKey = await call(tools, 'openfox_session_metadata', { sessionId: 's-1', action: 'get' })
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const noKey = await call(tools, 'morriscode_session_metadata', { sessionId: 's-1', action: 'get' })
       expect(noKey.isError).toBe(true)
       expect(text(noKey)).toContain('key')
-      const badAction = await call(tools, 'openfox_session_metadata', { sessionId: 's-1', action: 'clear', key: 'x' })
+      const badAction = await call(tools, 'morriscode_session_metadata', {
+        sessionId: 's-1',
+        action: 'clear',
+        key: 'x',
+      })
       expect(badAction.isError).toBe(true)
     })
 
@@ -603,7 +614,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_session_metadata', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_session_metadata', {
         sessionId: 'gone',
         action: 'get',
         key: 'criteria',
@@ -613,10 +624,10 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_set_mode', () => {
+  describe('morriscode_set_mode', () => {
     it('switches an existing session to a valid mode', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_set_mode', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_set_mode', {
         sessionId: 's-1',
         mode: 'planner',
       })
@@ -629,7 +640,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects a mode that is not a top-level agent', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_set_mode', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_set_mode', {
         sessionId: 's-1',
         mode: 'ghost',
       })
@@ -639,11 +650,11 @@ describe('openfx MCP tools', () => {
     })
 
     it('requires sessionId and mode', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const noSession = await call(tools, 'openfox_set_mode', { mode: 'builder' })
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const noSession = await call(tools, 'morriscode_set_mode', { mode: 'builder' })
       expect(noSession.isError).toBe(true)
       expect(text(noSession)).toContain('sessionId')
-      const noMode = await call(tools, 'openfox_set_mode', { sessionId: 's-1' })
+      const noMode = await call(tools, 'morriscode_set_mode', { sessionId: 's-1' })
       expect(noMode.isError).toBe(true)
       expect(text(noMode)).toContain('mode')
     })
@@ -652,7 +663,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_set_mode', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_set_mode', {
         sessionId: 'gone',
         mode: 'builder',
       })
@@ -661,10 +672,10 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_create_project', () => {
+  describe('morriscode_create_project', () => {
     it('creates a project with name and workdir', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_project', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_project', {
         name: 'my-project',
         workdir: '/tmp/my-project',
       })
@@ -675,11 +686,11 @@ describe('openfx MCP tools', () => {
 
     it('requires name and workdir', async () => {
       const deps = makeDeps()
-      const tools = createOpenFoxMcpTools(deps)
-      const noName = await call(tools, 'openfox_create_project', { workdir: '/tmp/x' })
+      const tools = createMorrisCodeMcpTools(deps)
+      const noName = await call(tools, 'morriscode_create_project', { workdir: '/tmp/x' })
       expect(noName.isError).toBe(true)
       expect(text(noName)).toContain('name')
-      const noWorkdir = await call(tools, 'openfox_create_project', { name: 'x' })
+      const noWorkdir = await call(tools, 'morriscode_create_project', { name: 'x' })
       expect(noWorkdir.isError).toBe(true)
       expect(text(noWorkdir)).toContain('workdir')
       expect(deps.createProject).not.toHaveBeenCalled()
@@ -691,7 +702,7 @@ describe('openfx MCP tools', () => {
           throw new Error('Permission denied: cannot create directory at /root/x')
         }),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_create_project', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_create_project', {
         name: 'x',
         workdir: '/root/x',
       })
@@ -700,32 +711,32 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_delete_project', () => {
+  describe('morriscode_delete_project', () => {
     it('deletes an existing project', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_delete_project', { projectId: 'p-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_delete_project', { projectId: 'p-1' })
       expect(deps.deleteProject).toHaveBeenCalledWith('p-1')
       expect(json(result).deleted).toBe(true)
     })
 
     it('reports false when the project does not exist', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_delete_project', { projectId: 'nope' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_delete_project', { projectId: 'nope' })
       expect(json(result).deleted).toBe(false)
     })
 
     it('requires projectId', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const result = await call(tools, 'openfox_delete_project', {})
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const result = await call(tools, 'morriscode_delete_project', {})
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('projectId')
     })
   })
 
-  describe('openfox_send_message', () => {
+  describe('morriscode_send_message', () => {
     it('queues the message asap and reports queue state', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_send_message', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_send_message', {
         sessionId: 's-1',
         content: 'Go',
       })
@@ -737,7 +748,7 @@ describe('openfx MCP tools', () => {
 
     it('passes attachments and messageKind through', async () => {
       const deps = makeDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_send_message', {
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_send_message', {
         sessionId: 's-1',
         content: 'x',
         attachments: [{ name: 'a.png' }],
@@ -753,8 +764,8 @@ describe('openfx MCP tools', () => {
     })
 
     it('requires content or attachments', async () => {
-      const tools = createOpenFoxMcpTools(makeDeps())
-      const result = await call(tools, 'openfox_send_message', { sessionId: 's-1' })
+      const tools = createMorrisCodeMcpTools(makeDeps())
+      const result = await call(tools, 'morriscode_send_message', { sessionId: 's-1' })
       expect(result.isError).toBe(true)
     })
 
@@ -762,7 +773,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_send_message', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_send_message', {
         sessionId: 'gone',
         content: 'x',
       })
@@ -771,7 +782,7 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_continue', () => {
+  describe('morriscode_continue', () => {
     it('rejects when the session is running', async () => {
       const deps = makeDeps({
         sessionManager: {
@@ -779,7 +790,7 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: true, phase: 'build' }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_continue', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_continue', { sessionId: 's-1' })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('already running')
     })
@@ -791,7 +802,7 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: false, phase: 'blocked' }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_continue', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_continue', { sessionId: 's-1' })
       expect(deps.sessionManager.setPhase).toHaveBeenCalledWith('s-1', 'build')
       expect(deps.sessionManager.queueMessage).toHaveBeenCalledWith(
         's-1',
@@ -805,10 +816,10 @@ describe('openfx MCP tools', () => {
 
     it('acknowledges idle sessions with a hint', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_continue', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_continue', { sessionId: 's-1' })
       const body = json(result)
       expect(body.accepted).toBe(true)
-      expect(body.note).toContain('openfox_send_message')
+      expect(body.note).toContain('morriscode_send_message')
     })
   })
 
@@ -851,7 +862,7 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_wait', () => {
+  describe('morriscode_wait', () => {
     afterEach(() => {
       vi.useRealTimers()
     })
@@ -862,7 +873,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => sessionState } as any,
       })
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 10 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 10 })
       sessionState.phase = 'done'
       await vi.advanceTimersByTimeAsync(1000)
       const result = await promise
@@ -877,7 +888,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => (state.pending ? pendingQ1 : [])),
       })
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 10 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 10 })
       state.pending = true
       await vi.advanceTimersByTimeAsync(1000)
       const result = await promise
@@ -906,7 +917,7 @@ describe('openfx MCP tools', () => {
           ),
         } as any,
       })
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 10 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 10 })
       sessionState.phase = 'waiting'
       await vi.advanceTimersByTimeAsync(1000)
       const result = await promise
@@ -920,7 +931,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => sessionState } as any,
       })
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 10 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 10 })
       sessionState.phase = 'blocked'
       await vi.advanceTimersByTimeAsync(1000)
       const result = await promise
@@ -930,7 +941,7 @@ describe('openfx MCP tools', () => {
     it('times out cleanly when the session never settles', async () => {
       vi.useFakeTimers()
       const deps = makeDeps()
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 5 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 5 })
       await vi.advanceTimersByTimeAsync(6000)
       const result = await promise
       expect(json(result)).toMatchObject({ settled: false, timedOut: true })
@@ -945,7 +956,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => sessionState } as any,
       })
-      const promise = call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 's-1', timeout: 10 })
+      const promise = call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 's-1', timeout: 10 })
       await vi.advanceTimersByTimeAsync(2500)
       const result = await promise
       expect(json(result)).toMatchObject({ settled: true, outcome: 'completed' })
@@ -955,16 +966,16 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_wait', { sessionId: 'gone' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_wait', { sessionId: 'gone' })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('not found')
     })
   })
 
-  describe('openfox_stop', () => {
+  describe('morriscode_stop', () => {
     it('stops the whole session', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop', { sessionId: 's-1' })
       expect(deps.stopSession).toHaveBeenCalledWith('s-1')
       expect(json(result).stopped).toBe(true)
     })
@@ -973,15 +984,15 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop', { sessionId: 'gone' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop', { sessionId: 'gone' })
       expect(result.isError).toBe(true)
     })
   })
 
-  describe('openfox_workflows', () => {
+  describe('morriscode_workflows', () => {
     it('lists workflows with parameters', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_workflows', { projectDir: '/tmp/proj' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_workflows', { projectDir: '/tmp/proj' })
       expect(deps.listWorkflows).toHaveBeenCalledWith('/tmp/proj')
       const workflows = json(result)
       expect(workflows).toHaveLength(2)
@@ -990,10 +1001,10 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_launch_workflow', () => {
+  describe('morriscode_launch_workflow', () => {
     it('launches directly on an idle session', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         workflowId: 'default',
         params: { task: 'fix the bug' },
@@ -1007,7 +1018,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects an unknown workflowId synchronously without launching', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         workflowId: 'does-not-exist',
       })
@@ -1019,7 +1030,7 @@ describe('openfx MCP tools', () => {
 
     it('resolves workflows across scopes like the orchestrator fallback', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         workflowId: 'custom',
         scope: 'builtin',
@@ -1036,7 +1047,10 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: false, phase: 'blocked' }),
         } as any,
       })
-      await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', { sessionId: 's-1', workflowId: 'default' })
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
+        sessionId: 's-1',
+        workflowId: 'default',
+      })
       expect(deps.sessionManager.setPhase).toHaveBeenCalledWith('s-1', 'build')
       expect(deps.launchWorkflow).toHaveBeenCalled()
     })
@@ -1048,7 +1062,7 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: true, phase: 'build' }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         workflowId: 'default',
         content: 'focus on auth',
@@ -1071,7 +1085,7 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: true, phase: 'build' }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         content: 'just a message',
       })
@@ -1092,7 +1106,7 @@ describe('openfx MCP tools', () => {
           getSession: () => ({ id: 's-1', isRunning: true, phase: 'build' }),
         } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
       })
       expect(result.isError).toBe(true)
@@ -1101,7 +1115,7 @@ describe('openfx MCP tools', () => {
 
     it('passes resume fields through on the idle path', async () => {
       const deps = makeDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_launch_workflow', {
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_launch_workflow', {
         sessionId: 's-1',
         workflowId: 'default',
         resumeFrom: 'implement',
@@ -1121,7 +1135,7 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_resume_workflow', () => {
+  describe('morriscode_resume_workflow', () => {
     const pausedExecution = () => ({
       id: 'exec-1',
       workflowId: 'default',
@@ -1156,7 +1170,7 @@ describe('openfx MCP tools', () => {
 
     it('resumes a paused user step with the chosen option', async () => {
       const deps = pausedDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_resume_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_resume_workflow', {
         sessionId: 's-1',
         choice: 'Work in current workspace',
       })
@@ -1172,7 +1186,7 @@ describe('openfx MCP tools', () => {
 
     it('accepts the choice by label as well as id', async () => {
       const deps = pausedDeps()
-      await call(createOpenFoxMcpTools(deps), 'openfox_resume_workflow', {
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_resume_workflow', {
         sessionId: 's-1',
         choice: 'Start a new workspace',
       })
@@ -1184,7 +1198,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects when the session is not paused at a user step', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_resume_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_resume_workflow', {
         sessionId: 's-1',
         choice: 'Work in current workspace',
       })
@@ -1195,7 +1209,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects an invalid choice and lists the available ones', async () => {
       const deps = pausedDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_resume_workflow', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_resume_workflow', {
         sessionId: 's-1',
         choice: 'Delete everything',
       })
@@ -1206,14 +1220,14 @@ describe('openfx MCP tools', () => {
 
     it('requires choice and errors for unknown sessions', async () => {
       const deps = pausedDeps()
-      const tools = createOpenFoxMcpTools(deps)
-      const noChoice = await call(tools, 'openfox_resume_workflow', { sessionId: 's-1' })
+      const tools = createMorrisCodeMcpTools(deps)
+      const noChoice = await call(tools, 'morriscode_resume_workflow', { sessionId: 's-1' })
       expect(noChoice.isError).toBe(true)
       expect(text(noChoice)).toContain('choice')
       const goneDeps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const gone = await call(createOpenFoxMcpTools(goneDeps), 'openfox_resume_workflow', {
+      const gone = await call(createMorrisCodeMcpTools(goneDeps), 'morriscode_resume_workflow', {
         sessionId: 'gone',
         choice: 'x',
       })
@@ -1222,23 +1236,23 @@ describe('openfx MCP tools', () => {
     })
   })
 
-  describe('openfox_stop_workflow', () => {
+  describe('morriscode_stop_workflow', () => {
     it('reports a running run was aborted', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop_workflow', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop_workflow', { sessionId: 's-1' })
       expect(deps.stopWorkflow).toHaveBeenCalledWith('s-1')
       expect(json(result)).toEqual({ stopped: true, aborted: 'running' })
     })
 
     it('reports a paused workflow was cancelled', async () => {
       const deps = makeDeps({ stopWorkflow: vi.fn(() => ({ aborted: 'paused' as const })) })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop_workflow', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop_workflow', { sessionId: 's-1' })
       expect(json(result)).toEqual({ stopped: true, aborted: 'paused' })
     })
 
     it('fails with a reason when there is nothing to stop', async () => {
       const deps = makeDeps({ stopWorkflow: vi.fn(() => null) })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop_workflow', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop_workflow', { sessionId: 's-1' })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('No active workflow')
     })
@@ -1247,17 +1261,17 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         sessionManager: { ...makeDeps().sessionManager, getSession: () => undefined } as any,
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_stop_workflow', { sessionId: 'gone' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_stop_workflow', { sessionId: 'gone' })
       expect(result.isError).toBe(true)
     })
   })
 
-  describe('openfox_answer', () => {
+  describe('morriscode_answer', () => {
     it('lists pending questions when callId is omitted', async () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQ1),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_answer', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_answer', { sessionId: 's-1' })
       const body = json(result)
       expect(body.questions).toHaveLength(1)
       expect(body.questions[0]).toMatchObject({ callId: 'q-1', question: 'Continue?' })
@@ -1267,7 +1281,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQ1),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_answer', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_answer', {
         sessionId: 's-1',
         callId: 'q-1',
         answer: 'yes',
@@ -1280,7 +1294,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQ1),
       })
-      await call(createOpenFoxMcpTools(deps), 'openfox_answer', { sessionId: 's-1', callId: 'q-1', skip: true })
+      await call(createMorrisCodeMcpTools(deps), 'morriscode_answer', { sessionId: 's-1', callId: 'q-1', skip: true })
       expect(deps.answerQuestion).toHaveBeenCalledWith('q-1', '', true)
     })
 
@@ -1288,7 +1302,7 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQother),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_answer', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_answer', {
         sessionId: 's-1',
         callId: 'q-mine',
         answer: 'y',
@@ -1301,17 +1315,20 @@ describe('openfx MCP tools', () => {
       const deps = makeDeps({
         pendingQuestions: vi.fn(() => pendingQ1),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_answer', { sessionId: 's-1', callId: 'q-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_answer', {
+        sessionId: 's-1',
+        callId: 'q-1',
+      })
       expect(result.isError).toBe(true)
     })
   })
 
-  describe('openfox_confirm', () => {
+  describe('morriscode_confirm', () => {
     it('lists pending confirmations when callId is omitted', async () => {
       const deps = makeDeps({
         pendingConfirmations: vi.fn(() => pendingC1),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_confirm', { sessionId: 's-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_confirm', { sessionId: 's-1' })
       expect(json(result).confirmations).toHaveLength(1)
     })
 
@@ -1321,7 +1338,7 @@ describe('openfx MCP tools', () => {
           { callId: 'c-1', tool: 'run_command', paths: ['/outside'], workdir: '/w', reason: 'outside_workdir' },
         ]),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_confirm', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_confirm', {
         sessionId: 's-1',
         callId: 'c-1',
         approved: true,
@@ -1333,7 +1350,7 @@ describe('openfx MCP tools', () => {
 
     it('rejects confirmations that are not pending in this session', async () => {
       const deps = makeDeps()
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_confirm', {
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_confirm', {
         sessionId: 's-1',
         callId: 'c-ghost',
         approved: true,
@@ -1348,7 +1365,10 @@ describe('openfx MCP tools', () => {
           { callId: 'c-1', tool: 't', paths: [], workdir: '/w', reason: 'outside_workdir' },
         ]),
       })
-      const result = await call(createOpenFoxMcpTools(deps), 'openfox_confirm', { sessionId: 's-1', callId: 'c-1' })
+      const result = await call(createMorrisCodeMcpTools(deps), 'morriscode_confirm', {
+        sessionId: 's-1',
+        callId: 'c-1',
+      })
       expect(result.isError).toBe(true)
       expect(text(result)).toContain('approved')
     })

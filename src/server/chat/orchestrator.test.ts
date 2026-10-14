@@ -70,7 +70,7 @@ vi.mock('../runtime-config.js', () => ({
 }))
 
 vi.mock('../../cli/paths.js', () => ({
-  getGlobalConfigDir: vi.fn(() => '/tmp/openfox-test'),
+  getGlobalConfigDir: vi.fn(() => '/tmp/morriscode-test'),
 }))
 
 vi.mock('../tools/index.js', async (importOriginal) => {
@@ -1904,7 +1904,7 @@ describe('chat orchestrator', () => {
         id: 'session-1',
         projectId: 'project-1',
         workdir: '/original/project',
-        workspace: '/workspaces/openfox/review-branch',
+        workspace: '/workspaces/morriscode/review-branch',
         mode: 'planner',
         phase: 'plan',
         isRunning: true,
@@ -1920,8 +1920,11 @@ describe('chat orchestrator', () => {
       llmClient: { getModel: () => 'qwen3-32b' } as never,
     })
 
-    expect(getEnabledSkillMetadata).toHaveBeenCalledWith('/tmp/openfox-test', '/original/project')
-    expect(getEnabledSkillMetadata).not.toHaveBeenCalledWith('/tmp/openfox-test', '/workspaces/openfox/review-branch')
+    expect(getEnabledSkillMetadata).toHaveBeenCalledWith('/tmp/morriscode-test', '/original/project')
+    expect(getEnabledSkillMetadata).not.toHaveBeenCalledWith(
+      '/tmp/morriscode-test',
+      '/workspaces/morriscode/review-branch',
+    )
   })
 })
 

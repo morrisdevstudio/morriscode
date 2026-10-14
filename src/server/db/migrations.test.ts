@@ -133,7 +133,7 @@ describe('db migrations', () => {
 
   beforeEach(async () => {
     closeDatabase()
-    tmpDir = await mkdtemp(join(tmpdir(), 'openfox-migration-test-'))
+    tmpDir = await mkdtemp(join(tmpdir(), 'morriscode-migration-test-'))
     dbPath = join(tmpDir, 'test.db')
   })
 

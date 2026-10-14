@@ -206,10 +206,10 @@ describe('Header', () => {
     clearCache()
   })
 
-  it('renders the OpenFox logo link', async () => {
+  it('renders the MorrisCode logo link', async () => {
     const { Header } = await import('./Header')
     const container = render(<Header />)
-    expect(container.textContent).toContain('OpenFox')
+    expect(container.textContent).toContain('MorrisCode')
   })
 
   it('renders settings button', async () => {
@@ -251,7 +251,7 @@ describe('Header', () => {
       (s) => s.textContent === '/' && s.className.includes('text-text-muted'),
     )
     expect(separators.length).toBe(2)
-    // The leading separator (between OpenFox and the project) is desktop-only;
+    // The leading separator (between MorrisCode and the project) is desktop-only;
     // the one between project and session shows at all breakpoints.
     expect(separators[0]!.className).toContain('hidden')
     expect(separators[1]!.className).not.toContain('hidden')

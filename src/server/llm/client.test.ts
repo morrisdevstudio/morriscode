@@ -1012,8 +1012,8 @@ describe('opencode session headers', () => {
 
     expect(httpClientCreateMock.mock.calls[0]?.[1]?.headers).toEqual({
       'x-opencode-session': 'sess-1',
-      'x-opencode-client': 'openfox',
-      'User-Agent': 'openfox',
+      'x-opencode-client': 'morriscode',
+      'User-Agent': 'morriscode',
     })
   })
 
@@ -1031,8 +1031,8 @@ describe('opencode session headers', () => {
 
     expect(httpClientCreateStreamMock.mock.calls[0]?.[1]?.headers).toEqual({
       'x-opencode-session': 'sess-2',
-      'x-opencode-client': 'openfox',
-      'User-Agent': 'openfox',
+      'x-opencode-client': 'morriscode',
+      'User-Agent': 'morriscode',
     })
   })
 
@@ -1049,8 +1049,8 @@ describe('opencode session headers', () => {
 
     expect(responsesCreateMock.mock.calls[0]?.[1]?.headers).toEqual({
       'x-opencode-session': 'sess-3',
-      'x-opencode-client': 'openfox',
-      'User-Agent': 'openfox',
+      'x-opencode-client': 'morriscode',
+      'User-Agent': 'morriscode',
     })
   })
 

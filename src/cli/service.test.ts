@@ -123,7 +123,7 @@ describe('service install', () => {
     const { writeFile } = vi.mocked(await import('node:fs/promises'))
     const calls = writeFile.mock.calls as [string, string, unknown][]
 
-    const serviceCall = calls.find(([p]) => p.includes('openfox.service'))
+    const serviceCall = calls.find(([p]) => p.includes('morriscode.service'))
     expect(serviceCall).toBeDefined()
     expect(serviceCall![1]).toContain('graphical-session.target')
     expect(serviceCall![1]).toContain('Wants=graphical-session.target')
@@ -139,7 +139,7 @@ describe('service install', () => {
     const { writeFile } = vi.mocked(await import('node:fs/promises'))
     const calls = writeFile.mock.calls as [string, string, unknown][]
 
-    const serviceCall = calls.find(([p]) => p.includes('openfox.service'))
+    const serviceCall = calls.find(([p]) => p.includes('morriscode.service'))
     expect(serviceCall).toBeDefined()
     expect(serviceCall![1]).toContain('default.target')
     expect(serviceCall![1]).not.toContain('graphical-session.target')
@@ -156,7 +156,7 @@ describe('service install', () => {
     const { writeFile } = vi.mocked(await import('node:fs/promises'))
     const calls = writeFile.mock.calls as [string, string, unknown][]
 
-    const serviceCall = calls.find(([p]) => p.includes('openfox.service'))
+    const serviceCall = calls.find(([p]) => p.includes('morriscode.service'))
     expect(serviceCall).toBeDefined()
     expect(serviceCall![1]).toContain('graphical-session.target')
     expect(serviceCall![1]).toContain('Wants=graphical-session.target')
@@ -210,7 +210,7 @@ describe('service logs', () => {
 
     await runServiceCommand('production', 'logs')
 
-    expect(mockSpawnSync).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'openfox', '-n', '50', '--no-pager'], {
+    expect(mockSpawnSync).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'morriscode', '-n', '50', '--no-pager'], {
       encoding: 'utf-8',
       windowsHide: true,
     })
@@ -220,7 +220,7 @@ describe('service logs', () => {
   it('uses spawn with -f when -f flag given', async () => {
     await runServiceCommand('production', 'logs', '-f')
 
-    expect(mockSpawn).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'openfox', '-f', '--no-pager'], {
+    expect(mockSpawn).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'morriscode', '-f', '--no-pager'], {
       stdio: 'inherit',
       windowsHide: true,
     })
@@ -230,7 +230,7 @@ describe('service logs', () => {
   it('uses spawn with -f when --follow flag given', async () => {
     await runServiceCommand('production', 'logs', '--follow')
 
-    expect(mockSpawn).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'openfox', '-f', '--no-pager'], {
+    expect(mockSpawn).toHaveBeenCalledWith('journalctl', ['--user', '-u', 'morriscode', '-f', '--no-pager'], {
       stdio: 'inherit',
       windowsHide: true,
     })

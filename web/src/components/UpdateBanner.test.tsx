@@ -15,7 +15,7 @@ describe('UpdateBanner', () => {
 
   it('uses fixed positioning and correct z-index when rendered', () => {
     localStorage.setItem('update_pending', 'true')
-    localStorage.setItem('openfox_updated_to', '99.0.0')
+    localStorage.setItem('morriscode_updated_to', '99.0.0')
     const html = renderToStaticMarkup(<UpdateBanner />)
     expect(html).toContain('fixed')
     expect(html).toContain('z-[100]')

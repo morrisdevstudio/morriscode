@@ -36,7 +36,7 @@ export function runGit(cwd: string, args: string[]): Promise<void> {
 }
 
 export function getServerMode(): 'development' | 'production' {
-  return process.env['OPENFOX_DEV'] === 'true' ? 'development' : 'production'
+  return process.env['MORRISCODE_DEV'] === 'true' ? 'development' : 'production'
 }
 
 export function getGlobalDataDir(): string {
@@ -45,11 +45,11 @@ export function getGlobalDataDir(): string {
   const home = homedir()
   switch (platform()) {
     case 'darwin':
-      return join(home, 'Library', 'Application Support', `openfox${suffix}`)
+      return join(home, 'Library', 'Application Support', `morriscode${suffix}`)
     case 'win32':
-      return join(process.env['LOCALAPPDATA'] ?? join(home, 'AppData', 'Local'), `openfox${suffix}`)
+      return join(process.env['LOCALAPPDATA'] ?? join(home, 'AppData', 'Local'), `morriscode${suffix}`)
     default:
-      return join(process.env['XDG_DATA_HOME'] ?? join(home, '.local', 'share'), `openfox${suffix}`)
+      return join(process.env['XDG_DATA_HOME'] ?? join(home, '.local', 'share'), `morriscode${suffix}`)
   }
 }
 

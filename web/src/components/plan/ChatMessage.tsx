@@ -175,8 +175,8 @@ function UserMessage({ message, messageId, sessionId }: UserMessageProps) {
       )}
 
       <div
-        className={`max-w-[75%] ${editing ? 'w-full' : ''} rounded p-2 ${
-          isSystemGenerated ? 'bg-bg-system border border-border-system' : 'bg-accent-primary/15 text-text-primary'
+        className={`max-w-[75%] ${editing ? 'w-full' : ''} rounded-lg px-3 py-2 ${
+          isSystemGenerated ? 'bg-bg-system border border-border-system' : 'bg-bg-tertiary text-text-primary'
         }`}
       >
         {isSystemGenerated && (
@@ -198,7 +198,7 @@ function UserMessage({ message, messageId, sessionId }: UserMessageProps) {
                   el.style.height = `${el.scrollHeight}px`
                 }
               }}
-              className="w-full bg-bg-primary border border-border rounded p-1.5 text-sm text-text-primary resize-none focus:outline-none focus:border-accent-primary min-h-[60px] overflow-hidden disabled:opacity-50"
+              className="w-full bg-bg-primary border border-border rounded-md p-1.5 text-sm text-text-primary resize-none focus:outline-none focus:border-accent-primary min-h-[60px] overflow-hidden disabled:opacity-50"
               value={editContent}
               onChange={(e) => {
                 setEditContent(e.target.value)
@@ -230,7 +230,7 @@ function UserMessage({ message, messageId, sessionId }: UserMessageProps) {
               <button
                 onClick={handleEditCancel}
                 disabled={pending}
-                className="px-4 py-1.5 rounded text-sm bg-bg-tertiary/50 text-text-muted hover:bg-bg-tertiary hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 rounded-md text-sm text-text-muted hover:bg-bg-tertiary hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t({ en: 'Cancel', fr: 'Annuler' })}
               </button>
@@ -239,7 +239,7 @@ function UserMessage({ message, messageId, sessionId }: UserMessageProps) {
                   void handleEditConfirm()
                 }}
                 disabled={pending || !editContent.trim()}
-                className="px-4 py-1.5 rounded text-sm bg-accent-primary/20 text-accent-primary font-medium hover:bg-accent-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 rounded-md text-sm bg-text-primary text-bg-primary font-medium hover:opacity-90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {t({ en: 'Send', fr: 'Envoyer' })}
               </button>
@@ -287,7 +287,7 @@ export const ChatMessage = memo(function ChatMessage({
 
   if (isSystem && message.isCompacted) {
     return (
-      <div className="feed-item bg-bg-tertiary/50 border border-border rounded p-2">
+      <div className="feed-item bg-bg-tertiary/50 border border-border rounded-lg p-2.5">
         <div className="text-text-muted text-xs mb-0.5">{t({ en: '[Compacted]', fr: '[Compacté]' })}</div>
         <div className="text-text-secondary text-xs whitespace-pre-wrap">
           {message.content.replace('[COMPACTED HISTORY]\n', '')}
@@ -298,8 +298,8 @@ export const ChatMessage = memo(function ChatMessage({
 
   if (isTool) {
     return (
-      <div className="feed-item bg-bg-tertiary/30 border-l-2 border-accent-primary rounded-r p-2">
-        <div className="text-accent-primary text-xs mb-0.5">
+      <div className="feed-item bg-bg-tertiary/40 rounded-lg p-2.5">
+        <div className="text-text-secondary text-xs mb-1 font-medium">
           {t({ en: 'Tool:', fr: 'Outil :' })} {message.toolName}
         </div>
         <OptionalScrollArea horizontal className="max-h-32">
@@ -347,7 +347,7 @@ export const ChatMessage = memo(function ChatMessage({
   if (message.messageKind === 'correction' && message.isSystemGenerated) {
     return (
       <div className="flex justify-end feed-item">
-        <div className="max-w-[75%] rounded p-2 bg-bg-system border border-border-system">
+        <div className="max-w-[75%] rounded-lg px-3 py-2 bg-bg-system border border-border-system">
           <span className="text-[10px] block mb-0.5 text-text-system">{t({ en: 'System', fr: 'Système' })}</span>
           <div className="whitespace-pre-wrap break-words text-sm text-text-system italic">{message.content}</div>
         </div>
@@ -361,7 +361,7 @@ export const ChatMessage = memo(function ChatMessage({
 
   return (
     <div className="flex justify-start feed-item">
-      <div className="max-w-[75%] rounded p-2 bg-bg-tertiary text-text-primary">
+      <div className="max-w-[75%] rounded-lg px-3 py-2 bg-bg-tertiary text-text-primary">
         <Markdown content={message.content} />
       </div>
     </div>

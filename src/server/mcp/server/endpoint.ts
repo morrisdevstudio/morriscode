@@ -4,25 +4,25 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { logger } from '../../utils/logger.js'
-import { createOpenFoxMcpTools } from './tools.js'
-import type { OpenFoxMcpToolDeps } from './types.js'
+import { createMorrisCodeMcpTools } from './tools.js'
+import type { MorrisCodeMcpToolDeps } from './types.js'
 
-export interface OpenFoxMcpRouterOptions {
+export interface MorrisCodeMcpRouterOptions {
   /** Resolve the live tool dependencies. Null until the server has finished wiring. */
-  resolveDeps(): OpenFoxMcpToolDeps | null
+  resolveDeps(): MorrisCodeMcpToolDeps | null
   /** Whether network auth (a valid session token) is required for MCP requests. */
   isAuthRequired(): boolean
   /** Whether the request carries a valid session token. */
   isAuthorized(req: Request): Promise<boolean>
 }
 
-export function buildOpenFoxMcpServer(deps: OpenFoxMcpToolDeps): McpServer {
+export function buildMorrisCodeMcpServer(deps: MorrisCodeMcpToolDeps): McpServer {
   const server = new McpServer({
-    name: 'openfox',
+    name: 'morriscode',
     version: '1.0.0',
   })
 
-  for (const tool of createOpenFoxMcpTools(deps)) {
+  for (const tool of createMorrisCodeMcpTools(deps)) {
     const config: Record<string, unknown> = { description: tool.description }
     if (Object.keys(tool.inputSchema).length > 0) {
       config['inputSchema'] = tool.inputSchema
@@ -35,7 +35,7 @@ export function buildOpenFoxMcpServer(deps: OpenFoxMcpToolDeps): McpServer {
   return server
 }
 
-export function createOpenFoxMcpRouter(options: OpenFoxMcpRouterOptions): Router {
+export function createMorrisCodeMcpRouter(options: MorrisCodeMcpRouterOptions): Router {
   const router = Router()
 
   router.all('/', async (req: Request, res: Response) => {
@@ -51,7 +51,7 @@ export function createOpenFoxMcpRouter(options: OpenFoxMcpRouterOptions): Router
         return
       }
 
-      const server = buildOpenFoxMcpServer(deps)
+      const server = buildMorrisCodeMcpServer(deps)
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined } as never)
       await server.connect(transport as unknown as Transport)
       await transport.handleRequest(req, res, req.body)

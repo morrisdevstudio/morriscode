@@ -21,7 +21,7 @@ describe('oauth-store', () => {
   let storePath: string
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), 'openfox-oauth-store-'))
+    tmpDir = await mkdtemp(join(tmpdir(), 'morriscode-oauth-store-'))
     storePath = join(tmpDir, 'mcp-auth.json')
     setMcpOAuthStorePath(storePath)
   })

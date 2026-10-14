@@ -13,7 +13,7 @@ export async function createTestProjectWithReadme(
   name: string = 'Test Project',
 ): Promise<TestProject> {
   // Create temporary directory
-  const workdir = join(tmpdir(), `openfox-test-${Date.now()}`)
+  const workdir = join(tmpdir(), `morriscode-test-${Date.now()}`)
   await mkdir(workdir, { recursive: true })
 
   // Create minimal README.md

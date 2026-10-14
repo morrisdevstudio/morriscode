@@ -1,11 +1,11 @@
-export interface OpenFoxMcpBootstrapInput {
+export interface MorrisCodeMcpBootstrapInput {
   host: string
   port: number
   authRequired: boolean
   sessionToken: string | null
 }
 
-export interface OpenFoxMcpBootstrapConfig {
+export interface MorrisCodeMcpBootstrapConfig {
   name: string
   transport: 'http'
   url: string
@@ -18,13 +18,13 @@ function normalizeHost(host: string): string {
   return WILDCARD_HOSTS.has(host) ? '127.0.0.1' : host
 }
 
-export function buildOpenFoxMcpBootstrap(input: OpenFoxMcpBootstrapInput): OpenFoxMcpBootstrapConfig {
+export function buildMorrisCodeMcpBootstrap(input: MorrisCodeMcpBootstrapInput): MorrisCodeMcpBootstrapConfig {
   if (input.authRequired && !input.sessionToken) {
     throw new Error('Session token could not be computed — cannot bootstrap an authenticated MCP endpoint')
   }
 
-  const config: OpenFoxMcpBootstrapConfig = {
-    name: 'openfox',
+  const config: MorrisCodeMcpBootstrapConfig = {
+    name: 'morriscode',
     transport: 'http',
     url: `http://${normalizeHost(input.host)}:${input.port}/mcp`,
   }

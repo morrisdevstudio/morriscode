@@ -136,7 +136,7 @@ describe('resolveSlashLaunch (filesystem-backed)', () => {
   })
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'openfox-slash-'))
+    root = await mkdtemp(join(tmpdir(), 'morriscode-slash-'))
     configDir = join(root, 'config')
     await mkdir(join(configDir, 'commands'), { recursive: true })
     await mkdir(join(configDir, 'workflows'), { recursive: true })
@@ -234,9 +234,9 @@ describe('resolveSlashLaunch (filesystem-backed)', () => {
 
   it('resolves a project-scoped command when a project dir is provided', async () => {
     const projectDir = join(root, 'proj')
-    await mkdir(join(projectDir, '.openfox', 'commands'), { recursive: true })
+    await mkdir(join(projectDir, '.morriscode', 'commands'), { recursive: true })
     await writeFile(
-      join(projectDir, '.openfox', 'commands', 'projcmd.command.md'),
+      join(projectDir, '.morriscode', 'commands', 'projcmd.command.md'),
       '---\nid: projcmd\nname: Project cmd\n---\n\nProject {{thing}}',
     )
     const resolved = await resolveSlashLaunch(configDir, projectDir, '/projcmd widget')

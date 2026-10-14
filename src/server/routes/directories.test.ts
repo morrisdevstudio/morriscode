@@ -12,7 +12,7 @@ describe('GET /api/directories', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-dir-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-dir-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
     await mkdir(join(testDir, 'visible'), { recursive: true })
     await mkdir(join(testDir, '.hidden'), { recursive: true })

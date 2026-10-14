@@ -141,7 +141,7 @@ export function TerminalDrawer({ isOpen, onClose }: TerminalDrawerProps) {
                 <p className="mb-4">{t({ en: 'No terminal sessions', fr: 'Aucune session de terminal' })}</p>
                 <button
                   onClick={() => createSession(undefined, currentSession?.projectId ?? currentProject?.id)}
-                  className="px-4 py-2 bg-accent-primary/25 text-text-primary rounded hover:bg-accent-primary/40 transition-colors"
+                  className="px-4 py-2 bg-text-primary text-bg-primary rounded-md hover:opacity-90 transition-colors"
                 >
                   {t({ en: 'Create Terminal', fr: 'Créer un terminal' })}
                 </button>

@@ -56,6 +56,19 @@ export default {
         },
       },
       fontFamily: {
+        // Interface text stays sans-serif; monospace is reserved for code, paths,
+        // commands, identifiers and metrics.
+        sans: [
+          'Inter Variable',
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'sans-serif',
+        ],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
       keyframes: {

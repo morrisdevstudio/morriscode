@@ -397,7 +397,7 @@ export function SidebarSummaryHeader({ visible }: SidebarSummaryHeaderProps) {
             isAlive ? (
               <button
                 onClick={handleOpen}
-                className="flex items-center justify-center p-1 rounded text-sm font-medium bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 transition-colors leading-none"
+                className="flex items-center justify-center p-1 rounded-md text-sm font-medium bg-bg-tertiary border border-border text-text-primary hover:bg-border transition-colors leading-none"
                 title={t({ en: 'Open dev server', fr: 'Ouvrir le serveur de dev' })}
               >
                 <OpenExternalIcon className="w-3.5 h-3.5" />
@@ -405,7 +405,7 @@ export function SidebarSummaryHeader({ visible }: SidebarSummaryHeaderProps) {
             ) : (
               <button
                 onClick={handleStart}
-                className="flex items-center justify-center p-1 rounded text-sm font-medium bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 transition-colors leading-none"
+                className="flex items-center justify-center p-1 rounded-md text-sm font-medium bg-bg-tertiary border border-border text-text-primary hover:bg-border transition-colors leading-none"
                 title={t({ en: 'Start dev server', fr: 'Démarrer le serveur de dev' })}
               >
                 <PlayIcon className="w-3.5 h-3.5" />

@@ -169,7 +169,7 @@ export async function createTestProject(options: TestProjectOptions = {}): Promi
   const { template = 'empty', files = {}, agentsMd, initGit } = options
 
   // Create unique temp directory
-  const projectPath = join(tmpdir(), `openfox-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const projectPath = join(tmpdir(), `morriscode-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   await mkdir(projectPath, { recursive: true })
 
   // Get template files

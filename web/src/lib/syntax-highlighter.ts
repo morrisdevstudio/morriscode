@@ -36,7 +36,7 @@ const coreLangs: Array<string> = [
 ]
 
 const themes = [
-  'github-dark-default',
+  'vesper',
   'vitesse-light',
   'monokai',
   'dracula',
@@ -53,7 +53,7 @@ const themes = [
 ]
 
 export const THEME_MAP: Record<string, string> = {
-  dark: 'github-dark-default',
+  dark: 'vesper',
   light: 'vitesse-light',
   monokai: 'monokai',
   dracula: 'dracula',
@@ -132,7 +132,7 @@ function cacheKey(code: string, language: string, theme: string): string {
   return `${code}|${language}|${theme}`
 }
 
-export async function highlightCode(code: string, language: string, theme = 'github-dark-default'): Promise<string> {
+export async function highlightCode(code: string, language: string, theme = 'vesper'): Promise<string> {
   if (language !== 'text' && !loadedLanguages.has(language)) {
     await loadLanguage(language)
   }
@@ -257,9 +257,9 @@ export function getShikiTheme(): string {
 function resolveShikiTheme(currentPreset: string, isCustom: boolean, basePreset: string): string {
   if (isCustom) {
     if (basePreset && basePreset !== 'system' && THEME_MAP[basePreset]) {
-      return THEME_MAP[basePreset] ?? 'github-dark-default'
+      return THEME_MAP[basePreset] ?? 'vesper'
     }
-    return 'github-dark-default'
+    return 'vesper'
   }
-  return THEME_MAP[currentPreset] ?? 'github-dark-default'
+  return THEME_MAP[currentPreset] ?? 'vesper'
 }

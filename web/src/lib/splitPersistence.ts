@@ -7,8 +7,8 @@ export interface SplitLayout {
 
 export const SPLIT_ROUTE = '/split-view'
 
-const SPLIT_KEY = 'openfox:split'
-const LAYOUT_KEY = 'openfox:split:layout'
+const SPLIT_KEY = 'morriscode:split'
+const LAYOUT_KEY = 'morriscode:split:layout'
 
 export type SplitLayoutMode = 'columns' | 'grid'
 

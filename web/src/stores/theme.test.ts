@@ -219,14 +219,14 @@ describe('Theme System', () => {
   describe('useThemeStore', () => {
     beforeEach(() => {
       useThemeStore.getState().reset()
-      localStorage.removeItem('openfox:theme')
-      localStorage.removeItem('openfox:userPresets')
+      localStorage.removeItem('morriscode:theme')
+      localStorage.removeItem('morriscode:userPresets')
     })
 
     afterEach(() => {
       useThemeStore.getState().reset()
-      localStorage.removeItem('openfox:theme')
-      localStorage.removeItem('openfox:userPresets')
+      localStorage.removeItem('morriscode:theme')
+      localStorage.removeItem('morriscode:userPresets')
     })
 
     describe('basePreset tracking', () => {
@@ -295,7 +295,7 @@ describe('Theme System', () => {
         useThemeStore.getState().applyPreset('dracula')
         useThemeStore.getState().startCustomizing()
         useThemeStore.getState().addUserPreset('My Dracula')
-        const saved = localStorage.getItem('openfox:userPresets')
+        const saved = localStorage.getItem('morriscode:userPresets')
         expect(saved).toBeTruthy()
         const parsed = JSON.parse(saved ?? '[]')
         expect(parsed[0].mode).toBe('dark')
@@ -303,7 +303,7 @@ describe('Theme System', () => {
 
       it('loads user presets with mode from localStorage', () => {
         localStorage.setItem(
-          'openfox:userPresets',
+          'morriscode:userPresets',
           JSON.stringify([
             {
               id: 'custom-1',
@@ -322,7 +322,7 @@ describe('Theme System', () => {
 
       it('handles legacy user presets without mode field', () => {
         localStorage.setItem(
-          'openfox:userPresets',
+          'morriscode:userPresets',
           JSON.stringify([
             {
               id: 'custom-legacy',
@@ -402,7 +402,7 @@ describe('Theme System', () => {
         useThemeStore.getState().applyPreset('dark')
         useThemeStore.getState().startCustomizing()
         useThemeStore.getState().addUserPreset('Saved')
-        const saved = localStorage.getItem('openfox:userPresets')
+        const saved = localStorage.getItem('morriscode:userPresets')
         expect(saved).toBeTruthy()
         const parsed = JSON.parse(saved ?? '[]')
         expect(parsed[0].name).toBe('Saved')
@@ -410,7 +410,7 @@ describe('Theme System', () => {
 
       it('loads user presets from localStorage', () => {
         localStorage.setItem(
-          'openfox:userPresets',
+          'morriscode:userPresets',
           JSON.stringify([
             { id: 'custom-1', name: 'Loaded', basePreset: 'dark', tokens: { 'color-accent-primary': '100 100 100' } },
           ]),
@@ -457,7 +457,7 @@ describe('Theme System', () => {
         const state = useThemeStore.getState()
         expect(state.isCustomizing).toBe(false)
         expect(state.isCustom).toBe(true)
-        const saved = JSON.parse(localStorage.getItem('openfox:theme') ?? '{}')
+        const saved = JSON.parse(localStorage.getItem('morriscode:theme') ?? '{}')
         expect(saved.tokens['color-accent-primary']).toBe('255 0 0')
       })
     })
@@ -613,7 +613,7 @@ describe('Theme System', () => {
       it('persists systemDarkPreset and systemLightPreset to localStorage', () => {
         useThemeStore.getState().setSystemDarkPreset('monokai')
         useThemeStore.getState().setSystemLightPreset('light-plus')
-        const saved = localStorage.getItem('openfox:systemThemePrefs')
+        const saved = localStorage.getItem('morriscode:systemThemePrefs')
         expect(saved).toBeTruthy()
         const parsed = JSON.parse(saved ?? '{}')
         expect(parsed.darkPreset).toBe('monokai')
@@ -622,14 +622,14 @@ describe('Theme System', () => {
 
       it('loads systemDarkPreset and systemLightPreset from localStorage on init', () => {
         localStorage.setItem(
-          'openfox:systemThemePrefs',
+          'morriscode:systemThemePrefs',
           JSON.stringify({ darkPreset: 'dracula', lightPreset: 'rose-pine-dawn' }),
         )
         // Reset store to force re-init from localStorage
         useThemeStore.getState().reset()
         // The store constructor reads from localStorage via the initializer
         // Since we can't re-construct, verify the saved value is correct
-        const saved = localStorage.getItem('openfox:systemThemePrefs')
+        const saved = localStorage.getItem('morriscode:systemThemePrefs')
         const parsed = JSON.parse(saved ?? '{}')
         expect(parsed.darkPreset).toBe('dracula')
         expect(parsed.lightPreset).toBe('rose-pine-dawn')
@@ -703,7 +703,7 @@ describe('Theme System', () => {
 
     describe('backwards compatibility', () => {
       it('loads legacy custom theme tokens (no basePreset)', () => {
-        localStorage.setItem('openfox:theme', JSON.stringify({ tokens: { 'color-accent-primary': '999 0 0' } }))
+        localStorage.setItem('morriscode:theme', JSON.stringify({ tokens: { 'color-accent-primary': '999 0 0' } }))
         const saved = useThemeStore.getState().getSavedTheme()
         expect(saved).toBeTruthy()
         const parsed = JSON.parse(saved!)
@@ -711,7 +711,7 @@ describe('Theme System', () => {
       })
 
       it('loads legacy preset theme', () => {
-        localStorage.setItem('openfox:theme', JSON.stringify({ preset: 'nord' }))
+        localStorage.setItem('morriscode:theme', JSON.stringify({ preset: 'nord' }))
         const saved = useThemeStore.getState().getSavedTheme()
         expect(saved).toBeTruthy()
         const parsed = JSON.parse(saved!)

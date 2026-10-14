@@ -323,12 +323,12 @@ describe('MCP Integration', () => {
     await removeMcpServer('zero-timeout')
   })
 
-  it('bootstraps OpenFox as its own MCP client on startup', async () => {
+  it('bootstraps MorrisCode as its own MCP client on startup', async () => {
     const port = await getFreePort()
     const selfServer = await createTestServer({
       port,
       mcpServers: {
-        openfox: { transport: 'http', url: `http://127.0.0.1:${port}/mcp` },
+        morriscode: { transport: 'http', url: `http://127.0.0.1:${port}/mcp` },
       },
     })
     try {
@@ -336,7 +336,7 @@ describe('MCP Integration', () => {
       let entry: { name: string; status: string; tools: Array<{ name: string; enabled: boolean }> } | undefined
       while (Date.now() < deadline) {
         const servers = await fetchMcpServers(selfServer.url)
-        entry = servers.find((s) => s.name === 'openfox')
+        entry = servers.find((s) => s.name === 'morriscode')
         if (entry?.status === 'connected') break
         await sleep(150)
       }
@@ -345,8 +345,8 @@ describe('MCP Integration', () => {
       // raced the HTTP listen and landed in an error state.
       expect(entry?.status).toBe('connected')
       const toolNames = entry?.tools.map((t) => t.name) ?? []
-      expect(toolNames).toContain('openfox_projects')
-      expect(toolNames).toContain('openfox_sessions')
+      expect(toolNames).toContain('morriscode_projects')
+      expect(toolNames).toContain('morriscode_sessions')
     } finally {
       await selfServer.close()
     }

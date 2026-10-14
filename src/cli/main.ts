@@ -10,10 +10,10 @@ export function printHelp(): void {
   console.log(
     cliT({
       en: `
-OpenFox - Local LLM coding assistant
+MorrisCode - Local LLM coding assistant
 
 Usage:
-  openfox [command] [options]
+  morriscode [command] [options]
 
 Commands:
   (none)           Start server for current project
@@ -25,8 +25,8 @@ Commands:
   service          Manage the systemd service (install, start, stop, status, logs, uninstall)
   pwa              Manage the PWA installation (install, uninstall, launch, update, status)
   mcp              Print a paste-ready MCP client config for this server (asks for the password if set)
-  install          Install a persistent OpenFox launcher (use --check to inspect)
-  update           Update OpenFox to the latest version
+  install          Install a persistent MorrisCode launcher (use --check to inspect)
+  update           Update MorrisCode to the latest version
 
 Options:
   -p, --port <number>     Specify port (default: 10369 for prod, 10469 for dev)
@@ -35,10 +35,10 @@ Options:
   -v, --version           Show version number
 `,
       fr: `
-OpenFox - Assistant de codage LLM local
+MorrisCode - Assistant de codage LLM local
 
 Utilisation :
-  openfox [commande] [options]
+  morriscode [commande] [options]
 
 Commandes :
   (aucune)        Démarrer le serveur pour le projet courant
@@ -50,8 +50,8 @@ Commandes :
   service         Gérer le service systemd (install, start, stop, status, logs, uninstall)
   pwa             Gérer l’installation PWA (install, uninstall, launch, update, status)
   mcp             Afficher une configuration MCP prête à coller pour ce serveur (demande le mot de passe s’il est défini)
-  install         Installer un lanceur OpenFox persistant (utiliser --check pour inspecter)
-  update          Mettre OpenFox à jour vers la dernière version
+  install         Installer un lanceur MorrisCode persistant (utiliser --check pour inspecter)
+  update          Mettre MorrisCode à jour vers la dernière version
 
 Options :
   -p, --port <nombre>    Spécifier le port (défaut : 10369 pour prod, 10469 pour dev)
@@ -73,10 +73,10 @@ async function runNetworkSetup(mode: Mode): Promise<void> {
     return
   }
 
-  console.log(cliT({ en: '\nOpenFox Setup\n', fr: '\nConfiguration d’OpenFox\n' }))
+  console.log(cliT({ en: '\nMorrisCode Setup\n', fr: '\nConfiguration d’MorrisCode\n' }))
 
   const networkChoice = await select({
-    message: cliT({ en: 'How should OpenFox be accessible?', fr: 'Comment OpenFox doit-il être accessible ?' }),
+    message: cliT({ en: 'How should MorrisCode be accessible?', fr: 'Comment MorrisCode doit-il être accessible ?' }),
     options: [
       { value: 'localhost', label: cliT({ en: 'Secure (localhost only)', fr: 'Sécurisé (localhost uniquement)' }) },
       {

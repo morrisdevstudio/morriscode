@@ -11,9 +11,9 @@ const CI_MULTIPLIER = process.env['CI'] === 'true' ? 10 : 1
 
 // Workers are configurable so machines that can parallel-start servers do, and
 // constrained ones (CI) or the unlucky can dial it down. Override with
-// OPENFOX_E2E_MAX_WORKERS; invalid values fall back to the default.
+// MORRISCODE_E2E_MAX_WORKERS; invalid values fall back to the default.
 export function resolveMaxWorkers(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env['OPENFOX_E2E_MAX_WORKERS']
+  const raw = env['MORRISCODE_E2E_MAX_WORKERS']
   if (raw) {
     const parsed = Number(raw)
     if (Number.isInteger(parsed) && parsed >= 1) return parsed

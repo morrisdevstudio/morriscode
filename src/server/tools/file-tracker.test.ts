@@ -9,7 +9,7 @@ describe('file-tracker', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-file-tracker-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-file-tracker-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
   })
 

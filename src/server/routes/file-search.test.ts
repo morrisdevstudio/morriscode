@@ -12,7 +12,7 @@ describe('GET /api/files', () => {
   let testDir: string
 
   beforeEach(async () => {
-    testDir = join(tmpdir(), `openfox-file-search-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-file-search-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
     await mkdir(join(testDir, 'src'), { recursive: true })
     await writeFile(join(testDir, 'README.md'), '# Test')

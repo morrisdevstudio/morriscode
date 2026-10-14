@@ -308,7 +308,7 @@ describe('getDefaultWorkflowIds', () => {
 })
 
 async function createProjectWorkflowFile(projectDir: string, id: string, name: string): Promise<void> {
-  const workflowsDir = join(projectDir, '.openfox', 'workflows')
+  const workflowsDir = join(projectDir, '.morriscode', 'workflows')
   await mkdir(workflowsDir, { recursive: true })
   const workflow = makeWorkflow({ metadata: { id, name, description: `Project workflow ${id}`, version: '1.0' } })
   await writeFile(join(workflowsDir, `${id}.workflow.json`), JSON.stringify(workflow))
@@ -320,7 +320,7 @@ describe('loadProjectWorkflows', () => {
     expect(workflows).toEqual([])
   })
 
-  it('should load valid .workflow.json files from .openfox/workflows/', async () => {
+  it('should load valid .workflow.json files from .morriscode/workflows/', async () => {
     await createProjectWorkflowFile(tempDir, 'proj-wf', 'Project Workflow')
 
     const workflows = await loadProjectWorkflows(tempDir)
@@ -396,7 +396,7 @@ describe('CRUD project workflows', () => {
   })
 
   it('should update a project workflow when filename differs from ID', async () => {
-    const workflowsDir = join(tempDir, '.openfox', 'workflows')
+    const workflowsDir = join(tempDir, '.morriscode', 'workflows')
     await mkdir(workflowsDir, { recursive: true })
 
     // Create a file with a different name than its internal ID (the bug scenario)
@@ -429,7 +429,7 @@ describe('CRUD project workflows', () => {
   })
 
   it('should delete a project workflow when filename differs from ID', async () => {
-    const workflowsDir = join(tempDir, '.openfox', 'workflows')
+    const workflowsDir = join(tempDir, '.morriscode', 'workflows')
     await mkdir(workflowsDir, { recursive: true })
 
     const workflow = makeWorkflow({

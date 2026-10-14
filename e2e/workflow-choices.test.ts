@@ -72,9 +72,9 @@ describe('Workflow User-Choice Branching', () => {
 
   beforeEach(async () => {
     testDir = await createTestProject({ template: 'typescript' })
-    await mkdir(join(testDir.path, '.openfox', 'workflows'), { recursive: true })
+    await mkdir(join(testDir.path, '.morriscode', 'workflows'), { recursive: true })
     await writeFile(
-      join(testDir.path, '.openfox', 'workflows', 'choices.workflow.json'),
+      join(testDir.path, '.morriscode', 'workflows', 'choices.workflow.json'),
       JSON.stringify(WORKFLOW, null, 2),
     )
     client = await createTestClient({ url: server.wsUrl })

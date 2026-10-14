@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   InvalidPhaseTransitionError,
   LLMError,
-  OpenFoxError,
+  MorrisCodeError,
   SessionNotFoundError,
   ToolExecutionError,
   ValidationError,
@@ -11,14 +11,14 @@ import {
 
 describe('error utilities', () => {
   it('builds typed error classes with stable metadata', () => {
-    const base = new OpenFoxError('base', 'BASE', { detail: true })
+    const base = new MorrisCodeError('base', 'BASE', { detail: true })
     const missing = new SessionNotFoundError('session-1')
     const transition = new InvalidPhaseTransitionError('plan', 'done')
     const tool = new ToolExecutionError('edit_file', 'failed badly', { reason: 'oops' })
     const llm = new LLMError('timeout', { attempt: 2 })
     const validation = new ValidationError('bad input', { field: 'mode' })
 
-    expect(base).toMatchObject({ name: 'OpenFoxError', code: 'BASE', details: { detail: true } })
+    expect(base).toMatchObject({ name: 'MorrisCodeError', code: 'BASE', details: { detail: true } })
     expect(missing).toMatchObject({
       name: 'SessionNotFoundError',
       code: 'SESSION_NOT_FOUND',

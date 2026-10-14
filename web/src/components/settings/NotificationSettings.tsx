@@ -181,7 +181,7 @@ export function NotificationSettings() {
               <option value="1h">{t({ en: 'Every hour', fr: 'Toutes les heures' })}</option>
               <option value="6h">{t({ en: 'Every 6 hours', fr: 'Toutes les 6 heures' })}</option>
               <option value="24h">{t({ en: 'Every 24 hours', fr: 'Toutes les 24h' })}</option>
-              <option value="startup">{t({ en: 'On OpenFox startup', fr: 'Au lancement d’OpenFox' })}</option>
+              <option value="startup">{t({ en: 'On MorrisCode startup', fr: 'Au lancement d’MorrisCode' })}</option>
             </select>
             <ChevronDownIcon className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-text-muted" />
           </div>

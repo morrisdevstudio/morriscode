@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path'
 import type { WorkspaceConfig } from '../../shared/workspace.js'
 import { getProjectByWorkdir, updateProject } from '../db/projects.js'
 
-const CONFIG_FILENAME = '.openfox/workspace.json'
+const CONFIG_FILENAME = '.morriscode/workspace.json'
 
 function getConfigPath(workdir: string): string {
   return join(resolve(workdir), CONFIG_FILENAME)
@@ -42,7 +42,7 @@ export async function saveWorkspaceConfig(workdir: string, config: WorkspaceConf
     return
   }
   const resolved = resolve(workdir)
-  const dirPath = join(resolved, '.openfox')
+  const dirPath = join(resolved, '.morriscode')
   await mkdir(dirPath, { recursive: true })
   await writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8')
 }

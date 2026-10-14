@@ -174,7 +174,7 @@ describe('ws/protocol', () => {
     it('builds project and session list messages', () => {
       const project = {
         id: 'project-1',
-        name: 'OpenFox',
+        name: 'MorrisCode',
         workdir: '/tmp/project',
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',

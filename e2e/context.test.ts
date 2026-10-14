@@ -18,7 +18,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { ContextState } from '@openfox/shared'
+import type { ContextState } from '@morriscode/shared'
 
 describe('Context Management', () => {
   let server: TestServerHandle

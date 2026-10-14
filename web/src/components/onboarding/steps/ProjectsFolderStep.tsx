@@ -37,8 +37,8 @@ export function ProjectsFolderStep({ onNext }: ProjectsFolderStepProps) {
       </h2>
       <p className="text-text-secondary mb-8">
         {t({
-          en: 'Where should OpenFox create project folders?',
-          fr: 'Où OpenFox doit-il créer les dossiers de projets ?',
+          en: 'Where should MorrisCode create project folders?',
+          fr: 'Où MorrisCode doit-il créer les dossiers de projets ?',
         })}
       </p>
 

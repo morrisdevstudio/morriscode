@@ -146,7 +146,7 @@ export function AskUserCard({ toolCall }: AskUserCardProps) {
                   <button
                     onClick={handleSubmit}
                     disabled={!answer.trim()}
-                    className={`${btnBase} bg-accent-primary/25 hover:bg-accent-primary/40 text-text-primary disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`${btnBase} bg-text-primary text-bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {t({ en: 'Send', fr: 'Envoyer' })}
                   </button>
@@ -182,7 +182,7 @@ export function AskUserCard({ toolCall }: AskUserCardProps) {
                   <button
                     onClick={handleSubmit}
                     disabled={!answer.trim()}
-                    className={`${btnBase} bg-accent-primary/25 hover:bg-accent-primary/40 text-text-primary disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`${btnBase} bg-text-primary text-bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {t({ en: 'Send Answer', fr: 'Envoyer la réponse' })}
                   </button>

@@ -1,15 +1,15 @@
 # Session Debugging Guide
 
-> How to inspect and debug OpenFox sessions directly in the database.
+> How to inspect and debug MorrisCode sessions directly in the database.
 
 ## Database Locations
 
-| Environment | Path                                     |
-| ----------- | ---------------------------------------- |
-| Production  | `~/.local/share/openfox/sessions.db`     |
-| Development | `~/.local/share/openfox-dev/sessions.db` |
+| Environment | Path                                        |
+| ----------- | ------------------------------------------- |
+| Production  | `~/.local/share/morriscode/sessions.db`     |
+| Development | `~/.local/share/morriscode-dev/sessions.db` |
 
-> **Tip:** The agent workdir tells you which DB to use. If `workdir` contains "openfox" and it's your dev machine → dev DB. Otherwise → production DB.
+> **Tip:** The agent workdir tells you which DB to use. If `workdir` contains "morriscode" and it's your dev machine → dev DB. Otherwise → production DB.
 
 ## Tables Overview
 
@@ -142,7 +142,7 @@ This is the single source of truth. All session state derives from events.
 
 ## The Snapshot Mechanism (Key Concept)
 
-OpenFox uses **event sourcing** with **snapshots** for efficiency:
+MorrisCode uses **event sourcing** with **snapshots** for efficiency:
 
 1. **At turn end**, agent emits a `turn.snapshot` event
 2. Snapshot contains **complete state**: all messages with tool results attached, criteria, todos, context state
@@ -178,7 +178,7 @@ ORDER BY updated_at DESC;
 
 ```sql
 -- Find project by workdir
-SELECT * FROM projects WHERE workdir LIKE '%openfox%';
+SELECT * FROM projects WHERE workdir LIKE '%morriscode%';
 
 -- Then get sessions
 SELECT * FROM sessions WHERE project_id = '70cafde1-b5c2-4099-b61d-011730170bfd';
@@ -394,14 +394,14 @@ Messages in a `turn.snapshot` have this structure:
 
 ```bash
 # SQLite3 basics
-sqlite3 ~/.local/share/openfox-dev/sessions.db "SELECT * FROM sessions LIMIT 5;"
+sqlite3 ~/.local/share/morriscode-dev/sessions.db "SELECT * FROM sessions LIMIT 5;"
 
 # Pretty print JSON payloads
-sqlite3 ~/.local/share/openfox-dev/sessions.db \
+sqlite3 ~/.local/share/morriscode-dev/sessions.db \
   "SELECT json_pretty(payload) FROM events WHERE session_id = 'XXX' AND event_type = 'turn.snapshot' LIMIT 1;" | less -S
 
 # Count events per type
-sqlite3 ~/.local/share/openfox-dev/sessions.db \
+sqlite3 ~/.local/share/morriscode-dev/sessions.db \
   "SELECT event_type, COUNT(*) FROM events WHERE session_id = 'XXX' GROUP BY event_type;"
 ```
 

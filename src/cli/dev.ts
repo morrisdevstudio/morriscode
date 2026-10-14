@@ -10,11 +10,11 @@ function getCurrentHeapMB(): number {
 }
 
 const currentHeap = getCurrentHeapMB()
-if (currentHeap < MIN_HEAP_MB && !process.env['OPENFOX_HEAP_INCREASED']) {
+if (currentHeap < MIN_HEAP_MB && !process.env['MORRISCODE_HEAP_INCREASED']) {
   const { spawnSync } = await import('node:child_process')
   const { totalmem } = await import('node:os')
   const heapMB = Math.min(DEFAULT_HEAP_MB, Math.max(4_096, Math.floor((totalmem() / (1024 * 1024)) * 0.55)))
-  const env: Record<string, string | undefined> = { ...process.env, OPENFOX_HEAP_INCREASED: '1' }
+  const env: Record<string, string | undefined> = { ...process.env, MORRISCODE_HEAP_INCREASED: '1' }
   const cleanNodeOptions = (env['NODE_OPTIONS'] ?? '').replace(/--max-old-space-size=\d+/g, '').trim()
   env['NODE_OPTIONS'] = cleanNodeOptions || undefined
   const scriptPath = process.argv[1] as string
@@ -30,7 +30,7 @@ import { runCli } from './main.js'
 import { logger } from '../server/utils/logger.js'
 import { readFileSync } from 'node:fs'
 
-const mode = (process.env['OPENFOX_MODE'] ?? 'development') as 'production' | 'development' | 'test'
+const mode = (process.env['MORRISCODE_MODE'] ?? 'development') as 'production' | 'development' | 'test'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 

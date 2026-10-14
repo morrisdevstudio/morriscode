@@ -3,7 +3,7 @@ import { mkdir, writeFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-const TEST_DIR = join(tmpdir(), `openfox-config-test-${Date.now()}`)
+const TEST_DIR = join(tmpdir(), `morriscode-config-test-${Date.now()}`)
 
 // Mock the paths module
 vi.mock('./paths.js', () => ({

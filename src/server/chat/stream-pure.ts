@@ -81,7 +81,7 @@ export interface PureStreamResult {
   toolCalls: ToolCall[]
   segments: MessageSegment[]
   /** Provider cache attribution is sourced from the provider response,
-   *  never inferred from OpenFox's prefTokenIncrement. */
+   *  never inferred from MorrisCode's prefTokenIncrement. */
   usage: {
     promptTokens: number
     completionTokens: number

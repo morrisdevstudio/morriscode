@@ -7,7 +7,7 @@ import { installSkillPackage } from './installer.js'
 let libraryDir: string
 
 beforeEach(async () => {
-  libraryDir = await mkdtemp(join(tmpdir(), 'openfox-skill-library-'))
+  libraryDir = await mkdtemp(join(tmpdir(), 'morriscode-skill-library-'))
 })
 
 afterEach(async () => {

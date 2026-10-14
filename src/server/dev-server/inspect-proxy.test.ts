@@ -13,13 +13,13 @@ vi.mock('../db/projects.js', () => ({
 import { startInspectProxy, stopAllInspectProxies } from './inspect-proxy.js'
 
 // Use a high base port to avoid conflicts with other services
-const ORIGINAL_PORT = process.env['OPENFOX_PORT']
+const ORIGINAL_PORT = process.env['MORRISCODE_PORT']
 beforeEach(() => {
-  process.env['OPENFOX_PORT'] = '45678'
+  process.env['MORRISCODE_PORT'] = '45678'
 })
 afterAll(() => {
-  if (ORIGINAL_PORT) process.env['OPENFOX_PORT'] = ORIGINAL_PORT
-  else delete process.env['OPENFOX_PORT']
+  if (ORIGINAL_PORT) process.env['MORRISCODE_PORT'] = ORIGINAL_PORT
+  else delete process.env['MORRISCODE_PORT']
 })
 
 function createMockTarget(handler: (req: http.IncomingMessage, res: http.ServerResponse) => void): Promise<number> {
@@ -346,7 +346,7 @@ describe('InspectProxy', () => {
         const result = await httpPost(
           '127.0.0.1',
           port,
-          '/__openfox_feedback',
+          '/__morriscode_feedback',
           JSON.stringify({
             sessionId: 'session-1',
             element: { tag: 'button', id: 'submit-btn' },
@@ -382,7 +382,7 @@ describe('InspectProxy', () => {
         const result = await httpPost(
           '127.0.0.1',
           port,
-          '/__openfox_feedback',
+          '/__morriscode_feedback',
           Buffer.from('not valid json at all', 'utf8'),
         )
         expect(result.status).toBe(400)
@@ -406,7 +406,7 @@ describe('InspectProxy', () => {
         await httpPost(
           '127.0.0.1',
           port,
-          '/__openfox_feedback',
+          '/__morriscode_feedback',
           JSON.stringify({
             element: { tag: 'div' },
             annotation: 'test',
@@ -432,7 +432,7 @@ describe('InspectProxy', () => {
         targetPort,
       )
       try {
-        const result = await httpGet('127.0.0.1', port, '/__openfox_sessions')
+        const result = await httpGet('127.0.0.1', port, '/__morriscode_sessions')
         expect(result.status).toBe(200)
         const data = JSON.parse(result.body)
         expect(data.sessions).toHaveLength(3)
@@ -459,7 +459,7 @@ describe('InspectProxy', () => {
         '/tmp',
       )
       try {
-        const result = await httpGet('127.0.0.1', port, '/__openfox_sessions')
+        const result = await httpGet('127.0.0.1', port, '/__morriscode_sessions')
         expect(result.status).toBe(200)
         const data = JSON.parse(result.body)
         expect(data.sessions).toHaveLength(2)

@@ -39,7 +39,7 @@ describe('installPluginFromPath', () => {
   let root: string
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'openfox-plugin-install-'))
+    root = await mkdtemp(join(tmpdir(), 'morriscode-plugin-install-'))
   })
 
   afterEach(async () => {

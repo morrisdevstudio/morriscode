@@ -19,7 +19,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { ChatToolPreparingPayload, ChatToolCallPayload } from '@openfox/shared/protocol'
+import type { ChatToolPreparingPayload, ChatToolCallPayload } from '@morriscode/shared/protocol'
 
 describe('Tool Preparing Events', () => {
   let server: TestServerHandle

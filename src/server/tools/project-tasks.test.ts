@@ -36,7 +36,7 @@ describe('project_tasks tool', () => {
     const config = loadConfig()
     config.database.path = ':memory:'
     initDatabase(config)
-    root = await mkdtemp(join(tmpdir(), 'openfox-tool-tasks-'))
+    root = await mkdtemp(join(tmpdir(), 'morriscode-tool-tasks-'))
     await mkdir(join(root, 'nested'), { recursive: true })
     projectId = createProject('Tool Tasks', root).id
 

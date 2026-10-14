@@ -57,8 +57,8 @@ describe('SessionManager pause state', () => {
     initDatabase(config)
     initEventStore(getDatabase())
 
-    workdir = await mkdtemp(join(tmpdir(), 'openfox-session-pause-'))
-    projectId = createProject('OpenFox', workdir).id
+    workdir = await mkdtemp(join(tmpdir(), 'morriscode-session-pause-'))
+    projectId = createProject('MorrisCode', workdir).id
     manager = new SessionManager(mockProviderManager as any)
     mockGetGitBranch.mockResolvedValue(null)
 

@@ -104,9 +104,9 @@ describe('buildBasePrompt', () => {
     expect(prompt).not.toContain('Model:')
   })
 
-  it('includes OpenFox repo URL', () => {
+  it('includes MorrisCode repo URL', () => {
     const prompt = buildBasePrompt('/tmp/project')
-    expect(prompt).toContain('https://github.com/co-l/openfox')
+    expect(prompt).toContain('https://github.com/morrisdevstudio/morriscode')
   })
 })
 

@@ -24,7 +24,7 @@ describe('skill library routes', () => {
   let baseUrl: string
 
   beforeEach(async () => {
-    rootDir = await mkdtemp(join(tmpdir(), 'openfox-skill-routes-'))
+    rootDir = await mkdtemp(join(tmpdir(), 'morriscode-skill-routes-'))
     settings.clear()
     const app = express()
     app.use(express.json({ limit: '10mb' }))
@@ -237,8 +237,8 @@ describe('skill library routes', () => {
 
   it('toggles a skill scoped to a workdir query in a different project dir', async () => {
     const otherProject = join(rootDir, 'other-project')
-    const skillPath = join(otherProject, '.openfox', 'skills', 'toggle-remote', 'SKILL.md')
-    await mkdir(join(otherProject, '.openfox', 'skills', 'toggle-remote'), { recursive: true })
+    const skillPath = join(otherProject, '.morriscode', 'skills', 'toggle-remote', 'SKILL.md')
+    await mkdir(join(otherProject, '.morriscode', 'skills', 'toggle-remote'), { recursive: true })
     await writeFile(skillPath, '---\nname: toggle-remote\ndescription: Toggle via workdir\n---\n\nInstructions.')
 
     const response = await fetch(

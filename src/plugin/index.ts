@@ -204,7 +204,7 @@ export type PluginHookEvent =
   | 'devserver.started'
   | 'devserver.stopped'
   | 'devserver.state.changed'
-  // OpenFox-internal events emitted by the runtime; plugins can observe
+  // MorrisCode-internal events emitted by the runtime; plugins can observe
   // them via `registerHook`. They mirror the underlying TurnEvent names
   // (see src/server/events/types.ts) so plugins can correlate hook
   // payloads with the session's EventStore stream.

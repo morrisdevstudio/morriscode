@@ -6,7 +6,7 @@ import { createViteWatchOptions } from './vite-watch.js'
 import { existsSync } from 'fs'
 
 const baseConfig = defineConfig({
-  base: process.env.OPENFOX_BASE_PATH || '/',
+  base: process.env.MORRISCODE_BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
@@ -14,10 +14,10 @@ const baseConfig = defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
-      includeAssets: ['assets/openfox-192.png', 'assets/openfox-512.png'],
+      includeAssets: ['assets/morriscode-192.png', 'assets/morriscode-512.png'],
       manifest: {
-        name: 'OpenFox',
-        short_name: 'OpenFox',
+        name: 'MorrisCode',
+        short_name: 'MorrisCode',
         description: 'Local-LLM-first agentic coding assistant',
         theme_color: '#0d1117',
         background_color: '#0d1117',
@@ -25,13 +25,13 @@ const baseConfig = defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'assets/openfox-192.png',
+            src: 'assets/morriscode-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'assets/openfox-512.png',
+            src: 'assets/morriscode-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
