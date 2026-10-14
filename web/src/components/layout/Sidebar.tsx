@@ -537,7 +537,9 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
         )
 
         const sidebarContent = (
-          <PluginZone id="sidebar" context={{ projectId }}>
+          // The plugin zones render a plain div, so each level has to carry the flex
+          // context itself — otherwise nothing constrains the scroll area's height.
+          <PluginZone id="sidebar" className="flex-1 min-h-0 flex flex-col" context={{ projectId }}>
             <PluginZone id="sidebar.header">
               <div className="p-4 border-b border-border flex gap-2">
                 <Link
@@ -711,8 +713,8 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
               />
             </Modal>
 
-            <PluginZone id="sidebar.sessions_list" context={{ projectId }}>
-              <ScrollArea className="flex-1">
+            <PluginZone id="sidebar.sessions_list" className="flex-1 min-h-0 flex flex-col" context={{ projectId }}>
+              <ScrollArea className="flex-1 min-h-0">
                 {allFiltered.length === 0 ? (
                   <div className="p-4 text-center text-text-muted text-xs">
                     {isSearching
