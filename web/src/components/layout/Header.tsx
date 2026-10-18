@@ -271,7 +271,10 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
               </>
             )}
 
-            {!isSplit && !project && <ProjectDropdown projects={projects} />}
+            {/* Without a project there is nothing to scope the header to, so the
+                project menu stays reachable on every route — including the split
+                view, where a fresh install lands before its first project. */}
+            {!project && <ProjectDropdown projects={projects} />}
           </PluginZone>
         </div>
 

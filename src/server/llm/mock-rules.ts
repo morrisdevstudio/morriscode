@@ -11,6 +11,20 @@ export interface MockRule {
 }
 
 export const RULES: MockRule[] = [
+  {
+    match: /Write to "([^"]+)" with content "([^"]*)"/i,
+    tools: [{ name: 'write_file', arguments: { path: '$1', content: '$2' } }],
+    response: 'Wrote the requested file.',
+  },
+  {
+    match: /Write three files to "([^"]+)", "([^"]+)", "([^"]+)"/i,
+    tools: [
+      { name: 'write_file', arguments: { path: '$1', content: 'alpha' } },
+      { name: 'write_file', arguments: { path: '$2', content: 'beta' } },
+      { name: 'write_file', arguments: { path: '$3', content: 'gamma' } },
+    ],
+    response: 'Wrote the three requested files.',
+  },
   // ---------------------------------------------------------------------------
   // Session Metadata Tools (criteria, todos, review_findings)
   // ---------------------------------------------------------------------------

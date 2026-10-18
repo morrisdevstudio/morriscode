@@ -4,6 +4,9 @@ MorrisCode works behind a reverse proxy. The WebSocket connection uses `wss://` 
 
 The frontend auto-detects the page protocol: `https://` → `wss://`, `http://` → `ws://`.
 
+For plain LAN access — other devices on your network, built-in self-signed HTTPS, no proxy — see
+[NETWORK-ACCESS.md](NETWORK-ACCESS.md).
+
 ## Nginx
 
 ```nginx
@@ -72,10 +75,12 @@ http:
 
 ## Key Points
 
-- **Use `npm start` (not `npm run dev`) behind a proxy** — `npm run dev` uses Vite which enforces `localhost` by default
+- **Use `npm start` (not `npm run dev`) behind a proxy** — `npm run dev` uses Vite, which enforces `localhost` by
+  default. MorrisCode disables that check for its own dev server (LAN addresses and hostnames both
+  work); it still applies to the standalone `npm run dev:web` server.
 - **Set `server.host: "127.0.0.1"`** in your MorrisCode config so the backend only listens locally
 - The WebSocket endpoint is `/ws` — the frontend always connects to the same origin as the page (e.g. `wss://yourdomain.com/ws`)
-- For local dev without a proxy, `ws://localhost:10469` is still the default
+- For local dev without a proxy, `ws://localhost:10469/ws` is still the default
 
 ## Local Dev Behind a Proxy
 

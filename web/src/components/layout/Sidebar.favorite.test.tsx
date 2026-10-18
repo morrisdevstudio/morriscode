@@ -8,6 +8,20 @@ import { formatTime } from '../../lib/format-date'
 
 const mockNavigate = vi.fn()
 const mockToggleFavorite = vi.fn()
+const mockToggleStar = vi.fn()
+
+vi.mock('../../stores/project', () => ({
+  useProjectStore: (selector: any) => selector({ toggleStar: mockToggleStar }),
+}))
+
+vi.mock('../../hooks/useProjects', () => ({
+  useProjects: () => ({
+    projects: [
+      { id: 'project-1', name: 'Alpha project', isStarred: false },
+      { id: 'project-2', name: 'Beta project', isStarred: true },
+    ],
+  }),
+}))
 
 vi.mock('wouter', () => ({
   useLocation: () => [undefined, mockNavigate],
@@ -20,7 +34,7 @@ vi.mock('wouter', () => ({
 
 const sessionStoreState = {
   sessions: [] as SessionSummary[],
-  currentSession: null,
+  currentSession: null as { id: string } | null,
   unreadSessionIds: [],
   sessionsWithPendingConfirmations: [],
   pendingPathConfirmations: [],
@@ -137,9 +151,38 @@ beforeEach(() => {
   vi.clearAllMocks()
   document.body.innerHTML = ''
   sessionStoreState.sessions = []
+  sessionStoreState.currentSession = null
 })
 
 describe('Sidebar favorites', () => {
+  it('only highlights the active conversation when search is not focused', () => {
+    sessionStoreState.sessions = [
+      session({ id: 'session-1', title: 'First' }),
+      session({ id: 'session-2', title: 'Second' }),
+      session({ id: 'session-3', title: 'Third' }),
+    ]
+    sessionStoreState.currentSession = { id: 'session-3' }
+    const container = renderSidebar()
+    expect(container.querySelectorAll('[data-sidx].bg-accent-primary\\/10')).toHaveLength(0)
+    const activeRows = container.querySelectorAll('[data-sidx].bg-bg-tertiary')
+    expect(activeRows).toHaveLength(1)
+    expect(activeRows[0]?.textContent).toContain('Third')
+  })
+
+  it('clears the search keyboard highlight as soon as focus leaves the search field', () => {
+    sessionStoreState.sessions = [
+      session({ id: 'session-1', title: 'First' }),
+      session({ id: 'session-2', title: 'Second' }),
+    ]
+    const container = renderSidebar()
+    const search = container.querySelector('input[placeholder="Search sessions..."]') as HTMLInputElement
+    act(() => search.focus())
+    act(() => search.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })))
+    expect(container.querySelectorAll('[data-sidx].bg-accent-primary\\/10')).toHaveLength(1)
+    act(() => search.blur())
+    expect(container.querySelectorAll('[data-sidx].bg-accent-primary\\/10')).toHaveLength(0)
+  })
+
   it('does not render a standalone star button in session rows', () => {
     sessionStoreState.sessions = [session({ id: 'session-1', title: 'Alpha' })]
     renderSidebar()
@@ -193,7 +236,7 @@ describe('Sidebar favorites', () => {
     expect(mockToggleFavorite).toHaveBeenCalledWith('session-1', true)
   })
 
-  it('hides the time for favorite sessions but keeps it for others', () => {
+  it('hides time and message count for every session', () => {
     sessionStoreState.sessions = [
       session({ id: 'session-1', title: 'Alpha', updatedAt: '2026-08-01T10:00:00Z' }),
       session({ id: 'session-2', title: 'Beta', updatedAt: '2026-08-01T11:00:00Z', isFavorite: true }),
@@ -204,7 +247,33 @@ describe('Sidebar favorites', () => {
     const alphaLink = links.find((l) => l.textContent?.includes('Alpha'))
     const betaLink = links.find((l) => l.textContent?.includes('Beta'))
 
-    expect(alphaLink?.textContent).toContain(formatTime('2026-08-01T10:00:00Z'))
+    expect(alphaLink?.textContent).not.toContain(formatTime('2026-08-01T10:00:00Z'))
     expect(betaLink?.textContent).not.toContain(formatTime('2026-08-01T11:00:00Z'))
+    expect(alphaLink?.textContent).not.toContain('messages')
+    expect(betaLink?.textContent).not.toContain('messages')
+  })
+
+  it('offers a new session in each project even with no sessions', () => {
+    renderSidebar()
+    expect(document.querySelector('a[href="/p/project-2/new"]')).toBeTruthy()
+    expect(document.querySelector('a[href="/p/project-1/new"]')).toBeTruthy()
+  })
+
+  it('toggles project favorites without collapsing or navigating', () => {
+    sessionStoreState.sessions = [session({ id: 'session-1', title: 'Alpha' })]
+    renderSidebar()
+    click(document.querySelector('button[title="Favorite project"]'))
+    expect(mockToggleStar).toHaveBeenCalledWith('project-1', true)
+    click(document.querySelector('button[title="Unfavorite project"]'))
+    expect(mockToggleStar).toHaveBeenCalledWith('project-2', false)
+    expect(document.querySelector('button[title="Alpha project"]')?.getAttribute('aria-expanded')).toBe('true')
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('places favorite projects first', () => {
+    sessionStoreState.sessions = [session({ id: 'session-1' })]
+    renderSidebar()
+    const projectButtons = document.querySelectorAll('button[aria-expanded]')
+    expect(projectButtons[0]?.getAttribute('title')).toBe('Beta project')
   })
 })

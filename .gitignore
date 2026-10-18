@@ -68,3 +68,5 @@ worktrees/
 .agent-office/
 
 /plugins/
+# Local test scratch files
+.tmp-vitest/

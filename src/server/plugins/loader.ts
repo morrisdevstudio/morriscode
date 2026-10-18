@@ -120,7 +120,7 @@ export async function readPluginManifest(packageDir: string): Promise<PluginMani
   }
 }
 
-function baseDiagnostic(manifest: PluginManifest, source: string): PluginDiagnostic {
+export function pluginDiagnosticDetails(manifest: PluginManifest, source: string) {
   return {
     packageName: manifest.name,
     version: manifest.version,
@@ -130,6 +130,12 @@ function baseDiagnostic(manifest: PluginManifest, source: string): PluginDiagnos
     displayName: manifest.openfox.displayName ?? manifest.name,
     ...(manifest.openfox.description ? { description: manifest.openfox.description } : {}),
     ...(manifest.author || manifest.openfox.author ? { author: manifest.author ?? manifest.openfox.author } : {}),
+  }
+}
+
+function baseDiagnostic(manifest: PluginManifest, source: string): PluginDiagnostic {
+  return {
+    ...pluginDiagnosticDetails(manifest, source),
     ...(manifest.openfox.icon ? { icon: manifest.openfox.icon } : {}),
     ...(manifest.openfox.logo ? { logo: manifest.openfox.logo } : {}),
     capabilities: manifest.openfox.capabilities ?? [],
@@ -218,7 +224,10 @@ function noopContext(manifest: PluginManifest): PluginContext {
   }
 }
 
-async function packageDirectories(root: string): Promise<string[]> {
+export async function packageDirectories(
+  root: string,
+  options: { skipHidden?: boolean; skipNodeModules?: boolean } = {},
+): Promise<string[]> {
   let entries
   try {
     entries = await readdir(root, { withFileTypes: true })
@@ -227,6 +236,8 @@ async function packageDirectories(root: string): Promise<string[]> {
   }
   const directories: string[] = []
   for (const entry of entries) {
+    if (options.skipHidden && entry.name.startsWith('.')) continue
+    if (options.skipNodeModules && entry.name === 'node_modules') continue
     const entryPath = join(root, entry.name)
     const isDirectory =
       entry.isDirectory() || (entry.isSymbolicLink() && (await stat(entryPath).catch(() => undefined))?.isDirectory())
@@ -234,6 +245,7 @@ async function packageDirectories(root: string): Promise<string[]> {
     if (entry.name.startsWith('@')) {
       const scoped = await readdir(entryPath, { withFileTypes: true }).catch(() => [])
       for (const child of scoped) {
+        if (options.skipHidden && child.name.startsWith('.')) continue
         const childPath = join(entryPath, child.name)
         const childIsDirectory =
           child.isDirectory() ||

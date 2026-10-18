@@ -18,6 +18,10 @@ export interface CreateTestServerOptions {
   port?: number
   /** MCP servers to configure at startup, e.g. a self-referencing morriscode entry. */
   mcpServers?: Config['mcpServers']
+  /** Serve over TLS. Pass a cert/key pair, or omit them to exercise the generated certificate. */
+  https?: boolean
+  httpsCert?: string
+  httpsKey?: string
 }
 
 // Create test config by modifying env vars before calling loadConfig
@@ -85,11 +89,17 @@ export async function createTestServer(options: CreateTestServerOptions = {}): P
   if (options.mcpServers !== undefined) {
     config.mcpServers = options.mcpServers
   }
+  if (options.https === true) {
+    config.server.https = true
+    if (options.httpsCert !== undefined) config.server.httpsCert = options.httpsCert
+    if (options.httpsKey !== undefined) config.server.httpsKey = options.httpsKey
+  }
   const handle = await createServerHandle(config)
   const { port } = await handle.start(options.port ?? 0) // Dynamic port by default
 
-  const url = `http://127.0.0.1:${port}`
-  const wsUrl = `ws://127.0.0.1:${port}/ws`
+  const scheme = config.server.https === true ? 'https' : 'http'
+  const url = `${scheme}://127.0.0.1:${port}`
+  const wsUrl = `${scheme === 'https' ? 'wss' : 'ws'}://127.0.0.1:${port}/ws`
 
   return {
     ...handle,

@@ -35,10 +35,12 @@ export function portCandidates(preferred: number, fallback: number): number[] {
  * Return the first port where the MorrisCode /api/health endpoint responds, or
  * null when no server is found on any candidate.
  */
-export async function findLivePort(host: string, candidates: number[]): Promise<number | null> {
+export async function findLivePort(host: string, candidates: number[], https = false): Promise<number | null> {
   for (const port of candidates) {
     try {
-      const res = await fetch(`http://${host}:${port}/api/health`, { signal: AbortSignal.timeout(400) })
+      const res = await fetch(`${https ? 'https' : 'http'}://${host}:${port}/api/health`, {
+        signal: AbortSignal.timeout(400),
+      })
       if (res.ok) return port
     } catch {
       // Port is not serving MorrisCode — keep probing
@@ -99,10 +101,11 @@ export async function runMcpCommand(mode: Mode, options: { password?: string; po
   const auth = await loadAuthConfig(mode)
 
   const host = config.server?.host ?? '127.0.0.1'
+  const https = config.server?.https === true
   const configuredPort = config.server?.port ?? MODE_DEFAULT_PORTS[mode]
   const requestedPort = options.port ?? configuredPort
 
-  const livePort = await findLivePort(probeHost(host), portCandidates(MODE_DEFAULT_PORTS[mode], requestedPort))
+  const livePort = await findLivePort(probeHost(host), portCandidates(MODE_DEFAULT_PORTS[mode], requestedPort), https)
   const port = livePort ?? requestedPort
   if (!livePort) {
     console.warn(
@@ -137,7 +140,7 @@ export async function runMcpCommand(mode: Mode, options: { password?: string; po
     sessionToken = signSessionToken(privateKey, entered)
   }
 
-  const bootstrap = buildMorrisCodeMcpBootstrap({ host, port, authRequired, sessionToken })
+  const bootstrap = buildMorrisCodeMcpBootstrap({ host, port, https, authRequired, sessionToken })
 
   console.log(cliT({ en: 'MorrisCode MCP client config', fr: 'Configuration client MCP MorrisCode' }))
   console.log(cliT({ en: '=========================', fr: '=========================' }))

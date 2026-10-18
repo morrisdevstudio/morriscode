@@ -895,7 +895,7 @@ export function ChatInput({
                     <McpSelector />
                   </div>
                 )}
-                <div className="ms-auto @md:ms-0 min-w-0" data-testid="provider-selector-slot">
+                <div className="ms-auto @md:ms-0 min-w-0 flex items-center gap-2" data-testid="provider-selector-slot">
                   <ProviderSelector />
                 </div>
               </div>

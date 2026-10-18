@@ -18,11 +18,14 @@ import {
   type TestProject,
 } from './utils/index.js'
 
+import { createOutsidePathFixture } from './utils/path-fixture.js'
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 describe('MCP server endpoint', () => {
   let server: TestServerHandle
   let testDir: TestProject
+  let outside: Awaited<ReturnType<typeof createOutsidePathFixture>>
   let client: Client
   let sessionId: string
 
@@ -38,11 +41,24 @@ describe('MCP server endpoint', () => {
   }, 60000)
 
   afterAll(async () => {
-    await server.close()
+    try {
+      await client?.close()
+    } finally {
+      try {
+        await server.close()
+      } finally {
+        try {
+          await testDir?.cleanup()
+        } finally {
+          await outside?.cleanup()
+        }
+      }
+    }
   })
 
   it('drives a full orchestrator loop through the MCP endpoint', async () => {
     testDir = await createTestProject({ template: 'typescript' })
+    outside = await createOutsidePathFixture()
     const project = await createProject(server.url, { name: 'MCP Server E2E', workdir: testDir.path })
 
     const transport = new StreamableHTTPClientTransport(new URL(`${server.url}/mcp`))
@@ -142,7 +158,7 @@ describe('MCP server endpoint', () => {
     // 6. Path confirmation flow: write outside the workdir triggers a confirmation
     await call('morriscode_send_message', {
       sessionId,
-      content: 'Write to /home/test/secret.txt with content "data"',
+      content: `Write to "${outside.path('secret.txt')}" with content "data"`,
     })
     const waitedConfirm = await call('morriscode_wait', { sessionId, timeout: 30 })
     expect(waitedConfirm.json.settled).toBe(true)
@@ -225,8 +241,6 @@ describe('MCP server endpoint', () => {
     const stoppedRaw = await client.callTool({ name: 'morriscode_stop_workflow', arguments: { sessionId } })
     expect(stoppedRaw.isError).toBe(true)
     expect(mcpText(stoppedRaw)).toContain('No active workflow run to stop')
-
-    await client.close()
   }, 120000)
 
   it('lists sessions for the project with pending counts', async () => {
@@ -317,7 +331,11 @@ describe('MCP server endpoint', () => {
       const raw = await callX('morriscode_answer', { sessionId, callId: callIdB, answer: 'x' })
       expect(raw.isError).toBe(true)
     } finally {
-      await c.close()
+      try {
+        await c.close()
+      } finally {
+        await crossDir.cleanup()
+      }
     }
   }, 60000)
 })

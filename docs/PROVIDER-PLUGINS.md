@@ -30,6 +30,8 @@ A transport adapter implements the wire protocol for a specific LLM API. It:
 
 - Lists available models with their capabilities (context window, reasoning efforts, etc.)
 - Sends completion requests and streams responses
+- Optionally reports the account's metered usage via `getUsage()`, which the UI shows
+  next to the provider selector
 - Receives a `ProviderRequestContext` with the resolved model, credentials, and metadata
 
 ### Preset
@@ -124,6 +126,14 @@ interface ProviderTransportAdapter {
   /** Fetch the catalog of available models. */
   listModels(context: ProviderRequestContext): Promise<ModelConfig[]>
 
+  /**
+   * Optional. Latest metered usage for this account, or `undefined` when the provider
+   * does not meter usage — or when nothing has been observed yet. Returning
+   * `undefined` rather than throwing keeps the caller simple: no data means nothing
+   * to display, and the indicator stays hidden.
+   */
+  getUsage?(context: ProviderRequestContext): Promise<ProviderUsage | undefined>
+
   /** Send a non-streaming completion request. */
   complete(request: LLMCompletionRequest, context: ProviderRequestContext): Promise<LLMCompletionResponse>
 
@@ -144,6 +154,13 @@ interface ProviderRequestContext {
   requestBody?: Record<string, unknown>
 }
 ```
+
+`ProviderUsage` describes the metered windows a backend reports — the short slot first,
+then the long one — each with `usedPercent` (0-100), an optional `windowMinutes` and an
+optional `resetsAt` (epoch seconds), plus the optional plan label and credits. It is
+defined in `src/shared/types.ts` and re-exported by `morriscode/provider`. The ChatGPT
+provider reads it from the backend's `x-codex-*` response headers and from its
+`codex.rate_limits` stream event, so nothing extra has to be requested.
 
 ### Security considerations
 

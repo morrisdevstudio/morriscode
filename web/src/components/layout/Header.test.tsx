@@ -46,6 +46,12 @@ vi.mock('../../hooks/useCurrentProject', () => ({
   useCurrentProject: () => projectState.currentProject,
 }))
 
+// The project manager itself is covered by its own tests — here it only needs
+// to be identifiable once the footer item opens it.
+vi.mock('../CreateSessionModal', () => ({
+  OpenProjectModal: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="manage-projects-modal" /> : null),
+}))
+
 vi.mock('../../hooks/useProjects', () => ({
   useProjects: () => ({ projects: projectState.projects, refresh: vi.fn(), loading: false }),
 }))
@@ -358,7 +364,7 @@ describe('Header', () => {
     expect(btn!.getAttribute('class')).toContain('w-full')
   })
 
-  it('offers a Home footer item in the project dropdown that navigates to the homepage', async () => {
+  it('offers a Manage projects footer item in the project dropdown that opens the project manager', async () => {
     projectState.currentProject = { id: 'p1', name: 'My Project', workdir: '/tmp' }
     projectState.projects = [{ id: 'p1', name: 'My Project', workdir: '/tmp' }]
 
@@ -379,14 +385,15 @@ describe('Header', () => {
 
     const menu = document.querySelector('[data-testid="session-dropdown-menu"]')
     expect(menu).toBeTruthy()
-    const homeLink = Array.from(menu!.querySelectorAll('a')).find((a) => a.textContent?.includes('Home'))
-    expect(homeLink).toBeTruthy()
-    expect(homeLink!.getAttribute('href')).toBe('/')
+    const manageItem = Array.from(menu!.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Manage projects'),
+    )
+    expect(manageItem).toBeTruthy()
 
     act(() => {
-      homeLink!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      manageItem!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     })
-    expect(setLocation).toHaveBeenCalledWith('/')
+    expect(document.querySelector('[data-testid="manage-projects-modal"]')).toBeTruthy()
   })
 
   it('shows terminal toggle on project page', async () => {
@@ -518,7 +525,7 @@ describe('Header', () => {
     expect(container.querySelector('[aria-label="Toggle split view control panel"]')).toBeTruthy()
   })
 
-  it('shows the split indicator and exits back home from the split route', async () => {
+  it('shows the split indicator and exits back to the project view from the split route', async () => {
     const { useSessionStore } = await import('../../stores/session')
     ;(useSessionStore as unknown as MockStore).setState({ openSessionIds: ['s1', 's2'] })
 

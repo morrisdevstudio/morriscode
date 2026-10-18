@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest'
 import http from 'http'
+import net from 'net'
 import zlib from 'zlib'
 
 vi.mock('../db/projects.js', () => ({
@@ -14,17 +15,31 @@ import { startInspectProxy, stopAllInspectProxies } from './inspect-proxy.js'
 
 // Use a high base port to avoid conflicts with other services
 const ORIGINAL_PORT = process.env['MORRISCODE_PORT']
+const mockTargets = new Set<http.Server>()
 beforeEach(() => {
   process.env['MORRISCODE_PORT'] = '45678'
 })
-afterAll(() => {
+afterAll(async () => {
   if (ORIGINAL_PORT) process.env['MORRISCODE_PORT'] = ORIGINAL_PORT
   else delete process.env['MORRISCODE_PORT']
+  await Promise.all(
+    [...mockTargets].map(
+      (server) =>
+        new Promise<void>((resolve, reject) => {
+          if (!server.listening) return resolve()
+          server.close((error) => (error ? reject(error) : resolve()))
+          server.closeAllConnections()
+        }),
+    ),
+  )
+  mockTargets.clear()
 })
 
 function createMockTarget(handler: (req: http.IncomingMessage, res: http.ServerResponse) => void): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = http.createServer(handler)
+    mockTargets.add(server)
+    server.once('error', reject)
     server.listen(0, '127.0.0.1', () => {
       const addr = server.address()
       if (addr && typeof addr === 'object') resolve(addr.port)
@@ -153,6 +168,11 @@ describe('InspectProxy', () => {
 
   afterAll(() => {
     stopAllInspectProxies()
+  })
+
+  afterEach(() => {
+    stopAllInspectProxies()
+    vi.restoreAllMocks()
   })
 
   describe('HTML injection', () => {
@@ -472,6 +492,99 @@ describe('InspectProxy', () => {
   })
 
   describe('Port allocation', () => {
+    function observeServers(onCreate: (server: net.Server) => void) {
+      const createServer = net.createServer
+      vi.spyOn(net, 'createServer').mockImplementation((...args: Parameters<typeof net.createServer>) => {
+        const server = createServer(...args)
+        onCreate(server)
+        return server
+      })
+    }
+
+    function denyListen(server: net.Server, error: Error) {
+      // Also handle the error on the old implementation, so the regression test
+      // fails its assertion rather than creating an uncaught process error.
+      server.on('error', () => {})
+      vi.spyOn(server, 'listen').mockImplementation((() => {
+        queueMicrotask(() => server.emit('error', error))
+        return server
+      }) as typeof server.listen)
+    }
+
+    it('returns an already listening proxy bound only to loopback', async () => {
+      const servers: net.Server[] = []
+      observeServers((server) => servers.push(server))
+      const { port, cleanup } = await startInspectProxy('http://127.0.0.1:1', mockSessionManager as any, 9001)
+      try {
+        const server = servers.find((candidate) => candidate.listenerCount('connection') > 0)
+        expect(server?.listening).toBe(true)
+        expect(server?.address()).toMatchObject({ address: '127.0.0.1', port })
+      } finally {
+        cleanup()
+      }
+    })
+
+    it('waits for the actual listening event before resolving', async () => {
+      let releaseListen: (() => void) | undefined
+      observeServers((server) => {
+        if (server.listenerCount('connection') === 0) return
+        const listen = server.listen.bind(server)
+        vi.spyOn(server, 'listen').mockImplementation(((...args: Parameters<typeof server.listen>) => {
+          releaseListen = () => listen(...args)
+          return server
+        }) as typeof server.listen)
+      })
+      let resolved = false
+      const starting = startInspectProxy('http://127.0.0.1:1', mockSessionManager as any, 9001).then((result) => {
+        resolved = true
+        return result
+      })
+      await vi.waitFor(() => expect(releaseListen).toBeDefined())
+      try {
+        expect(resolved).toBe(false)
+      } finally {
+        releaseListen!()
+        const { cleanup } = await starting
+        cleanup()
+      }
+    })
+
+    it('uses an OS-assigned port when every scanned port is denied', async () => {
+      const targetPort = await createMockTarget((_req, res) => res.end('fallback works'))
+      let attempts = 0
+      let requestedPort: () => unknown = () => undefined
+      observeServers((server) => {
+        if (server.listenerCount('connection') > 0) {
+          const listen = vi.spyOn(server, 'listen')
+          requestedPort = () => listen.mock.calls[0]?.[0]
+          return
+        }
+        attempts++
+        denyListen(server, Object.assign(new Error('Reserved port'), { code: 'EACCES' }))
+      })
+      const { port, cleanup } = await startInspectProxy(
+        `http://127.0.0.1:${targetPort}`,
+        mockSessionManager as any,
+        9001,
+      )
+      try {
+        expect(attempts).toBe(200)
+        expect(port).toBeGreaterThan(0)
+        expect(requestedPort()).toBe(0)
+        expect((await httpGet('127.0.0.1', port, '/')).body).toBe('fallback works')
+      } finally {
+        cleanup()
+      }
+    })
+
+    it('rejects when the actual proxy cannot bind after a successful probe', async () => {
+      const error = Object.assign(new Error('Port taken after probe'), { code: 'EADDRINUSE' })
+      observeServers((server) => {
+        if (server.listenerCount('connection') > 0) denyListen(server, error)
+      })
+      await expect(startInspectProxy('http://127.0.0.1:1', mockSessionManager as any, 9001)).rejects.toBe(error)
+    })
+
     it('keeps the proxy port below 65536 when devServerPort + 1000 would overflow', async () => {
       const targetPort = await createMockTarget((_req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' })

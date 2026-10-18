@@ -89,21 +89,51 @@ export function getDatabaseSize(databasePath: string): string {
   }
 }
 
+export function serverScheme(httpsEnabled: boolean): 'http' | 'https' {
+  return httpsEnabled ? 'https' : 'http'
+}
+
+/**
+ * URLs a peer can actually open: the loopback alias when the server is bound to
+ * localhost, otherwise every LAN address (falling back to the bind address when
+ * no usable interface is found).
+ */
+export function getServerUrls(config: { host: string; port: number; https?: boolean | undefined }): string[] {
+  const scheme = serverScheme(config.https === true)
+
+  if (config.host === '127.0.0.1' || config.host === 'localhost') {
+    return [`${scheme}://localhost:${config.port}`]
+  }
+
+  const ips = getValidIPv4Addresses()
+  if (ips.length === 0) {
+    return [`${scheme}://${config.host}:${config.port}`]
+  }
+
+  return ips.map((ip) => `${scheme}://${ip}:${config.port}`)
+}
+
 export function displayStartupBanner(config: {
   host: string
   port: number
   databasePath: string
   configPath: string
+  https?: boolean
+  certificate?: { certPath: string; generated: boolean }
 }): void {
   const { host, port, databasePath, configPath } = config
+  const https = config.https === true
   const isLocalhost = host === '127.0.0.1'
+  const urls = getServerUrls({ host, port, https })
 
   // eslint-disable-next-line no-console
   console.log(`\nMorrisCode v${VERSION}\n`)
 
   if (isLocalhost) {
     // eslint-disable-next-line no-console
-    console.log(`  🌐 ${serverT({ en: `Server: http://localhost:${port}`, fr: `Serveur : http://localhost:${port}` })}`)
+    console.log(
+      `  🌐 ${serverT({ en: `Server: ${urls[0] ?? serverScheme(https)}://localhost:${port}`, fr: `Serveur : ${urls[0] ?? serverScheme(https)}://localhost:${port}` })}`,
+    )
     // eslint-disable-next-line no-console
     console.log(`  🔒 ${serverT({ en: 'Access: Localhost only', fr: 'Accès : localhost uniquement' })}`)
   } else {
@@ -111,7 +141,7 @@ export function displayStartupBanner(config: {
 
     if (ips.length === 0) {
       // eslint-disable-next-line no-console
-      console.log(`  🌐 ${serverT({ en: `Server: http://0.0.0.0:${port}`, fr: `Serveur : http://0.0.0.0:${port}` })}`)
+      console.log(`  🌐 ${serverT({ en: `Server: ${urls[0] ?? ''}`, fr: `Serveur : ${urls[0] ?? ''}` })}`)
 
       console.warn(
         `  ⚠️  ${serverT({ en: 'Warning: No valid network interfaces detected', fr: 'Avertissement : aucune interface réseau valide détectée' })}`,
@@ -119,13 +149,38 @@ export function displayStartupBanner(config: {
     } else {
       // eslint-disable-next-line no-console
       console.log(`  🌐 ${serverT({ en: 'Server:', fr: 'Serveur :' })}`)
-      for (const ip of ips) {
+      for (const url of urls) {
         // eslint-disable-next-line no-console
-        console.log(`     • http://${ip}:${port}`)
+        console.log(`     • ${url}`)
       }
       // eslint-disable-next-line no-console
       console.log(`  🌍 ${serverT({ en: 'Access: Local network', fr: 'Accès : réseau local' })}`)
     }
+  }
+
+  if (https) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `  🔐 ${serverT({ en: 'HTTPS: enabled (self-signed certificate)', fr: 'HTTPS : activé (certificat auto-signé)' })}`,
+    )
+
+    if (config.certificate) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `     ${serverT({
+          en: `Certificate: ${config.certificate.certPath}`,
+          fr: `Certificat : ${config.certificate.certPath}`,
+        })}`,
+      )
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `     ${serverT({
+        en: 'Accept the certificate warning once per device — see docs/NETWORK-ACCESS.md',
+        fr: 'Acceptez l’avertissement de certificat une fois par appareil — voir docs/NETWORK-ACCESS.md',
+      })}`,
+    )
   }
 
   const size = getDatabaseSize(databasePath)

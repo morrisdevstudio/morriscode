@@ -27,16 +27,46 @@ MorrisCode is not published to npm — run it from a clone. For development, `np
 starts the CLI dev server (port 10469, password `password`). On first run, MorrisCode
 detects your local LLM backend (vLLM, sglang, ollama, llamacpp) and configures itself.
 
+## Local Network Access & HTTPS
+
+MorrisCode is localhost-only by default. To reach it from your phone or another machine on the same
+network, use Settings → Advanced → Network → Local network access, or start it with:
+
+```bash
+morriscode --network --https
+```
+
+HTTPS uses a generated self-signed certificate on the same port (10369 production, 10469 development);
+each device accepts the warning once. See [docs/NETWORK-ACCESS.md](docs/NETWORK-ACCESS.md) for
+trusting the certificate, firewall rules and installing it as an app on other devices.
+
 ## Migrating from OpenFox
+
+To populate the environment used by `npm run dev` with your real OpenFox providers, models,
+projects and sessions, stop MorrisCode dev and run:
+
+```bash
+node scripts/migrate-from-openfox.mjs --dev
+```
+
+This copies into `morriscode-dev`, leaving OpenFox running and its source files intact. SQLite's
+online backup API creates a consistent database snapshot. Existing dev data is backed up before
+replacement; providers and models are merged. The copied data persists across dev restarts.
+Run the command again only when you want to refresh the snapshot from OpenFox.
 
 ```bash
 node scripts/migrate-from-openfox.mjs
 ```
 
-The script copies `config.json`, `auth.json`, `auth.key`, `plugins/`, `skills/` and
-`workflows/` from the OpenFox configuration directory into MorrisCode's, and copies a
-project's `.openfox/` directory to `.morriscode/` when you pass a project path with
-`--project`. It never deletes or rewrites the OpenFox originals.
+The script copies `auth.json`, `auth.key`, `plugins/`, `skills/` and `workflows/` when
+MorrisCode does not have them yet, merges `config.json` so every provider keeps every model it has in
+OpenFox (providers and models you added in MorrisCode are preserved), and refreshes `sessions.db` from a
+consistent snapshot of OpenFox's database — the previous file is kept next to it as a timestamped
+`.pre-migrate-*.bak`.
+
+Re-running it after using OpenFox again is how new sessions and models catch up; `--dry-run` previews
+the work, and a project's `.openfox/` directory is copied to `.morriscode/` when you pass its path with
+`--project`. The OpenFox originals are never modified or deleted.
 
 ## What's New in 2.0
 
@@ -120,9 +150,6 @@ Authoring guide: [docs/PLUGINS.md](docs/PLUGINS.md) — working reference plugin
 - To use free OpenCode models, you can install the [`openfox-opencode-free`](https://github.com/JamesDAdams/openfox-opencode-free) plugin.
 
 ## Screenshots
-
-_Homepage — Project overview and session history_
-![Homepage](docs/screenshots/homepage.png)
 
 _Project Selected — Active session with context stats_
 ![Project Selected](docs/screenshots/project-selected.png)

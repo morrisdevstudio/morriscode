@@ -35,7 +35,7 @@
     "scripts/postinstall.mjs"
   ],
   "scripts": {
-    "dev": "cross-env MORRISCODE_DEV=true tsx watch src/cli/dev.ts --no-browser",
+    "dev": "tsx scripts/dev.ts",
     "dev:web": "vite --config web/vite.config.ts",
     "build": "npm run build:server && npm run build:web",
     "build:server": "tsup && node scripts/copy-assets.mjs",
@@ -106,6 +106,7 @@
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",
+    "selfsigned": "^3.0.1",
     "shiki": "^4.2.0",
     "strip-ansi": "^7.2.0",
     "turndown": "^7.2.2",

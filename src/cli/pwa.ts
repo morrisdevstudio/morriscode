@@ -6,6 +6,7 @@ import { confirm, isCancel, cancel, log } from '@clack/prompts'
 import type { Mode } from './main.js'
 import { getGlobalConfigDir } from './paths.js'
 import { cliT } from './i18n.js'
+import { loadGlobalConfig } from './config.js'
 
 const PWA_CONFIG_FILE = 'pwa.json'
 
@@ -45,9 +46,17 @@ function isRuntimeInstalled(): boolean {
   return out.includes('uninstall')
 }
 
+// Set by runPwaCommand before dispatching, so every manifest URL (install, update,
+// status, uninstall, launch) matches the scheme the server is actually served over.
+let httpsMode = false
+
+export function setPwaHttpsMode(https: boolean): void {
+  httpsMode = https
+}
+
 export function getManifestUrl(mode: Mode): string {
   const port = mode === 'development' ? 10469 : 10369
-  return `http://127.0.0.1:${port}/manifest.webmanifest`
+  return `${httpsMode ? 'https' : 'http'}://127.0.0.1:${port}/manifest.webmanifest`
 }
 
 function getPwaConfigPath(mode: Mode): string {
@@ -119,15 +128,27 @@ function probeInstalledApp(manifestUrl: string): { appId: string; profileId: str
   return null
 }
 
-export async function isServerReachable(port: number): Promise<boolean> {
+export async function isServerReachable(port: number, https = false): Promise<boolean> {
   try {
-    const res = await fetch(`http://127.0.0.1:${port}/manifest.webmanifest`, {
+    const res = await fetch(`${https ? 'https' : 'http'}://127.0.0.1:${port}/manifest.webmanifest`, {
       signal: AbortSignal.timeout(5000),
     })
     return res.ok
-  } catch {
-    return false
+  } catch (error) {
+    // A self-signed certificate fails the TLS check even though the server answered,
+    // and that is enough for the CLI to know it is up.
+    return isCertificateError(error)
   }
+}
+
+function isCertificateError(error: unknown): boolean {
+  const code = (error as { cause?: { code?: string } } | undefined)?.cause?.code ?? ''
+  return (
+    code.startsWith('ERR_TLS_') ||
+    code.includes('SELF_SIGNED') ||
+    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'CERT_HAS_EXPIRED'
+  )
 }
 
 export function printPwaHelp(): void {
@@ -164,6 +185,9 @@ Prérequis :
 }
 
 export async function runPwaCommand(mode: Mode, subcommand?: string): Promise<void> {
+  const config = await loadGlobalConfig(mode)
+  setPwaHttpsMode(config.server.https === true)
+
   switch (subcommand) {
     case 'install':
     case undefined:
@@ -238,7 +262,7 @@ async function pwaInstall(mode: Mode): Promise<void> {
   }
 
   const port = mode === 'development' ? 10469 : 10369
-  if (!(await isServerReachable(port))) {
+  if (!(await isServerReachable(port, httpsMode))) {
     log.error(
       cliT({
         en: `MorrisCode server is not reachable on port ${port}.`,

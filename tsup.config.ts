@@ -17,7 +17,9 @@ export default defineConfig({
   },
   format: ['esm'],
   dts: true,
-  clean: true,
+  // tsup's clean deletes every file in the output folder. Keep dist/web (built by
+  // Vite) so a server-only rebuild doesn't leave the app serving "Web UI not built".
+  clean: ['!web/**'],
   sourcemap: true,
   external: ['better-sqlite3', 'vscode-jsonrpc', 'vscode-languageserver-protocol', 'ws', 'node-pty', 'undici'],
   noExternal: ['@clack/prompts', '@clack/core', 'sisteransi'],

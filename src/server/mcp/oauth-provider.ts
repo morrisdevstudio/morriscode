@@ -86,9 +86,15 @@ function memoryStorage(): ProviderStorage {
 const CALLBACK_PATH = '/api/mcp/oauth/callback'
 
 let serverPort = 10369
+let serverProtocol: 'http' | 'https' = 'http'
 
 export function setMcpOAuthServerPort(port: number): void {
   serverPort = port
+}
+
+/** OAuth redirect URIs must match the scheme the server is actually reached over. */
+export function setMcpOAuthServerScheme(https: boolean): void {
+  serverProtocol = https ? 'https' : 'http'
 }
 
 /**
@@ -102,7 +108,7 @@ export function setMcpOAuthServerPort(port: number): void {
  */
 export function getMcpOAuthRedirectUri(): string {
   const publicUrl = process.env['MORRISCODE_PUBLIC_URL']
-  if (!publicUrl) return `http://127.0.0.1:${serverPort}${CALLBACK_PATH}`
+  if (!publicUrl) return `${serverProtocol}://127.0.0.1:${serverPort}${CALLBACK_PATH}`
   let base: URL
   try {
     base = new URL(publicUrl)

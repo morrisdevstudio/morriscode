@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { authFetch } from '../lib/api'
 import { projectsResource, projectResource } from '../lib/resources'
+import { readLastProjectId, writeLastProjectId } from '../lib/landing'
 import type { Project } from '@shared/types.js'
 
 interface ProjectState {
@@ -34,7 +35,11 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set, get) => ({
   currentProjectId: null,
 
-  setCurrentProjectId: (id) => set({ currentProjectId: id }),
+  // Remember the working project so the next app open can resume it.
+  setCurrentProjectId: (id) => {
+    writeLastProjectId(id)
+    set({ currentProjectId: id })
+  },
 
   clearProject: () => set({ currentProjectId: null }),
 
@@ -83,6 +88,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       projectResource.invalidate(projectId)
       if (get().currentProjectId === projectId) {
         set({ currentProjectId: null })
+      }
+      if (readLastProjectId() === projectId) {
+        writeLastProjectId(null)
       }
       return true
     } catch {

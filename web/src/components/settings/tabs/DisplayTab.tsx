@@ -27,18 +27,6 @@ interface ToggleDefinition {
 
 const FEED_TOGGLES: ToggleDefinition[] = [
   {
-    key: SETTINGS_KEYS.DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS,
-    label: {
-      en: 'Show projects above sessions on home page',
-      fr: 'Afficher les projets au-dessus des conversations',
-    },
-    description: {
-      en: 'Display the projects list before recent sessions on the home screen',
-      fr: 'Affiche la liste des projets avant les sessions récentes sur l’écran d’accueil',
-    },
-    defaultValue: 'false',
-  },
-  {
     key: SETTINGS_KEYS.DISPLAY_SHOW_TOOL_CALL_STREAMING,
     label: {
       en: 'Show live tool call previews',
@@ -189,7 +177,6 @@ export function DisplayTab() {
   const showStats = useSetting(SETTINGS_KEYS.DISPLAY_SHOW_STATS, 'true')
   const showAgentDefinitions = useSetting(SETTINGS_KEYS.DISPLAY_SHOW_AGENT_DEFINITIONS, 'true')
   const showWorkflowBars = useSetting(SETTINGS_KEYS.DISPLAY_SHOW_WORKFLOW_BARS, 'true')
-  const showProjectsAboveSessions = useSetting(SETTINGS_KEYS.DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS, 'false')
   const showToolCallStreaming = useSetting(SETTINGS_KEYS.DISPLAY_SHOW_TOOL_CALL_STREAMING, 'false')
   const fullscreenSlashCommand = useSetting(SETTINGS_KEYS.DISPLAY_FULLSCREEN_SLASH_COMMAND, 'false')
   const nativeScrollbars = useSetting(SETTINGS_KEYS.DISPLAY_USE_NATIVE_SCROLLBARS, 'false')
@@ -222,7 +209,6 @@ export function DisplayTab() {
   const allToggles = [...FEED_TOGGLES, ...PERF_TOGGLES, ...COMPOSER_TOGGLES]
 
   const localValues: Record<string, string> = {
-    [SETTINGS_KEYS.DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS]: showProjectsAboveSessions.value,
     [SETTINGS_KEYS.DISPLAY_SHOW_TOOL_CALL_STREAMING]: showToolCallStreaming.value,
     [SETTINGS_KEYS.DISPLAY_SHOW_THINKING]: showThinking.value,
     [SETTINGS_KEYS.DISPLAY_SHOW_VERBOSE_TOOL_OUTPUT]: showVerboseToolOutput.value,

@@ -1,11 +1,21 @@
 import net from 'net'
 import zlib from 'zlib'
 import { logger } from '../utils/logger.js'
+import { getRuntimeConfig } from '../runtime-config.js'
 import type { SessionManager } from '../session/manager.js'
 import { getProjectByWorkdir } from '../db/projects.js'
 
 const MORRISCODE_BASE_PORT = Number(process.env['MORRISCODE_PORT'] ?? 10369)
-const INJECT_SCRIPT = `<script src="http://127.0.0.1:${MORRISCODE_BASE_PORT}/__inspect__.js"></script>`
+
+/**
+ * Script tag injected into proxied pages. It loads from the MorrisCode server
+ * itself, so it has to speak that server's scheme — an http:// URL never
+ * connects when the server serves HTTPS.
+ */
+function injectScript(): string {
+  const scheme = getRuntimeConfig().server.https === true ? 'https' : 'http'
+  return `<script src="${scheme}://127.0.0.1:${MORRISCODE_BASE_PORT}/__inspect__.js"></script>`
+}
 
 function buildHttpHeaders(
   resHeaders: Record<string, string>,
@@ -34,7 +44,6 @@ interface ProxyInstance {
 }
 
 const proxyPool = new Map<string, ProxyInstance>()
-let nextOffset = 0
 
 const PORT_SCAN_RANGE = 200
 
@@ -46,7 +55,8 @@ async function getAvailablePort(proxyBase: number): Promise<number> {
   for (let port = base; port < base + PORT_SCAN_RANGE; port++) {
     if (await tryBind(port)) return port
   }
-  return base + (nextOffset++ % PORT_SCAN_RANGE)
+  // Let the OS choose a port when the preferred range is occupied or reserved.
+  return 0
 }
 
 function tryBind(port: number): Promise<boolean> {
@@ -121,7 +131,7 @@ export async function startInspectProxy(
   workdir?: string,
 ): Promise<{ port: number; cleanup: () => void }> {
   // Place the proxy at devServerPort + 1000 to avoid colliding with the dev server's port range
-  const port = await getAvailablePort(devServerPort + 1000)
+  const requestedPort = await getAvailablePort(devServerPort + 1000)
 
   const server = net.createServer((client) => {
     let clientHead = ''
@@ -319,8 +329,8 @@ export async function startInspectProxy(
           const bi = text.indexOf('</body>')
           const hi = text.indexOf('</head>')
           let modified: string
-          if (bi >= 0) modified = text.slice(0, bi) + INJECT_SCRIPT + text.slice(bi)
-          else if (hi >= 0) modified = text.slice(0, hi) + INJECT_SCRIPT + text.slice(hi)
+          if (bi >= 0) modified = text.slice(0, bi) + injectScript() + text.slice(bi)
+          else if (hi >= 0) modified = text.slice(0, hi) + injectScript() + text.slice(hi)
           else {
             // No injection point found — send original body through (still compressed)
             const headStr = buildHttpHeaders(resHeaders, status)
@@ -347,9 +357,9 @@ export async function startInspectProxy(
           const hi = dechunks.indexOf('</head>')
           let modified: Buffer
           if (bi >= 0)
-            modified = Buffer.concat([dechunks.slice(0, bi), Buffer.from(INJECT_SCRIPT, 'utf8'), dechunks.slice(bi)])
+            modified = Buffer.concat([dechunks.slice(0, bi), Buffer.from(injectScript(), 'utf8'), dechunks.slice(bi)])
           else if (hi >= 0)
-            modified = Buffer.concat([dechunks.slice(0, hi), Buffer.from(INJECT_SCRIPT, 'utf8'), dechunks.slice(hi)])
+            modified = Buffer.concat([dechunks.slice(0, hi), Buffer.from(injectScript(), 'utf8'), dechunks.slice(hi)])
           else {
             // No injection point found — send original body through
             const headStr = buildHttpHeaders(
@@ -375,9 +385,21 @@ export async function startInspectProxy(
     client.on('error', () => {})
   })
 
-  server.listen(port, '0.0.0.0', () => {
-    logger.debug('Inspect proxy listening', { port, target })
+  // This proxy carries plaintext HTTP and must never be exposed to the LAN.
+  // A successful probe does not reserve a port: the actual bind may still fail.
+  const port = await new Promise<number>((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(requestedPort, '127.0.0.1', () => {
+      server.off('error', reject)
+      const address = server.address()
+      if (!address || typeof address === 'string') {
+        reject(new Error('Failed to get inspect proxy port'))
+        return
+      }
+      resolve(address.port)
+    })
   })
+  logger.debug('Inspect proxy listening', { port, target })
 
   proxyPool.set(target, { server, target })
 

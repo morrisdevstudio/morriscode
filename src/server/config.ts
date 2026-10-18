@@ -12,6 +12,14 @@ const envSchema = z.object({
   MORRISCODE_MAX_CONTEXT: z.coerce.number().default(200000),
   MORRISCODE_PORT: z.coerce.number().default(10369),
   MORRISCODE_HOST: z.string().optional(),
+  // Kept as a string so "0"/"false" don't trip z.coerce.boolean(), which treats any
+  // non-empty string as true.
+  MORRISCODE_HTTPS: z
+    .string()
+    .optional()
+    .transform((value) => value !== undefined && !['', '0', 'false', 'no'].includes(value.toLowerCase())),
+  MORRISCODE_HTTPS_CERT: z.string().optional(),
+  MORRISCODE_HTTPS_KEY: z.string().optional(),
   MORRISCODE_WORKDIR: z.string().optional(),
   MORRISCODE_DB_PATH: z.string().default('./morriscode.db'),
   MORRISCODE_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -60,6 +68,9 @@ export function loadConfig(): Config {
     server: {
       port: env.MORRISCODE_PORT,
       ...(env.MORRISCODE_HOST !== undefined ? { host: env.MORRISCODE_HOST } : {}),
+      ...(env.MORRISCODE_HTTPS ? { https: true } : {}),
+      ...(env.MORRISCODE_HTTPS_CERT !== undefined ? { httpsCert: env.MORRISCODE_HTTPS_CERT } : {}),
+      ...(env.MORRISCODE_HTTPS_KEY !== undefined ? { httpsKey: env.MORRISCODE_HTTPS_KEY } : {}),
     },
     database: {
       path: env.MORRISCODE_DB_PATH,

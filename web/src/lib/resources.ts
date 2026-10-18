@@ -25,6 +25,7 @@ import type {
   WorkflowScope,
   Project,
   ModelConfig,
+  ProviderUsage,
   ProjectTask,
   ProjectTaskCounts,
   ProjectTaskSettings,
@@ -393,6 +394,27 @@ export const providerModelsResource = resource<ProviderModelsData, [string]>({
   fetch: fetchProviderModels,
 })
 
+export interface ProviderUsageData {
+  usage: ProviderUsage | null
+}
+
+export async function fetchProviderUsage(providerId: string): Promise<ProviderUsageData> {
+  const res = await authFetch(`/api/providers/${providerId}/usage`)
+  if (!res.ok) throw new Error(`Failed to load usage for provider ${providerId} (${res.status})`)
+  const data = (await res.json()) as Partial<ProviderUsageData>
+  return { usage: data.usage ?? null }
+}
+
+/**
+ * Per-provider metered usage (short slot + weekly window). Providers that do not
+ * meter simply answer null, and the indicator hides itself.
+ */
+export const providerUsageResource = resource<ProviderUsageData, [string]>({
+  key: (providerId) => `provider-usage:${providerId}`,
+  fetch: fetchProviderUsage,
+  maxAgeMs: 60_000,
+})
+
 export interface VisionFallbackConfig {
   enabled: boolean
   url: string
@@ -400,6 +422,16 @@ export interface VisionFallbackConfig {
   timeout: number
   backend: 'ollama' | 'openai'
   providerModelRef?: string
+}
+
+/** How peers on the network reach this server: bind address, scheme, and usable URLs. */
+export interface ServerNetworkInfo {
+  host: string
+  port: number
+  https: boolean
+  urls: string[]
+  certificatePath: string | null
+  certificateGenerated: boolean
 }
 
 export interface ConfigData {
@@ -415,6 +447,8 @@ export interface ConfigData {
   visionFallback: VisionFallbackConfig | null
   /** UI locale setting: 'automatic' | 'en' | 'fr' (resolved client-side). */
   locale: string
+  /** Network access settings, or null when the server predates them. */
+  serverNetwork: ServerNetworkInfo | null
 }
 
 function normalizePlatform(platform: unknown): PlatformInfo | null {
@@ -423,6 +457,19 @@ function normalizePlatform(platform: unknown): PlatformInfo | null {
   return {
     isWSL: !!(p.isWSL as boolean | undefined),
     wslDistro: String(p.wslDistro ?? ''),
+  }
+}
+
+export function normalizeServerNetwork(value: unknown): ServerNetworkInfo | null {
+  if (!value || typeof value !== 'object') return null
+  const network = value as Record<string, unknown>
+  return {
+    host: String(network.host ?? '127.0.0.1'),
+    port: Number(network.port ?? 0),
+    https: network.https === true,
+    urls: Array.isArray(network.urls) ? network.urls.filter((url): url is string => typeof url === 'string') : [],
+    certificatePath: typeof network.certificatePath === 'string' ? network.certificatePath : null,
+    certificateGenerated: network.certificateGenerated === true,
   }
 }
 
@@ -442,7 +489,34 @@ export async function fetchConfig(): Promise<ConfigData> {
     workdir: (data.workdir as string | undefined) ?? null,
     visionFallback: (data.visionFallback as VisionFallbackConfig | undefined) ?? null,
     locale: (data.locale as string | undefined) ?? 'automatic',
+    serverNetwork: normalizeServerNetwork(data.serverNetwork),
   }
+}
+
+/**
+ * Persist LAN/HTTPS settings. The listening socket and its TLS material are
+ * fixed at startup, so the server reports that a restart is needed and the
+ * saved values are written straight into the cache for every subscriber.
+ */
+export async function updateServerNetwork(input: {
+  host?: string
+  https?: boolean
+}): Promise<{ restartRequired: boolean }> {
+  const res = await authFetch('/api/config/network', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`Failed to save network settings (${res.status})`)
+
+  const data = (await res.json()) as { restartRequired?: boolean; serverNetwork?: unknown }
+  const network = normalizeServerNetwork(data.serverNetwork)
+  const current = readConfig()
+  if (network && current) {
+    configResource.write({ ...current, serverNetwork: network })
+  }
+
+  return { restartRequired: data.restartRequired === true }
 }
 
 /** Runtime selection + app-level config (excludes the providers list). */
@@ -625,7 +699,6 @@ export const SETTINGS_KEYS = {
   DISPLAY_COLLAPSE_FAVORITES_BY_DEFAULT: 'display.collapseFavoritesByDefault',
   DISPLAY_MODEL_FAVORITES: 'display.modelFavorites',
   DISPLAY_MOBILE_FULLSCREEN_COMPOSER: 'display.mobileFullscreenComposer',
-  DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS: 'display.showProjectsAboveSessions',
   DISPLAY_FULLSCREEN_SLASH_COMMAND: 'display.fullscreenSlashCommand',
   DISPLAY_DANGER_LEVEL_DISPLAY_MODE: 'display.dangerLevelDisplayMode',
   DISPLAY_DANGER_LEVEL_AUTO_LIST: 'display.dangerLevelAutoList',
@@ -668,7 +741,6 @@ export const DISPLAY_SETTINGS_KEYS = [
   SETTINGS_KEYS.DISPLAY_DEFER_CODE_HIGHLIGHT_WHILE_STREAMING,
   SETTINGS_KEYS.DISPLAY_SHOW_TOOL_CALL_STREAMING,
   SETTINGS_KEYS.DISPLAY_FEED_VIRTUALIZATION,
-  SETTINGS_KEYS.DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS,
   SETTINGS_KEYS.DISPLAY_FULLSCREEN_SLASH_COMMAND,
   SETTINGS_KEYS.DISPLAY_DANGER_LEVEL_DISPLAY_MODE,
   SETTINGS_KEYS.DISPLAY_DANGER_LEVEL_AUTO_LIST,

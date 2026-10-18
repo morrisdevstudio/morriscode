@@ -26,6 +26,7 @@ import { useT } from '../../hooks/useT'
 import { useSetting } from '../../hooks/useSetting'
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice'
 import { SETTINGS_KEYS, setSetting } from '../../lib/resources'
+import { ProviderUsageIndicator } from '../shared/ProviderUsageIndicator'
 import { PluginZone } from '../plugins/PluginZone'
 import { PluginModelMeta } from '../plugins/PluginModelMeta'
 import { usePlugins } from '../../hooks/usePlugins'
@@ -422,6 +423,10 @@ export function ProviderSelector() {
   }
 
   const loadProviderModels = async (providerId: string) => {
+    // Expanding a provider is a look, not an edit: re-syncing here would overwrite the
+    // curated model list with the whole catalog. Only a provider with no models at all
+    // is populated, so a freshly added provider still shows something.
+    if ((providers.find((p) => p.id === providerId)?.models.length ?? 0) > 0) return
     setLoadingModels(providerId)
     try {
       await refreshProviderModels(providerId)
@@ -774,7 +779,8 @@ export function ProviderSelector() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative flex items-center gap-1" ref={dropdownRef}>
+      <ProviderUsageIndicator providerId={effectiveProviderId} />
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

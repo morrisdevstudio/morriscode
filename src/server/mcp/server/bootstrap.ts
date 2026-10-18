@@ -1,6 +1,8 @@
 export interface MorrisCodeMcpBootstrapInput {
   host: string
   port: number
+  /** The endpoint speaks TLS when the server serves HTTPS. */
+  https?: boolean
   authRequired: boolean
   sessionToken: string | null
 }
@@ -26,7 +28,7 @@ export function buildMorrisCodeMcpBootstrap(input: MorrisCodeMcpBootstrapInput):
   const config: MorrisCodeMcpBootstrapConfig = {
     name: 'morriscode',
     transport: 'http',
-    url: `http://${normalizeHost(input.host)}:${input.port}/mcp`,
+    url: `${input.https === true ? 'https' : 'http'}://${normalizeHost(input.host)}:${input.port}/mcp`,
   }
   if (input.authRequired && input.sessionToken) {
     config.headers = { Authorization: `Bearer ${input.sessionToken}` }

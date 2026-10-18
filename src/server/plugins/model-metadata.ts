@@ -11,6 +11,16 @@ export function listPluginModelMetadataProviders(): PluginModelMetadataProvider[
   return [...providers]
 }
 
+function attachMetadata<T extends ModelConfig | Provider>(
+  target: T,
+  merged: PluginModelMetadata,
+  badges: NonNullable<PluginModelMetadata['badges']>,
+): T {
+  if (badges.length > 0) merged.badges = badges
+  if (Object.keys(merged).length === 0) return target
+  return { ...target, pluginMetadata: merged }
+}
+
 export async function enrichModelWithPluginMetadata(providerId: string, model: ModelConfig): Promise<ModelConfig> {
   if (providers.length === 0) return model
   const merged: PluginModelMetadata = {}
@@ -33,9 +43,7 @@ export async function enrichModelWithPluginMetadata(providerId: string, model: M
     if (metadata.extra !== undefined) merged.extra = { ...(merged.extra ?? {}), ...metadata.extra }
     if (metadata.badges) badges.push(...metadata.badges)
   }
-  if (badges.length > 0) merged.badges = badges
-  if (Object.keys(merged).length === 0) return model
-  return { ...model, pluginMetadata: merged }
+  return attachMetadata(model, merged, badges)
 }
 
 export async function enrichProviderWithPluginMetadata(provider: Provider): Promise<Provider> {
@@ -56,9 +64,7 @@ export async function enrichProviderWithPluginMetadata(provider: Provider): Prom
     if (metadata.badges) badges.push(...metadata.badges)
   }
 
-  if (badges.length > 0) merged.badges = badges
-  if (Object.keys(merged).length === 0) return provider
-  return { ...provider, pluginMetadata: merged }
+  return attachMetadata(provider, merged, badges)
 }
 
 export async function enrichProvidersWithPluginMetadata(providersToEnrich: Provider[]): Promise<Provider[]> {

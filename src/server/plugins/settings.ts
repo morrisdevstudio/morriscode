@@ -90,20 +90,30 @@ function coerce(field: PluginSettingsField, raw: string | undefined): PluginSett
   }
 }
 
+function mapListSecrets(
+  field: PluginSettingsField,
+  items: Record<string, unknown>[],
+  update: (item: Record<string, unknown>, key: string, index: number) => void,
+): string {
+  return JSON.stringify(
+    items.map((item, index) => {
+      const next = { ...item }
+      for (const sub of field.itemFields ?? []) {
+        if (isSecret(sub)) update(next, sub.key, index)
+      }
+      return next
+    }),
+  )
+}
+
 /** Replaces every configured secret sub-value of a list with the mask. */
 function maskListSecrets(field: PluginSettingsField, raw: string): string {
   const items = parseListValue(raw)
   if (!items) return raw
-  const masked = items.map((item) => {
-    const next: Record<string, unknown> = { ...item }
-    for (const sub of field.itemFields ?? []) {
-      if (!isSecret(sub)) continue
-      const value = next[sub.key]
-      if (typeof value === 'string' && value !== '') next[sub.key] = MASKED_SECRET
-    }
-    return next
+  return mapListSecrets(field, items, (next, key) => {
+    const value = next[key]
+    if (typeof value === 'string' && value !== '') next[key] = MASKED_SECRET
   })
-  return JSON.stringify(masked)
 }
 
 /**
@@ -114,19 +124,13 @@ function mergeListSecrets(field: PluginSettingsField, incoming: string, stored: 
   const incomingItems = parseListValue(incoming)
   if (!incomingItems) return incoming
   const storedItems = stored === undefined ? [] : (parseListValue(stored) ?? [])
-  const merged = incomingItems.map((item, index) => {
-    const next: Record<string, unknown> = { ...item }
-    for (const sub of field.itemFields ?? []) {
-      if (!isSecret(sub)) continue
-      const value = next[sub.key]
-      if (typeof value === 'string' && value !== '' && !isMaskedValue(value)) continue
-      const previous = storedItems[index]?.[sub.key]
-      if (typeof previous === 'string' && previous !== '') next[sub.key] = previous
-      else delete next[sub.key]
-    }
-    return next
+  return mapListSecrets(field, incomingItems, (next, key, index) => {
+    const value = next[key]
+    if (typeof value === 'string' && value !== '' && !isMaskedValue(value)) return
+    const previous = storedItems[index]?.[key]
+    if (typeof previous === 'string' && previous !== '') next[key] = previous
+    else delete next[key]
   })
-  return JSON.stringify(merged)
 }
 
 export function readPluginSettings(

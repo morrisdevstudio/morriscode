@@ -1,3 +1,4 @@
+import { readDecodedChunks } from './decoded-stream.js'
 import type {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionCreateParamsStreaming,
@@ -134,25 +135,14 @@ export async function* readResponseLines(response: Response): AsyncGenerator<str
     throw new LLMError('No response body for streaming')
   }
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
   let buffer = ''
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        const trimmed = line.trim()
-        if (trimmed) yield trimmed
-      }
+  for await (const chunk of readDecodedChunks(response.body)) {
+    buffer += chunk
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed) yield trimmed
     }
-  } finally {
-    reader.releaseLock()
   }
 }

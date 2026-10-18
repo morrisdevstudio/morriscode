@@ -5,6 +5,14 @@ import path from 'path'
 import { createViteWatchOptions } from './vite-watch.js'
 import { existsSync } from 'fs'
 
+// The standalone dev server (npm run dev:web) proxies to the backend, so it has to
+// speak the backend's scheme: HTTPS on with a self-signed cert means https/wss plus
+// secure: false.
+const backendScheme = ['1', 'true', 'yes'].includes((process.env.MORRISCODE_HTTPS ?? '').toLowerCase())
+  ? 'https'
+  : 'http'
+const backendWsScheme = backendScheme === 'https' ? 'wss' : 'ws'
+
 const baseConfig = defineConfig({
   base: process.env.MORRISCODE_BASE_PATH || '/',
   plugins: [
@@ -65,12 +73,14 @@ const baseConfig = defineConfig({
     // build behind the reverse proxy instead, or add custom rewrites.
     proxy: {
       '/api': {
-        target: 'http://localhost:10469',
+        target: backendScheme + '://localhost:10469',
         changeOrigin: true,
+        secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:10469',
+        target: backendWsScheme + '://localhost:10469',
         ws: true,
+        secure: false,
       },
     },
   },

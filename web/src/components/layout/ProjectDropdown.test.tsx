@@ -12,6 +12,10 @@ vi.mock('../../hooks/useWorkdir', () => ({
   useWorkdir: () => '/home/user',
 }))
 
+vi.mock('../CreateSessionModal', () => ({
+  OpenProjectModal: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="manage-projects-modal" /> : null),
+}))
+
 vi.mock('../../hooks/useT', () => ({
   useT: () => (obj: { en: string; fr: string }) => obj.en,
 }))
@@ -119,7 +123,7 @@ describe('ProjectDropdown', () => {
 
     // Only Beta App remains: the selection (index 1) must land on it, not on the first footer item
     expect(screen.getByText('Beta App').closest('a')?.className).toContain('bg-accent-primary/20')
-    expect(screen.getByText('Home').closest('a')?.className).not.toContain('bg-accent-primary/20')
+    expect(screen.getByText('Manage projects').closest('button')?.className).not.toContain('bg-accent-primary/20')
   })
 
   it('auto-focuses the search input when opened on desktop', async () => {
@@ -158,15 +162,15 @@ describe('ProjectDropdown', () => {
     const utils = render(<ProjectDropdown projects={mockProjects} />)
 
     fireEvent.click(screen.getByTitle('Select project'))
-    // 3 main items (0-2), 3 footer items (3-5): three ArrowDowns select "Home"
+    // 3 main items (0-2), 3 footer items (3-5): three ArrowDowns select "Manage projects"
     fireEvent.keyDown(window, { key: 'ArrowDown' })
     fireEvent.keyDown(window, { key: 'ArrowDown' })
     fireEvent.keyDown(window, { key: 'ArrowDown' })
-    expect(screen.getByText('Home').closest('a')?.className).toContain('bg-accent-primary/20')
+    expect(screen.getByText('Manage projects').closest('button')?.className).toContain('bg-accent-primary/20')
 
     // Same content, new array identity — what a keystroke or star toggle produces
     utils.rerender(<ProjectDropdown projects={[...mockProjects]} />)
 
-    expect(screen.getByText('Home').closest('a')?.className).toContain('bg-accent-primary/20')
+    expect(screen.getByText('Manage projects').closest('button')?.className).toContain('bg-accent-primary/20')
   })
 })

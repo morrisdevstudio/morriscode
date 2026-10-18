@@ -1,3 +1,4 @@
+import { withTimeout } from '../utils/promise-timeout.js'
 import type { PluginHookEvent, PluginHookPayload } from '../../plugin/index.js'
 import type { PluginRegistry } from './registry.js'
 
@@ -25,7 +26,7 @@ export class HookBus {
     await Promise.all(
       handlers.map(async ({ pluginId, value }) => {
         try {
-          await withTimeout(Promise.resolve(value(full)), this.timeoutMs)
+          await withTimeout(Promise.resolve(value(full)), this.timeoutMs, `Hook timed out after ${this.timeoutMs}ms`)
         } catch (error) {
           this.logger.warn('Plugin hook failed', {
             pluginId,
@@ -36,20 +37,4 @@ export class HookBus {
       }),
     )
   }
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Hook timed out after ${timeoutMs}ms`)), timeoutMs)
-    promise.then(
-      (value) => {
-        clearTimeout(timer)
-        resolve(value)
-      },
-      (error: unknown) => {
-        clearTimeout(timer)
-        reject(error instanceof Error ? error : new Error(String(error)))
-      },
-    )
-  })
 }

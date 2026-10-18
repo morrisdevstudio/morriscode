@@ -920,6 +920,36 @@ export interface Provider {
   pluginMetadata?: PluginModelMetadataView
 }
 
+/** One metered usage window, as a provider backend reports it. */
+export interface ProviderUsageWindow {
+  /** Share of the window already consumed, 0-100. */
+  usedPercent: number
+  /** Window length in minutes (300 for the short slot, 10080 for a week). */
+  windowMinutes?: number
+  /** Epoch seconds at which this window resets. */
+  resetsAt?: number
+}
+
+/** Read-only availability of earned usage resets, without account or credit identifiers. */
+export interface ProviderResetCredits {
+  /** Null means the count could not be fetched, never zero by inference. */
+  availableCount: number | null
+  /** Missing means only the count is known; no private identifiers reach the client. */
+  coupons?: { expiresAt?: number | null }[]
+}
+
+/** Metered usage of the account behind a provider, when it meters at all. */
+export interface ProviderUsage {
+  /** Windows as the backend reports them: the short slot first, then the long one. */
+  windows: ProviderUsageWindow[]
+  /** Label the backend gives the plan or limit (for example `Pro`). */
+  planType?: string
+  credits?: { hasCredits: boolean; unlimited: boolean; balance?: string }
+  resetCredits?: ProviderResetCredits
+  /** Epoch milliseconds of the observation, filled by the adapter. */
+  observedAt?: number
+}
+
 export interface Config {
   llm: {
     baseUrl: string
@@ -955,6 +985,11 @@ export interface Config {
     port: number
     host?: string
     openBrowser?: boolean
+    /** Serve the UI and API over TLS on the same port. */
+    https?: boolean
+    /** PEM certificate/key to use instead of the generated self-signed certificate. */
+    httpsCert?: string
+    httpsKey?: string
   }
   database: {
     path: string

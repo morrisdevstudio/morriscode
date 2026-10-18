@@ -222,19 +222,19 @@ test.describe('Full-stack Build & Verify E2E', () => {
     // Step 3: Skip vision
     await page.getByTestId('onboarding-skip-button').click()
 
-    // After onboarding completes, navigate to home
+    // Onboarding ends without any project, so the app root lands on the split
+    // view — the header project menu is where the first project gets created.
     await page.goto(`${serverUrl}/`)
     await page.waitForLoadState('networkidle')
 
-    // Verify we're on the home page (not onboarding)
+    // Verify we left onboarding
     expect(page.url()).toContain(serverUrl)
     expect(page.url()).not.toContain('/onboarding')
+    await expect(page).toHaveURL(/\/split-view$/, { timeout: 20000 })
 
-    // Wait for content to load
-    await page.waitForTimeout(2000)
-
-    // Click "Open Project" to open the modal
-    await page.getByRole('button', { name: 'Open Project' }).click()
+    // Open the header project menu, then the project manager
+    await page.getByRole('button', { name: 'Select project...' }).click()
+    await page.getByRole('button', { name: 'Manage projects' }).click()
     await page.waitForTimeout(500)
 
     // Click "Create Project"

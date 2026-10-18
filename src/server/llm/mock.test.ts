@@ -2,6 +2,35 @@ import { describe, expect, it } from 'vitest'
 
 import { createMockLLMClient } from './mock.js'
 
+describe('mock llm quoted paths', () => {
+  it.each(['C:\\Users\\Test User\\outside\\secret.txt', '/home/test user/outside/secret.txt'])(
+    'preserves the quoted path and content for %s',
+    async (path) => {
+      const response = await createMockLLMClient().complete({
+        messages: [{ role: 'user', content: `Write to "${path}" with content "custom data"` }],
+      })
+      expect(response.toolCalls).toEqual([
+        expect.objectContaining({ name: 'write_file', arguments: { path, content: 'custom data' } }),
+      ])
+    },
+  )
+
+  it('captures three distinct quoted paths in order', async () => {
+    const paths = ['C:/Users/Test User/outside/alpha.txt', '/home/test/beta.txt', '/home/test/gamma.txt']
+    const response = await createMockLLMClient().complete({
+      messages: [{ role: 'user', content: `Write three files to "${paths[0]}", "${paths[1]}", "${paths[2]}"` }],
+    })
+    expect(response.toolCalls).toEqual(
+      paths.map((path, index) =>
+        expect.objectContaining({
+          name: 'write_file',
+          arguments: { path, content: ['alpha', 'beta', 'gamma'][index] },
+        }),
+      ),
+    )
+  })
+})
+
 describe('mock llm runtime reminders', () => {
   it('ignores planner runtime reminders when resolving the active user prompt', async () => {
     const client = createMockLLMClient()

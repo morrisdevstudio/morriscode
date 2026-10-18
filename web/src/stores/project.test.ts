@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authFetch } from '../lib/api'
 import { clearCache } from '../lib/resourceCache'
 import { projectsResource, readProject, readProjects } from '../lib/resources'
+import { LAST_PROJECT_KEY } from '../lib/landing'
 import { useProjectStore } from './project'
 
 vi.mock('../lib/api', () => ({
@@ -27,6 +28,7 @@ describe('project store mutations', () => {
   beforeEach(() => {
     mockedAuthFetch.mockReset()
     clearCache()
+    localStorage.clear()
     useProjectStore.setState({ currentProjectId: null })
   })
 
@@ -101,5 +103,24 @@ describe('project store mutations', () => {
     )
     expect(mockedAuthFetch).toHaveBeenNthCalledWith(2, '/api/projects')
     expect(projectsResource.keyOf()).toBe('projects:list')
+  })
+
+  it('remembers the working project so the next open can resume it', () => {
+    useProjectStore.getState().setCurrentProjectId('proj-a')
+    expect(localStorage.getItem(LAST_PROJECT_KEY)).toBe('proj-a')
+
+    useProjectStore.getState().setCurrentProjectId(null)
+    expect(localStorage.getItem(LAST_PROJECT_KEY)).toBeNull()
+  })
+
+  it('forgets a deleted project even when it is not the open one', async () => {
+    useProjectStore.setState({ currentProjectId: 'proj-b' })
+    localStorage.setItem(LAST_PROJECT_KEY, 'proj-a')
+    mockedAuthFetch.mockResolvedValue(jsonResponse({}))
+
+    await useProjectStore.getState().deleteProject('proj-a')
+
+    expect(localStorage.getItem(LAST_PROJECT_KEY)).toBeNull()
+    expect(useProjectStore.getState().currentProjectId).toBe('proj-b')
   })
 })

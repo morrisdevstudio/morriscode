@@ -206,6 +206,21 @@ describe('ProviderModal - thinkingLevel persistence', () => {
     }
   })
 
+  it('keeps every model unticked when the saved list says so', async () => {
+    await renderProviderModal({
+      editProvider: providerWithModels([
+        { id: 'model-a', contextWindow: 200000, selected: false },
+        { id: 'model-b', contextWindow: 200000, selected: false },
+      ]),
+    })
+
+    clickSave()
+
+    // An unticked list used to look untouched, so reopening the modal re-ticked every
+    // model and a save wrote them all back as offered.
+    expect(savedProvider().models.map((model) => model.selected)).toEqual([false, false])
+  })
+
   it('preserves previously-saved advanced parameters when reopening the modal', async () => {
     await renderProviderModal({
       editProvider: providerWithModels([
@@ -1216,6 +1231,7 @@ describe('ProviderModal - model mode merge', () => {
     const claudeMerged = savedData.models.find((m) => m.id === 'antigravity/claude-opus-4-6-thinking')
     // Only the gemini family (which had a selected member) is selected.
     expect(geminiMerged?.selected).toBe(true)
+    // The claude family is not among the saved models at all — hence no flag to read.
     expect(claudeMerged?.selected).toBeUndefined()
     expect(savedData.models.some((m) => m.id === 'antigravity/gemini-3.6-flash-high')).toBe(false)
   })
@@ -1374,12 +1390,12 @@ describe('ProviderModal - model mode merge', () => {
 
     // model-b was not selected and remains unselected
     const modelB = savedData.models.find((m) => m.id === 'model-b')
-    expect(modelB?.selected).toBeUndefined()
+    expect(modelB?.selected).toBe(false)
 
     // model-c-new is added to models but is NOT selected
     const modelC = savedData.models.find((m) => m.id === 'model-c-new')
     expect(modelC).toBeDefined()
-    expect(modelC?.selected).toBeUndefined()
+    expect(modelC?.selected).toBe(false)
   })
 
   it('syncing with merged mode models does not duplicate models in Selected Models', async () => {
@@ -1455,7 +1471,7 @@ describe('ProviderModal - model mode merge', () => {
     // gemini-3.1-pro was newly discovered, so it is in available models but NOT selected
     const geminiPro = savedData.models.find((m) => m.id === 'gemini-3.1-pro')
     expect(geminiPro).toBeDefined()
-    expect(geminiPro?.selected).toBeUndefined()
+    expect(geminiPro?.selected).toBe(false)
 
     // Total models saved should be 3 (claude-opus, gemini-flash, gemini-pro)
     expect(savedData.models.length).toBe(3)

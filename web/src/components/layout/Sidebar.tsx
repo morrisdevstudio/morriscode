@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useLocation, Link } from 'wouter'
 import { useSessionStore } from '../../stores/session'
+import { useProjectStore } from '../../stores/project'
+import { sortProjectsStarredFirst } from '../../lib/projects'
 import type { PendingPathConfirmation } from '../../stores/session/types'
 import { useCurrentProject } from '../../hooks/useCurrentProject'
 import { useProjects } from '../../hooks/useProjects'
@@ -26,7 +28,6 @@ import {
   GearIcon,
   TrashIcon,
   EditSmallIcon,
-  HomeIcon,
   ColumnsIcon,
   TerminalIcon,
   PuzzleIcon,
@@ -36,8 +37,9 @@ import {
   FolderIcon,
   ChevronRightIcon,
   UserIcon,
+  PlusMdIcon,
 } from '../shared/icons'
-import { groupSessionsByDate, formatDateHeader, formatTime } from '../../lib/format-date.js'
+import { groupSessionsByDate, formatDateHeader } from '../../lib/format-date.js'
 import { fuzzyMatch, highlightMatches } from '../../lib/modal-utils.js'
 import { shouldAutofocus } from '../../lib/device'
 import { useBinding, useKeybindings } from '../../hooks/useKeybindings.js'
@@ -92,6 +94,7 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   const [searchQuery, setSearchQuery] = useState('')
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const { projects } = useProjects()
+  const toggleProjectStar = useProjectStore((state) => state.toggleStar)
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
   const [revealedProjects, setRevealedProjects] = useState<Set<string>>(new Set())
   const searchRef = useRef<HTMLInputElement>(null)
@@ -217,9 +220,10 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
    * project list is still loading (or when it is unavailable).
    */
   const treeProjects = useMemo(() => {
-    const nodes: { id: string; name: string }[] = projects.map((project) => ({
+    const nodes: { id: string; name: string; isStarred?: boolean }[] = projects.map((project) => ({
       id: project.id,
       name: project.name,
+      isStarred: project.isStarred ?? false,
     }))
     const known = new Set(nodes.map((node) => node.id))
     for (const session of filteredOthers) {
@@ -227,7 +231,7 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
       known.add(session.projectId)
       nodes.push({ id: session.projectId, name: session.projectId })
     }
-    return nodes
+    return sortProjectsStarredFirst(nodes)
   }, [projects, filteredOthers])
 
   const toggleProject = useCallback((targetId: string) => {
@@ -270,10 +274,10 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   const isSearching = searchQuery.length > 0
   const hasNoResults = isSearching && allFiltered.length === 0
 
-  // Reset focused index when search results change
+  // Keyboard highlighting belongs to the focused search field, never to ordinary browsing.
   useEffect(() => {
-    setFocusedIndex(allFiltered.length > 0 ? 0 : -1)
-  }, [allFiltered.length])
+    setFocusedIndex(document.activeElement === searchRef.current && allFiltered.length > 0 ? 0 : -1)
+  }, [allFilteredIds, searchQuery])
 
   // Scroll focused item into view
   useEffect(() => {
@@ -403,7 +407,7 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
       {/* Sidebar content — shared between desktop and mobile variants */}
       {(() => {
-        const renderProjectNode = (project: { id: string; name: string }) => {
+        const renderProjectNode = (project: { id: string; name: string; isStarred?: boolean }) => {
           const treeSessions = sessionsByProject.get(project.id) ?? []
           if (isSearching && treeSessions.length === 0) return null
 
@@ -415,20 +419,64 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
           return (
             <div key={project.id}>
-              <button
-                type="button"
-                onClick={() => toggleProject(project.id)}
-                aria-expanded={isExpanded}
-                title={project.name}
-                className="w-full flex items-center gap-1.5 px-3 py-1.5 text-left text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/40 transition-colors"
-              >
-                <ChevronRightIcon
-                  className={`w-3 h-3 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                />
-                <FolderIcon className="w-4 h-4 flex-shrink-0 text-text-muted" />
-                <span className="truncate text-[13px] font-medium">{project.name}</span>
-                {isRunning && <SpinIcon />}
-              </button>
+              <div className="flex items-center gap-1 pr-2 hover:bg-bg-tertiary/40">
+                <button
+                  type="button"
+                  onClick={() => toggleProject(project.id)}
+                  aria-expanded={isExpanded}
+                  title={project.name}
+                  className="min-w-0 flex-1 flex items-center gap-1.5 px-3 py-1.5 text-left text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <ChevronRightIcon
+                    className={`w-3 h-3 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                  />
+                  <FolderIcon className="w-4 h-4 flex-shrink-0 text-text-muted" />
+                  <span className="truncate text-[13px] font-medium">{project.name}</span>
+                  {isRunning && <SpinIcon />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void toggleProjectStar(project.id, !project.isStarred)}
+                  aria-pressed={!!project.isStarred}
+                  title={
+                    project.isStarred
+                      ? t({ en: 'Unfavorite project', fr: 'Retirer le projet des favoris' })
+                      : t({ en: 'Favorite project', fr: 'Ajouter le projet aux favoris' })
+                  }
+                  aria-label={
+                    project.isStarred
+                      ? t(
+                          { en: 'Unfavorite project {{name}}', fr: 'Retirer le projet {{name}} des favoris' },
+                          { name: project.name },
+                        )
+                      : t(
+                          { en: 'Favorite project {{name}}', fr: 'Ajouter le projet {{name}} aux favoris' },
+                          { name: project.name },
+                        )
+                  }
+                  className="shrink-0 p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+                >
+                  {project.isStarred ? (
+                    <StarFilledIcon className="w-3.5 h-3.5 text-amber-400" />
+                  ) : (
+                    <StarIcon className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <Link
+                  href={`/p/${project.id}/new`}
+                  title={t(
+                    { en: 'New session in {{name}}', fr: 'Nouvelle session dans {{name}}' },
+                    { name: project.name },
+                  )}
+                  aria-label={t(
+                    { en: 'New session in {{name}}', fr: 'Nouvelle session dans {{name}}' },
+                    { name: project.name },
+                  )}
+                  className="flex shrink-0 p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+                >
+                  <PlusMdIcon className="w-4 h-4" />
+                </Link>
+              </div>
 
               {isExpanded && (
                 <>
@@ -475,9 +523,6 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
         const rail = (
           <nav className="hidden @md:flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border py-2">
-            <Link href="/" className={railButtonClass} title={t({ en: 'Home', fr: 'Accueil' })}>
-              <HomeIcon className="w-4 h-4" />
-            </Link>
             <Link href="/split-view" className={railButtonClass} title={t({ en: 'Split view', fr: 'Vue divisée' })}>
               <ColumnsIcon className="w-4 h-4" />
             </Link>
@@ -616,6 +661,8 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setFocusedIndex(allFiltered.length > 0 ? 0 : -1)}
+                  onBlur={() => setFocusedIndex(-1)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder={t({ en: 'Search sessions...', fr: 'Rechercher des sessions…' })}
                   className="w-full bg-bg-tertiary border border-border rounded pl-8 pr-8 py-1.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary/50 focus:border-accent-primary transition-colors"
@@ -715,7 +762,7 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
             <PluginZone id="sidebar.sessions_list" className="flex-1 min-h-0 flex flex-col" context={{ projectId }}>
               <ScrollArea className="flex-1 min-h-0">
-                {allFiltered.length === 0 ? (
+                {allFiltered.length === 0 && (isSearching || treeProjects.length === 0) ? (
                   <div className="p-4 text-center text-text-muted text-xs">
                     {isSearching
                       ? t({ en: 'No matching sessions', fr: 'Aucune session correspondante' })
@@ -907,8 +954,7 @@ function renderSessionList(
               />
             </div>
           </div>
-          {/* Time displayed below the title as muted secondary text */}
-          <div className={`flex items-center gap-2 ${indent ? 'mt-0.5' : 'mt-1'}`}>
+          <div className="flex items-center gap-2 empty:hidden">
             {hasPendingConfirmation ? (
               <span title={t({ en: 'Awaiting confirmation', fr: 'En attente de confirmation' })}>
                 <StopIcon className="w-3 h-3 text-red-400 flex-shrink-0" />
@@ -922,14 +968,6 @@ function renderSessionList(
                 className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
               />
             ) : null}
-            {/* Time in muted style */}
-            {!isFavorite && (
-              <span className="text-text-muted text-xs flex-shrink-0">{formatTime(session.updatedAt)}</span>
-            )}
-            {/* Message count in muted style */}
-            <span className="text-text-muted text-xs flex-shrink-0">
-              {t({ en: '{{count}} messages', fr: '{{count}} messages' }, { count: session.messageCount })}
-            </span>
             <PluginBadges
               slot="session.row.badges"
               context={{

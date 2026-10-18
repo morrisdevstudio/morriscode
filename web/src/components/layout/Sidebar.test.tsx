@@ -108,7 +108,7 @@ describe('Sidebar', () => {
     expect(html).toContain('Options')
   })
 
-  it('displays message count in session list', () => {
+  it('hides message count in session list', () => {
     sessionStoreStateRef.current = {
       ...sessionStoreState,
       sessions: sessionStoreState.sessions.map((s) => ({
@@ -118,7 +118,7 @@ describe('Sidebar', () => {
     }
 
     const html = renderToStaticMarkup(<Sidebar projectId="project-1" />)
-    expect(html).toContain('5 messages')
+    expect(html).not.toContain('5 messages')
   })
 
   it('renders as a fixed overlay with a backdrop when overlay mode is on', () => {

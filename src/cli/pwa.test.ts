@@ -9,7 +9,11 @@ vi.mock('./paths.js', () => ({
   getGlobalConfigDir: (mode: string) => join(TEST_DIR, mode),
 }))
 
-vi.mock('./config.js', () => ({}))
+vi.mock('./config.js', () => ({
+  loadGlobalConfig: vi.fn(async () => ({
+    server: { port: 10369, host: '127.0.0.1', openBrowser: true, https: false },
+  })),
+}))
 
 describe('pwa', () => {
   beforeEach(async () => {
@@ -36,6 +40,13 @@ describe('pwa', () => {
     it('returns localhost:10369 for test mode (falls back to production port)', async () => {
       const { getManifestUrl } = await import('./pwa.js')
       expect(getManifestUrl('test')).toBe('http://127.0.0.1:10369/manifest.webmanifest')
+    })
+
+    it('switches to https once the server is served over TLS', async () => {
+      const { getManifestUrl, setPwaHttpsMode } = await import('./pwa.js')
+      setPwaHttpsMode(true)
+      expect(getManifestUrl('production')).toBe('https://127.0.0.1:10369/manifest.webmanifest')
+      setPwaHttpsMode(false)
     })
   })
 

@@ -33,6 +33,7 @@ vi.mock('wouter', () => ({
   Route: ({ children, path }: { children: React.ReactNode; path: string }) => <div data-path={path}>{children}</div>,
   Switch: ({ children }: { children: React.ReactNode }) => <div data-switch>{children}</div>,
   Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+  Redirect: ({ to }: { to: string }) => <div data-redirect={to} />,
   useRoute: (path: string) => {
     if (path === '/p/:projectId/s/:sessionId/readonly') {
       return [false, {}]
@@ -52,6 +53,14 @@ const sessionState = vi.hoisted(() => ({
   connectionStatus: 'connected' as 'connected' | 'disconnected' | 'reconnecting',
   showPasswordModal: false,
   passwordModalRetry: false,
+  currentSession: { id: 'deleted-session', projectId: 'test-project' } as { id: string; projectId: string } | null,
+}))
+const currentProjectRef = vi.hoisted(() => ({
+  current: { id: 'test-project', name: 'Test Project', workdir: '/test' } as {
+    id: string
+    name: string
+    workdir: string
+  } | null,
 }))
 
 const layoutProps = vi.hoisted(() => ({
@@ -76,7 +85,7 @@ vi.mock('./stores/session', () => ({
       showPasswordModal: sessionState.showPasswordModal,
       passwordModalRetry: sessionState.passwordModalRetry,
       sessions: [],
-      currentSession: { id: 'deleted-session', projectId: 'test-project' },
+      currentSession: sessionState.currentSession,
       messages: [],
       currentTodos: [],
       contextState: null,
@@ -94,7 +103,7 @@ vi.mock('./stores/session', () => ({
 }))
 
 vi.mock('./hooks/useCurrentProject', () => ({
-  useCurrentProject: () => ({ id: 'test-project', name: 'Test Project', workdir: '/test' }),
+  useCurrentProject: () => currentProjectRef.current,
 }))
 
 const configStoreState = vi.hoisted(() => ({
@@ -165,13 +174,12 @@ vi.mock('./components/layout/Sidebar', () => ({
 }))
 
 const noop = () => null
-vi.mock('./components/HomePage', () => ({ HomePage: noop }))
 vi.mock('./components/EmptyProjectView', () => ({ EmptyProjectView: noop }))
 vi.mock('./components/plan/PlanPanel', () => ({
   PlanPanel: (props: { criteriaSidebarOpen?: boolean; criteriaSidebarOverlay?: boolean }) => {
     layoutProps.rightSidebar.open = props.criteriaSidebarOpen
     layoutProps.rightSidebar.overlay = props.criteriaSidebarOverlay
-    return null
+    return <div data-testid="plan-panel" />
   },
 }))
 vi.mock('./components/plan/ReadonlySessionView', () => ({ ReadonlySessionView: noop }))
@@ -218,6 +226,8 @@ async function renderAppAt(width: number): Promise<HTMLElement> {
 }
 
 beforeEach(() => {
+  currentProjectRef.current = { id: 'test-project', name: 'Test Project', workdir: '/test' }
+  sessionState.currentSession = { id: 'deleted-session', projectId: 'test-project' }
   sessionState.connectionStatus = 'connected'
   sessionState.showPasswordModal = false
   sessionState.passwordModalRetry = false
@@ -236,6 +246,58 @@ beforeEach(() => {
 })
 
 describe('App - imports', () => {
+  it('preserves the same sidebar and chat DOM through loading and recovery', async () => {
+    const container = await renderAppAt(1600)
+    const view = container.querySelector('[data-path="/p/:projectId/s/:sessionId"]')!
+    const sidebar = view.querySelector('[data-testid="sidebar"]')
+    const chat = view.querySelector('[data-testid="plan-panel"]')
+    currentProjectRef.current = null
+    sessionState.currentSession = null
+    act(() => {
+      setViewportWidth(1500)
+      window.dispatchEvent(new Event('resize'))
+    })
+    expect(view.querySelector('[data-testid="sidebar"]')).toBe(sidebar)
+    expect(view.querySelector('[data-testid="plan-panel"]')).toBe(chat)
+    expect(view.querySelector('[inert]')).toBeTruthy()
+    currentProjectRef.current = { id: 'test-project', name: 'Test Project', workdir: '/test' }
+    sessionState.currentSession = { id: 'deleted-session', projectId: 'test-project' }
+    act(() => {
+      setViewportWidth(1600)
+      window.dispatchEvent(new Event('resize'))
+    })
+    expect(view.querySelector('[data-testid="sidebar"]')).toBe(sidebar)
+    expect(view.querySelector('[data-testid="plan-panel"]')).toBe(chat)
+    expect(view.querySelector('[role="status"]')).toBeNull()
+    expect(view.querySelector('[inert]')).toBeNull()
+  })
+
+  it('keeps the sidebar and chat mounted while a different project loads', async () => {
+    currentProjectRef.current = null
+    await renderAppAsync()
+    const view = document.querySelector('[data-path="/p/:projectId/s/:sessionId"]')!
+    expect(view.querySelector('[data-testid="sidebar"]')).toBeTruthy()
+    expect(view.querySelector('[data-testid="plan-panel"]')).toBeTruthy()
+    expect(view.querySelector('[role="status"]')).toBeTruthy()
+    expect(view.querySelector('[inert]')).toBeTruthy()
+  })
+
+  it('covers stale conversation controls while the target session is loading', async () => {
+    sessionState.currentSession = { id: 'previous-session', projectId: 'test-project' }
+    await renderAppAsync()
+    const view = document.querySelector('[data-path="/p/:projectId/s/:sessionId"]')!
+    expect(view.querySelector('[role="status"]')).toBeTruthy()
+    expect(view.querySelector('[inert]')).toBeTruthy()
+  })
+
+  it('shows the loaded conversation without a loading cover', async () => {
+    await renderAppAsync()
+    const view = document.querySelector('[data-path="/p/:projectId/s/:sessionId"]')!
+    expect(view.querySelector('[data-testid="plan-panel"]')).toBeTruthy()
+    expect(view.querySelector('[role="status"]')).toBeNull()
+    expect(view.querySelector('[inert]')).toBeNull()
+  })
+
   it('imports without throwing', async () => {
     const App = (await import('./App')).default
     expect(App).toBeDefined()

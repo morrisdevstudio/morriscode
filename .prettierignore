@@ -5,3 +5,7 @@ src/server/lsp/__fixtures__/
 examples/agent-office-plugin/vendor/
 examples/agent-office-plugin/dist/
 .agent-office/
+
+# Local test scratch files
+.tmp-vitest/
+tmp/

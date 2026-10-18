@@ -9,6 +9,7 @@ import { SETTINGS_KEYS, setSetting } from '../../../lib/resources'
 import { useSetting } from '../../../hooks/useSetting'
 import { useTestButton } from '../../../hooks/useTestButton'
 import { RetryPatternsEditor, isValidRegex, type RetryPatternsValue } from '../RetryPatternsEditor'
+import { NetworkAccessCard } from '../NetworkAccessCard'
 import { useConfig } from '../../../hooks/useConfig'
 import { useUpdateStore } from '../../../stores/update'
 import { AutoUpdateModal } from '../../AutoUpdateModal'
@@ -376,6 +377,8 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
             })}
           </p>
         </div>
+        <hr className="border-border mt-4" />
+        <NetworkAccessCard />
       </div>
       <hr className="border-border" />
       <div>

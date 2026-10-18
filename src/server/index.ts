@@ -1,10 +1,14 @@
 import express from 'express'
 import cors from 'cors'
-import { createServer as createHttpServer } from 'node:http'
+import { createServer as createHttpServer, type Server as HttpServer } from 'node:http'
+import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve, join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { createServer as createViteServer, type ViteDevServer } from 'vite'
+
+/** Vite's HMR options expect a node:http server; an https.Server is compatible at runtime. */
+type ViteHmrServer = HttpServer | import('node:http2').Http2SecureServer
 
 import type { Config, ModelConfig, ProviderBackend } from '../shared/types.js'
 import type { ServerHandle } from './context.js'
@@ -36,7 +40,7 @@ import {
 } from './tools/mcp-config.js'
 import { getSessionDisabledServers, setSessionDisabledServers } from './mcp/session-overrides.js'
 import { setMcpOAuthStoreMode, setMcpOAuthStorePath } from './mcp/oauth-store.js'
-import { setMcpOAuthServerPort } from './mcp/oauth-provider.js'
+import { setMcpOAuthServerPort, setMcpOAuthServerScheme } from './mcp/oauth-provider.js'
 import { createServerMessage } from '../shared/protocol.js'
 import { createContextStateMessage } from './ws/protocol.js'
 import { createWebSocketServer } from './ws/index.js'
@@ -52,6 +56,8 @@ import { createWorkflowRoutes } from './routes/workflows.js'
 import { listAvailableWorkflows } from './workflows/registry.js'
 import { createMorrisCodeMcpRouter, extractSessionToken } from './mcp/server/endpoint.js'
 import { buildMorrisCodeMcpBootstrap } from './mcp/server/bootstrap.js'
+import { describeCertificate, resolveTlsMaterial } from './tls.js'
+import { getServerUrls, serverScheme } from './utils/network.js'
 import type { MorrisCodeMcpToolDeps } from './mcp/server/types.js'
 import { createDevServerRoutes } from './routes/dev-server.js'
 import { createWorkspaceConfigRoutes } from './routes/workspace-config.js'
@@ -75,12 +81,16 @@ import {
   loadServerAuthConfig,
   requiresAuth,
   hasPassword,
+  hasEffectiveNetworkAuth,
   getAuthConfig,
   verifyPassword,
   isValidToken,
   tokenFromPassword,
   currentSessionToken,
 } from './auth.js'
+import { isLoopbackHost, networkAccessError } from '../shared/network-security.js'
+import { serverT } from './i18n.js'
+import { cliT } from '../cli/i18n.js'
 import { detectWsl, type WslInfo } from './utils/wsl.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -110,6 +120,14 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Load auth config
   await loadServerAuthConfig()
+
+  const bindHost = config.server.host ?? '127.0.0.1'
+  const safetyError = networkAccessError(
+    bindHost,
+    config.server.https === true,
+    isLoopbackHost(bindHost) || (await hasEffectiveNetworkAuth()),
+  )
+  if (safetyError) throw new Error(cliT(safetyError))
 
   // Initialize database
   const db = initDatabase(config)
@@ -1961,6 +1979,39 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   })
 
   // Config endpoint
+  /**
+   * How peers reach this server: the bind address, the scheme, and the URLs to
+   * hand out. Computed from a server block so the settings UI can preview the
+   * values it just saved, before the restart makes them real.
+   */
+  // Mirrors Config['server'], but tolerates the optional-with-undefined shape the
+  // global config parses into (exactOptionalPropertyTypes rejects the narrower one).
+  type NetworkServerConfig = {
+    port: number
+    host?: string | undefined
+    openBrowser?: boolean | undefined
+    https?: boolean | undefined
+    httpsCert?: string | undefined
+    httpsKey?: string | undefined
+  }
+
+  const describeNetwork = (server: NetworkServerConfig) => {
+    const host = server.host ?? '127.0.0.1'
+    const https = server.https === true
+    const certificate = https
+      ? describeCertificate({ server, mode: config.mode, globalConfigPath: config.globalConfigPath })
+      : null
+
+    return {
+      host,
+      port: server.port,
+      https,
+      urls: getServerUrls({ host, port: server.port, https }),
+      certificatePath: certificate?.certPath ?? null,
+      certificateGenerated: certificate?.generated ?? false,
+    }
+  }
+
   app.get('/api/config', async (_req, res) => {
     const llmClient = getLLMClient()
     const activeProvider = providerManager.getActiveProvider()
@@ -2009,7 +2060,52 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
       visionFallback,
       platform: platformInfo,
       locale: (await import('./db/settings.js')).getSetting('display.locale') ?? 'automatic',
+      serverNetwork: describeNetwork(config.server),
     })
+  })
+
+  // Network access settings (bind address + HTTPS). Persisted to the global
+  // config; the listening socket and its TLS material are fixed at startup, so
+  // the change lands on the next start.
+  app.put('/api/config/network', async (req, res) => {
+    const { host, https } = req.body as { host?: unknown; https?: unknown }
+
+    if (host !== undefined && (typeof host !== 'string' || host.trim() === '')) {
+      return res.status(400).json({ error: 'host must be a non-empty string' })
+    }
+    if (https !== undefined && typeof https !== 'boolean') {
+      return res.status(400).json({ error: 'https must be a boolean' })
+    }
+
+    const mode = config.mode ?? 'production'
+
+    try {
+      const { loadGlobalConfig, saveGlobalConfig } = await import('../cli/config.js')
+      const globalConfig = await loadGlobalConfig(mode, config.globalConfigPath)
+      const nextHost =
+        typeof host === 'string' ? host.trim() : (globalConfig.server.host ?? config.server.host ?? '127.0.0.1')
+      const nextHttps =
+        typeof https === 'boolean' ? https : !isLoopbackHost(nextHost) || globalConfig.server.https === true
+      const safetyError = networkAccessError(
+        nextHost,
+        nextHttps,
+        isLoopbackHost(nextHost) || (await hasEffectiveNetworkAuth()),
+      )
+      if (safetyError) return res.status(400).json({ error: serverT(safetyError) })
+      const updated = {
+        ...globalConfig,
+        server: {
+          ...globalConfig.server,
+          host: nextHost,
+          https: nextHttps,
+        },
+      }
+
+      await saveGlobalConfig(mode, updated, config.globalConfigPath)
+      res.json({ restartRequired: true, serverNetwork: describeNetwork(updated.server) })
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
   })
 
   // Model refresh endpoint
@@ -2827,6 +2923,12 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     res.json({ models })
   })
 
+  // Metered usage of a provider's account (weekly window and short slot) when it reports one.
+  app.get('/api/providers/:id/usage', async (req, res) => {
+    const { id } = req.params
+    res.json({ usage: await providerManager.getProviderUsage(id as string) })
+  })
+
   // Persist a single model's settings (e.g. the sticky reasoning-effort default
   // picked in the model selector) to the config file and in-memory state.
   app.put('/api/providers/:id/models/:modelId/settings', async (req, res) => {
@@ -3478,6 +3580,14 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   app.use('/api/directories', createDirectoryRoutes())
   app.use('/api/files', createFileSearchRoutes())
 
+  // Create the listener before the dev-mode Vite middleware so Vite can share it
+  // for HMR: one port, one listener, one firewall rule, TLS included.
+  const tlsMaterial = await resolveTlsMaterial(config)
+  const httpServer: HttpServer | HttpsServer = tlsMaterial
+    ? createHttpsServer({ key: tlsMaterial.key, cert: tlsMaterial.cert }, app)
+    : createHttpServer(app)
+  const scheme = serverScheme(tlsMaterial !== null)
+
   // Serve static web UI
   const webDir = resolve(__dirname, '../../web')
   const isDev = config.mode === 'development'
@@ -3492,7 +3602,18 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     viteServer = await createViteServer({
       root: webDir,
       configFile: resolve(__dirname, '../../web/vite.config.ts'),
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        // The server is meant to be reachable from the LAN, and Vite's dev host
+        // check answers 403 for hostnames (literal IPs pass on their own).
+        allowedHosts: true,
+        // Ride the app server instead of Vite's own HMR port, so the WebSocket
+        // lands on the same origin and the same TLS listener as the page.
+        hmr: {
+          server: httpServer as unknown as ViteHmrServer,
+          ...(tlsMaterial ? { protocol: 'wss' } : {}),
+        },
+      },
       appType: 'spa',
       logLevel: 'warn',
     })
@@ -3642,9 +3763,6 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         })
     })
   }
-
-  // Create HTTP server from Express app
-  const httpServer = createHttpServer(app)
 
   // Create WebSocket server attached to HTTP server
   const wssExports = createWebSocketServer(
@@ -3844,6 +3962,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     return buildMorrisCodeMcpBootstrap({
       host: config.server.host ?? '127.0.0.1',
       port: mcpActualPort ?? config.server.port,
+      https: tlsMaterial !== null,
       authRequired,
       sessionToken,
     })
@@ -3857,12 +3976,13 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     start: (port?: number) =>
       new Promise((resolve, reject) => {
         const listenPort = port ?? config.server.port
-        const host = config.server.host
+        const host = bindHost
 
         httpServer.listen(listenPort, host, () => {
           const addr = httpServer.address()
           const actualPort = typeof addr === 'object' && addr ? addr.port : listenPort
           setMcpOAuthServerPort(actualPort)
+          setMcpOAuthServerScheme(tlsMaterial !== null)
           mcpActualPort = actualPort
           // The /mcp endpoint is only reachable once we're listening, so start
           // MCP client connections now — a self-referencing server (MorrisCode as
@@ -3875,10 +3995,10 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
             })
           })
           const client = getLLMClient()
-          logger.info(`MorrisCode server running at http://${host}:${actualPort}`)
-          logger.info(`WebSocket available at ws://${host}:${actualPort}/ws`)
+          logger.info(`MorrisCode server running at ${scheme}://${host}:${actualPort}`)
+          logger.info(`WebSocket available at ${scheme === 'https' ? 'wss' : 'ws'}://${host}:${actualPort}/ws`)
           logger.info(
-            `MCP endpoint available at http://${host}:${actualPort}/mcp — run 'morriscode mcp' for a paste-ready client config`,
+            `MCP endpoint available at ${scheme}://${host}:${actualPort}/mcp — run 'morriscode mcp' for a paste-ready client config`,
           )
           logger.info(`LLM backend: ${client.getBackend()}, model: ${client.getModel()}, url: ${config.llm.baseUrl}`)
           resolve({ port: actualPort })

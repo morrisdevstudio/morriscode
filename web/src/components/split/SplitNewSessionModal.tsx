@@ -145,8 +145,8 @@ export function SplitNewSessionModal({ isOpen, onClose }: SplitNewSessionModalPr
       {projects.length === 0 ? (
         <p className="text-sm text-text-muted">
           {t({
-            en: 'No projects yet — create one from the home page first.',
-            fr: 'Aucun projet pour l’instant — créez-en un depuis la page d’accueil d’abord.',
+            en: 'No projects yet — create one from the project menu in the header first.',
+            fr: 'Aucun projet pour l’instant — créez-en un depuis le menu de projet dans l’en-tête.',
           })}
         </p>
       ) : (
