@@ -58,7 +58,7 @@ creates both archives, signs the manifest, publishes a draft release in the
 public repository, uploads every asset, then makes the release public. The
 application only sees releases that passed the whole chain.
 
-The tag must match `package.json`: `v0.3.0` for version `0.3.0`.
+The tag must match `package.json`: `v0.3.1` for version `0.3.1`.
 
 ## Update lifecycle in the application
 
@@ -122,7 +122,7 @@ reenabled later from Settings → Advanced.
 
 ## First deployment and rollback
 
-The current production build (0.1.0) predates the launcher. Install 0.3.0 once
+The current production build (0.1.0) predates the launcher. Install 0.3.1 once
 with the command above; every later release updates itself. Keep the old
 `releases/2026-10-16-production` directory and the exported task XML until the
 new version has been verified.

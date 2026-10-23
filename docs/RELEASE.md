@@ -145,8 +145,8 @@ npm run patch
 
 This runs `npm version patch` which creates a commit (`2.0.88`) and a tag (`v2.0.88`).
 
-The first release that ships the automatic updater is `0.3.0`: use
-`npm version 0.3.0` once, then return to `npm run patch` for later
+The first release that ships the automatic updater is `0.3.1`: use
+`npm version 0.3.1` once, then return to `npm run patch` for later
 releases.
 
 ### 8b. Sync the web lockfile version

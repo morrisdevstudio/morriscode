@@ -29,8 +29,10 @@ describe('install flavor', () => {
   })
 
   it('recognises a release path without environment variables', () => {
-    expect(detectInstallFlavor({}, 'C:\\app\\releases\\0.2.0\\dist\\cli\\index.js')).toBe('release')
-    expect(inferReleaseRoot('C:\\app\\releases\\0.2.0\\dist\\cli\\index.js')).toBe('C:\\app')
+    const releaseRoot = join(process.cwd(), 'app')
+    const argv1 = join(releaseRoot, 'releases', '0.2.0', 'dist', 'cli', 'index.js')
+    expect(detectInstallFlavor({}, argv1)).toBe('release')
+    expect(inferReleaseRoot(argv1)).toBe(releaseRoot)
   })
 
   it('keeps development and npm installs separate', () => {
@@ -58,7 +60,8 @@ describe('current release pointer', () => {
   })
 
   it('rejects a release directory outside the root', () => {
-    expect(() => resolveVersionDir('C:/app', '../evil')).toThrow(/escapes the install root/)
-    expect(resolveVersionDir('C:/app', 'releases/0.2.0')).toMatch(/releases/)
+    const releaseRoot = join(process.cwd(), 'app')
+    expect(() => resolveVersionDir(releaseRoot, '../evil')).toThrow(/escapes the install root/)
+    expect(resolveVersionDir(releaseRoot, join('releases', '0.2.0'))).toMatch(/releases/)
   })
 })

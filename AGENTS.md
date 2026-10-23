@@ -132,7 +132,7 @@ violée, préviens-moi immédiatement.
   d’OpenFox après vérification. Voir `docs/WINDOWS-PRODUCTION.md`.
 - **Mise à jour automatique** : les releases signées sont publiées dans le dépôt public
   `morrisdevstudio/morriscode-releases` ; l’application les télécharge et attend le clic
-  « Installer et redémarrer ». Voir `docs/AUTO-UPDATE.md`. Une installation manuelle de 0.3.0
+  « Installer et redémarrer ». Voir `docs/AUTO-UPDATE.md`. Une installation manuelle de 0.3.1
   reste nécessaire sur les installations antérieures.
 - **Historique** : consolidation des bases OpenFox, MorrisCode et développement dans une nouvelle base,
   avec sauvegardes et conservation séparée des conversations divergentes. Ne jamais utiliser le script
