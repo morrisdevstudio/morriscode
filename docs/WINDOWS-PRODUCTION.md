@@ -5,7 +5,7 @@ Build and test the intended checkout, commit it with a conventional commit, then
 of `dist/`, `package.json` and its runtime dependencies. Record the commit in the deployment manifest.
 The public release process remains in [RELEASE.md](RELEASE.md).
 
-Production now follows signed GitHub releases instead. The one-time migration to 0.2.0 is described in
+Production now follows signed GitHub releases instead. The one-time migration to 0.3.0 is described in
 [AUTO-UPDATE.md](AUTO-UPDATE.md): the installer verifies the release, writes `current.json`, and replaces
 the `MorrisCode Server` task action with the stable `launcher.mjs`. After that, new versions are detected
 and downloaded automatically; installing them still requires a click. The launcher keeps the previous
