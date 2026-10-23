@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 - 2026-10-23
+
+### Features
+
+- **Signed automatic updates** — MorrisCode checks GitHub releases, downloads signed packages in the background, and installs them when you click.
+- **Automatic rollback** — a stable launcher restores the previous version, configuration, and database if a new release cannot start.
+- **Release installers** — Windows and Linux installers verify the signature before installing and register startup automatically.
+
+### Enhancements
+
+- **Update dialog** — shows download progress, release notes, and a single “Install and restart” action.
+- **Automatic update toggle** — enable or disable background checks from Settings → Advanced.
+
 ## 0.1.0
 
 MorrisCode fork of OpenFox 2.0.161.
