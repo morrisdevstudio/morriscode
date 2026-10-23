@@ -150,6 +150,8 @@ export class SpeechService implements SpeechEngine {
   private startResolve: (() => void) | null = null
   private startReject: ((error: Error) => void) | null = null
   private active: ActiveSynthesis | null = null
+  private pendingId: string | null = null
+  private busy = false
   private stage: SpeechInstallStage = 'idle'
   private progress = 0
   private installError: string | null = null
@@ -214,22 +216,38 @@ export class SpeechService implements SpeechEngine {
 
   async generate(text: string, language: SpeechLanguage, requestId = randomUUID()): Promise<SpeechGeneration> {
     if (!this.isInstalled()) throw new SpeechNotInstalledError()
-    if (this.active) throw new SpeechBusyError()
+    if (this.active || this.busy) throw new SpeechBusyError()
 
-    const worker = await this.ensureWorker()
-    return new Promise<SpeechGeneration>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.cancel(requestId)
-        reject(new Error('speech synthesis timed out'))
-      }, SYNTHESIS_TIMEOUT_MS)
-      timeout.unref()
-      this.active = { id: requestId, resolve, reject, timeout }
-      this.clearIdleTimer()
-      worker.stdin.write(JSON.stringify({ id: requestId, text, language }) + '\n')
-    })
+    this.busy = true
+    this.pendingId = requestId
+    try {
+      const worker = await this.ensureWorker()
+      if (this.pendingId !== requestId) throw new SpeechCanceledError()
+      this.pendingId = null
+      return new Promise<SpeechGeneration>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          this.cancel(requestId)
+          reject(new Error('speech synthesis timed out'))
+        }, SYNTHESIS_TIMEOUT_MS)
+        timeout.unref()
+        this.active = { id: requestId, resolve, reject, timeout }
+        this.busy = false
+        this.clearIdleTimer()
+        worker.stdin.write(JSON.stringify({ id: requestId, text, language }) + '\n')
+      })
+    } catch (error) {
+      if (this.pendingId === requestId) this.pendingId = null
+      this.busy = false
+      throw error
+    }
   }
 
   cancel(requestId: string): void {
+    if (this.pendingId === requestId) {
+      this.pendingId = null
+      this.stopWorker()
+      return
+    }
     if (!this.active || this.active.id !== requestId) return
     const active = this.active
     this.active = null
@@ -239,6 +257,8 @@ export class SpeechService implements SpeechEngine {
   }
 
   close(): void {
+    this.pendingId = null
+    this.busy = false
     const active = this.active
     this.active = null
     if (active) {
@@ -447,10 +467,7 @@ export class SpeechService implements SpeechEngine {
 
   private handleWorkerFailure(child: ChildProcessWithoutNullStreams, error: Error): void {
     if (this.worker !== child) return
-    this.stopWorker()
-    this.startReject?.(error)
-    this.startResolve = null
-    this.startReject = null
+    this.stopWorker(error)
     const active = this.active
     this.active = null
     if (active) {
@@ -477,7 +494,7 @@ export class SpeechService implements SpeechEngine {
     this.idleTimer = null
   }
 
-  private stopWorker(): void {
+  private stopWorker(reason: Error = new SpeechCanceledError()): void {
     this.clearIdleTimer()
     for (const timer of this.idleTimers) clearTimeout(timer)
     this.idleTimers.clear()
@@ -485,6 +502,10 @@ export class SpeechService implements SpeechEngine {
     this.worker = null
     this.workerReady = null
     this.stdoutBuffer = ''
+    const rejectStart = this.startReject
+    this.startResolve = null
+    this.startReject = null
+    rejectStart?.(reason)
     if (!worker) return
     worker.kill()
   }
