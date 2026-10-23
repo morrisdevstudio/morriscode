@@ -674,3 +674,42 @@ describe('Sidebar session search', () => {
     })
   })
 })
+
+describe('Sidebar running indicator', () => {
+  it('renders the running indicator on the title line, at its end', async () => {
+    sessions = [
+      {
+        id: 's1',
+        projectId: 'project-1',
+        title: 'Check config',
+        workdir: '/tmp/project',
+        mode: 'planner',
+        phase: 'build',
+        isRunning: true,
+        createdAt: '2024-06-15T09:00:00Z',
+        updatedAt: '2024-06-15T10:00:00Z',
+        criteriaCount: 0,
+        criteriaCompleted: 0,
+        messageCount: 1,
+      },
+    ]
+    const { Sidebar } = await import('./Sidebar')
+    render(<Sidebar projectId="project-1" />)
+
+    const row = screen.getByText('Check config').closest('a')
+    expect(row).toBeTruthy()
+
+    const spinIcon = row?.querySelector('[data-testid="spin-icon"]')
+    expect(spinIcon).toBeTruthy()
+
+    // The indicator shares the title's flex row instead of sitting on a second line.
+    const titleLine = row?.querySelector('.justify-between')
+    expect(titleLine?.contains(spinIcon as Node)).toBe(true)
+
+    // And it comes after the title, right before the options menu.
+    const rowHtml = row?.innerHTML ?? ''
+    expect(rowHtml.indexOf('Check config')).toBeLessThan(rowHtml.indexOf('spin-icon'))
+    expect(rowHtml.indexOf('spin-icon')).toBeLessThan(rowHtml.indexOf('data-testid="dropdown-trigger"'))
+    expect(row?.querySelectorAll('[data-testid="spin-icon"]')).toHaveLength(1)
+  })
+})

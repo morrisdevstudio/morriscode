@@ -903,6 +903,19 @@ function renderSessionList(
                 : (session.title ?? session.id.slice(0, 6))}
             </span>
             <div className="flex items-center gap-1">
+              {hasPendingConfirmation ? (
+                <span title={t({ en: 'Awaiting confirmation', fr: 'En attente de confirmation' })}>
+                  <StopIcon className="w-3 h-3 text-red-400 flex-shrink-0" />
+                </span>
+              ) : isRunning ? (
+                <SpinIcon />
+              ) : hasUnread && !isActive ? (
+                <span
+                  aria-label={t({ en: 'Unread activity', fr: 'Activité non lue' })}
+                  title={t({ en: 'Unread activity', fr: 'Activité non lue' })}
+                  className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
+                />
+              ) : null}
               <DropdownMenu
                 items={[
                   {
@@ -955,19 +968,6 @@ function renderSessionList(
             </div>
           </div>
           <div className="flex items-center gap-2 empty:hidden">
-            {hasPendingConfirmation ? (
-              <span title={t({ en: 'Awaiting confirmation', fr: 'En attente de confirmation' })}>
-                <StopIcon className="w-3 h-3 text-red-400 flex-shrink-0" />
-              </span>
-            ) : isRunning ? (
-              <SpinIcon />
-            ) : hasUnread && !isActive ? (
-              <span
-                aria-label={t({ en: 'Unread activity', fr: 'Activité non lue' })}
-                title={t({ en: 'Unread activity', fr: 'Activité non lue' })}
-                className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
-              />
-            ) : null}
             <PluginBadges
               slot="session.row.badges"
               context={{
