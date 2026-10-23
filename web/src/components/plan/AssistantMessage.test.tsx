@@ -555,4 +555,38 @@ describe('AssistantMessage', () => {
     expect(html).toContain('deepseek-v4-flash-dspark')
     expect(html).not.toContain('my-provider/')
   })
+
+  it('offers voice narration for completed explanations', () => {
+    render(
+      <AssistantMessage
+        message={{
+          id: 'assistant-speech',
+          role: 'assistant',
+          content: 'The change is ready. See [the guide](https://example.com).',
+          timestamp: '2024-01-01T00:00:00.000Z',
+          tokenCount: 0,
+          isStreaming: false,
+        }}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Read this response aloud' })).toBeTruthy()
+  })
+
+  it('does not offer voice narration for a code-only response', () => {
+    render(
+      <AssistantMessage
+        message={{
+          id: 'assistant-code-only',
+          role: 'assistant',
+          content: '```ts\nconst onlyCode = true\n```',
+          timestamp: '2024-01-01T00:00:00.000Z',
+          tokenCount: 0,
+          isStreaming: false,
+        }}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Read this response aloud' })).toBeNull()
+  })
 })

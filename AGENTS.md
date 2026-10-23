@@ -123,6 +123,8 @@ violée, préviens-moi immédiatement.
   versionné 0.1.0, fork d'OpenFox 2.0.161.
 - **Fait** : fournisseur ChatGPT Plus / Pro intégré, catalogue actuel, sélection persistante des modèles
   et indicateurs d’usage par fournisseur. Les erreurs de flux sont propagées et les images sont transmises.
+- **Fait** : lecture vocale locale des réponses avec Kokoro int8 sur processeur, voix française et anglaise,
+  installation guidée et contrôles lecture/pause/arrêt. Voir `docs/VOICE.md`.
 - **Fait** : interface revue, accès HTTPS, authentification Windows alignée entre serveur et CLI.
   Tout accès hors localhost exige HTTPS et un mot de passe réseau valide.
 - **Préparation production locale** : les changements sont regroupés sur `morriscode-rebrand`.

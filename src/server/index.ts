@@ -68,11 +68,13 @@ import { createFileSearchRoutes } from './routes/file-search.js'
 import { createAutoUpdateRoutes } from './routes/auto-update.js'
 import { createProviderAuthRoutes } from './routes/provider-auth.js'
 import { devServerManager } from './dev-server/manager.js'
-import { getGlobalConfigDir } from '../cli/paths.js'
+import { getGlobalConfigDir, getGlobalDataDir } from '../cli/paths.js'
 import { ProviderRegistry } from './providers/plugins/index.js'
 import { PluginHost } from './plugins/host.js'
 import { createPluginRoutes } from './routes/plugins.js'
 import { createNotificationRoutes } from './routes/notifications.js'
+import { createSpeechRoutes } from './routes/speech.js'
+import { SpeechService } from './speech/service.js'
 import { pluginAssetToken } from './plugins/asset-auth.js'
 import { registerSessionFavoriteRoute } from './routes/session-favorite.js'
 import { logger, setLogLevel } from './utils/logger.js'
@@ -153,6 +155,9 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Get config directory for loading user items
   const configDir = getGlobalConfigDir(config.mode ?? 'production')
+  const speechService = new SpeechService({
+    dataDir: getGlobalDataDir(config.mode ?? 'production'),
+  })
 
   // Discover provider plugins before creating transport-aware clients.
   const providerAdapters = new ProviderRegistry({
@@ -2742,6 +2747,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   app.use('/api/plugins', createPluginRoutes({ config, host: pluginHost, logger }))
   app.get('/api/plugins', (_req, res) => res.json({ plugins: pluginHost.getDiagnostics() }))
   app.use('/api/notifications', createNotificationRoutes(pluginHost.notifications))
+  app.use('/api/speech', createSpeechRoutes(speechService))
   app.get('/api/provider-presets', (_req, res) => res.json({ presets: pluginHost.registry.getPresets() }))
   app.get('/api/provider-adapters', (_req, res) =>
     res.json({
@@ -4012,6 +4018,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         logger.info('Shutting down...')
         void (async () => {
           await devServerManager.stopAll()
+          speechService.close()
           await mcpManager.disconnectAll()
           taskScheduler.stop()
           const { stopAllInspectProxies } = await import('./dev-server/inspect-proxy.js')

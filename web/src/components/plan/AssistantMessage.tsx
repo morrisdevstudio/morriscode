@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { Message, MessageSegment, ToolCall, PreparingToolCall } from '@shared/types.js'
 import { Markdown } from '../shared/Markdown'
 import { ThinkingBlockToggle } from '../shared/ThinkingBlockToggle'
@@ -20,6 +20,7 @@ import { formatTime } from '../../lib/format-stats'
 import { copyToClipboard } from '../../lib/clipboard.js'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { useMessageContextMenu } from '../../hooks/useMessageContextMenu'
+import { SpeechButton } from './SpeechButton'
 
 interface AssistantMessageProps {
   message: Message
@@ -179,6 +180,13 @@ export const AssistantMessage = memo(function AssistantMessage({
   const [forkError, setForkError] = useState<string | null>(null)
   const [, navigate] = useLocation()
   const { onContextMenu, contextMenu } = useContextMenu()
+  const speechSegments = useMemo(
+    () =>
+      message.segments
+        ?.filter((segment): segment is Extract<MessageSegment, { type: 'text' }> => segment.type === 'text')
+        .map((segment) => segment.content) ?? [],
+    [message.segments],
+  )
 
   const handleCopy = () => {
     void copyToClipboard(message.content)
@@ -359,6 +367,13 @@ export const AssistantMessage = memo(function AssistantMessage({
             }
           }
         })}
+
+        <SpeechButton
+          messageId={message.id}
+          content={message.content}
+          textSegments={speechSegments}
+          isStreaming={message.isStreaming}
+        />
 
         {message.partial && (
           <div className="flex items-center gap-1.5 text-[10px] text-accent-warning mt-1">
