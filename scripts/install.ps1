@@ -121,22 +121,27 @@ try {
   Write-Utf8 $currentPath ($current | ConvertTo-Json -Depth 5)
 
   if (-not $NoTask) {
-    $taskCommand = '"' + $node + '" "' + (Join-Path $Root 'launcher.mjs') + '"'
+    $launcherPath = Join-Path $Root 'launcher.mjs'
+    $action = New-ScheduledTaskAction -Execute $node -Argument ('"{0}"' -f $launcherPath) -WorkingDirectory $Root
     if ($ExistingTask) {
       $backup = Join-Path $Root ('task-backup-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.xml')
       & schtasks.exe /query /tn $TaskName /xml | Out-File -LiteralPath $backup -Encoding utf8
-      & schtasks.exe /change /tn $TaskName /tr $taskCommand | Out-Null
-      if ($LASTEXITCODE -ne 0) { throw "Could not update task $TaskName. Stop it first or run this from an elevated prompt." }
+      $existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+      if ($existingTask -and $existingTask.State -eq 'Running') {
+        Stop-ScheduledTask -TaskName $TaskName
+        Start-Sleep -Seconds 2
+      }
+      Set-ScheduledTask -TaskName $TaskName -Action $action | Out-Null
     } else {
-      & schtasks.exe /create /tn $TaskName /sc ONLOGON /tr $taskCommand /rl LIMITED /f | Out-Null
-      if ($LASTEXITCODE -ne 0) { throw "Could not create task $TaskName." }
+      $trigger = New-ScheduledTaskTrigger -AtLogOn
+      Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -RunLevel Limited -Force | Out-Null
     }
   }
 
   Write-Host "MorrisCode $version installed in $releaseDir"
   Write-Host "Configuration and history were not modified: $env:APPDATA\morriscode and $env:LOCALAPPDATA\morriscode"
   if (-not $NoTask) { Write-Host "Startup task: $TaskName" }
-  if ($Start) { & schtasks.exe /run /tn $TaskName }
+  if ($Start) { Start-ScheduledTask -TaskName $TaskName }
 }
 finally {
   Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
