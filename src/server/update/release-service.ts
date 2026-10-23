@@ -441,6 +441,7 @@ export class ReleaseUpdateService {
   }
 
   async apply(): Promise<{ version: string }> {
+    if (!this.staged) await this.loadStagedRelease()
     if (this.staged) {
       this.candidate = { manifest: this.staged.manifest, asset: this.staged.asset, release: placeholders(this.staged) }
     }

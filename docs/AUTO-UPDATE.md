@@ -122,7 +122,7 @@ reenabled later from Settings → Advanced.
 
 ## First deployment and rollback
 
-The current production build (0.1.0) predates the launcher. Install 0.3.1 once
+The current production build (0.1.0) predates the launcher. Install the latest release once
 with the command above; every later release updates itself. Keep the old
 `releases/2026-10-16-production` directory and the exported task XML until the
 new version has been verified.
