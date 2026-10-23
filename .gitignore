@@ -70,3 +70,4 @@ worktrees/
 /plugins/
 # Local test scratch files
 .tmp-vitest/
+.tmp/

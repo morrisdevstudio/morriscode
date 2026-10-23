@@ -236,3 +236,83 @@ describe('Auto Update Routes (auth required)', () => {
     })
   })
 })
+
+describe('Auto Update Routes (release installs)', () => {
+  it('exposes the release status and applies the prepared version', async () => {
+    let applied = false
+    let restarted = false
+    let autoUpdate = true
+    const status = {
+      flavor: 'release',
+      current: '0.1.0',
+      latest: '0.2.0',
+      phase: 'ready',
+      updateAvailable: true,
+      autoUpdate: true,
+      received: 10,
+      total: 10,
+      error: null,
+      stagedVersion: '0.2.0',
+      releaseUrl: 'https://github.com/example/releases/tag/v0.2.0',
+      notes: 'Notes',
+      checkedAt: '2026-10-23T00:00:00.000Z',
+      lastApplied: null,
+    }
+    const app = express()
+    app.use(express.json())
+    app.use(
+      '/api/auto-update',
+      createAutoUpdateRoutes({
+        releaseService: {
+          check: async () => status,
+          getStatus: () => ({ ...status, autoUpdate }),
+          apply: async () => {
+            applied = true
+            return { version: '0.2.0' }
+          },
+          requestRestart: () => {
+            restarted = true
+          },
+          setAutoUpdate: async (enabled: boolean) => {
+            autoUpdate = enabled
+          },
+          restart: async () => {
+            restarted = true
+          },
+        } as any,
+      }),
+    )
+    const server = app.listen(0)
+    const url = `http://localhost:${(server.address() as any).port}`
+    try {
+      const checked = (await (await fetch(`${url}/api/auto-update/check`)).json()) as {
+        flavor: string
+        isUpdateAvailable: boolean
+        stagedVersion: string
+      }
+      expect(checked.flavor).toBe('release')
+      expect(checked.isUpdateAvailable).toBe(true)
+      expect(checked.stagedVersion).toBe('0.2.0')
+
+      const statusResponse = (await (await fetch(`${url}/api/auto-update/status`)).json()) as { phase: string }
+      expect(statusResponse.phase).toBe('ready')
+
+      const settings = await fetch(`${url}/api/auto-update/settings`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ autoUpdate: false }),
+      })
+      expect(settings.status).toBe(200)
+      expect(((await settings.json()) as { autoUpdate: boolean }).autoUpdate).toBe(false)
+
+      const appliedResponse = await fetch(`${url}/api/auto-update`, { method: 'POST' })
+      expect(appliedResponse.status).toBe(200)
+      expect(((await appliedResponse.json()) as { success: boolean }).success).toBe(true)
+      expect(applied).toBe(true)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      expect(restarted).toBe(true)
+    } finally {
+      server.close()
+    }
+  })
+})

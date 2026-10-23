@@ -78,7 +78,9 @@ export function Header({ onMenuClick, onCriteriaToggle }: HeaderProps) {
   const stopAutoRefresh = useConfigStore((state) => state.stopAutoRefresh)
   const setTerminalOpen = useTerminalStore((state) => state.setOpen)
   const terminalIsOpen = useTerminalStore((state) => state.isOpen)
-  const updateAvailable = useUpdateStore((state) => state.status === 'available')
+  const updateAvailable = useUpdateStore((state) =>
+    ['available', 'downloading', 'ready', 'applying'].includes(state.status),
+  )
   const checkForUpdate = useUpdateStore((state) => state.check)
 
   useEffect(() => {

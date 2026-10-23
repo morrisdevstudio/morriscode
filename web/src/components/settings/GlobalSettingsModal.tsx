@@ -37,7 +37,9 @@ interface GlobalSettingsModalProps {
 
 export function GlobalSettingsModal({ isOpen, onClose, initialTab }: GlobalSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('instructions')
-  const updateAvailable = useUpdateStore((state) => state.status === 'available')
+  const updateAvailable = useUpdateStore((state) =>
+    ['available', 'downloading', 'ready', 'applying'].includes(state.status),
+  )
   const { contributions } = usePlugins()
   const localize = useLocalizedString()
   const t = useT()

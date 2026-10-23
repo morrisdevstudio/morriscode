@@ -56,7 +56,7 @@ vi.mock('../shared/icons', () => ({
   BranchIcon: () => null,
   ReloadIcon: () => null,
 }))
-vi.mock('../AutoUpdateModal', () => ({ AutoUpdateModal: () => null }))
+vi.mock('../UpdateDialog', () => ({ UpdateDialog: () => null }))
 vi.mock('./DiffViewer', () => ({ DiffViewer: () => null }))
 vi.mock('./BranchModal', () => ({ BranchModal: () => null }))
 vi.mock('./WorkspaceModal', () => ({ WorkspaceModal: () => null }))

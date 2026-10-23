@@ -5,6 +5,17 @@ Build and test the intended checkout, commit it with a conventional commit, then
 of `dist/`, `package.json` and its runtime dependencies. Record the commit in the deployment manifest.
 The public release process remains in [RELEASE.md](RELEASE.md).
 
+Production now follows signed GitHub releases instead. The one-time migration to 0.2.0 is described in
+[AUTO-UPDATE.md](AUTO-UPDATE.md): the installer verifies the release, writes `current.json`, and replaces
+the `MorrisCode Server` task action with the stable `launcher.mjs`. After that, new versions are detected
+and downloaded automatically; installing them still requires a click. The launcher keeps the previous
+release and restores it if the new one does not become healthy.
+
+The configuration in `%APPDATA%\morriscode` and the database in
+`%LOCALAPPDATA%\morriscode\sessions.db` are not moved. Before the first migration, stop the task and copy
+both locations outside the repository. `plugins/`, `skills/` and `workflows/` are never written by the
+update mechanism.
+
 ## Data and backups
 
 On Windows, configuration lives in `%APPDATA%\morriscode` and the production database lives in

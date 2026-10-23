@@ -12,7 +12,7 @@ import { RetryPatternsEditor, isValidRegex, type RetryPatternsValue } from '../R
 import { NetworkAccessCard } from '../NetworkAccessCard'
 import { useConfig } from '../../../hooks/useConfig'
 import { useUpdateStore } from '../../../stores/update'
-import { AutoUpdateModal } from '../../AutoUpdateModal'
+import { UpdateDialog } from '../../UpdateDialog'
 import { ChangelogModal } from '../../ChangelogModal'
 import { useAgents } from '../../../hooks/useAgents'
 
@@ -51,6 +51,12 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
   const version = useConfig().config?.version ?? null
   const updateStatus = useUpdateStore((state) => state.status)
   const latestVersion = useUpdateStore((state) => state.latest)
+  const stagedVersion = useUpdateStore((state) => state.stagedVersion)
+  const updatePhase = useUpdateStore((state) => state.phase)
+  const updateError = useUpdateStore((state) => state.error)
+  const autoUpdate = useUpdateStore((state) => state.autoUpdate)
+  const setAutoUpdate = useUpdateStore((state) => state.setAutoUpdate)
+  const updateFlavor = useUpdateStore((state) => state.flavor)
   const checkForUpdate = useUpdateStore((state) => state.check)
   const versionInfo = version && latestVersion ? { current: version, latest: latestVersion } : null
   // "Up to date" only answers a manual check; the background check on app
@@ -165,7 +171,7 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
     <div className="space-y-6">
       <div>
         <h3 className="text-sm font-medium text-text-primary mb-1">
-          {updateStatus === 'available' && (
+          {['available', 'downloading', 'ready', 'applying'].includes(updateStatus) && (
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-primary mr-1.5 align-middle" />
           )}
           {t({ en: 'Updates', fr: 'Mises à jour' })}
@@ -188,7 +194,7 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
             variant="secondary"
             onClick={() => {
               setManuallyChecked(true)
-              checkForUpdate()
+              checkForUpdate(true)
             }}
             disabled={updateStatus === 'checking'}
           >
@@ -204,17 +210,41 @@ export function AdvancedTab({ onClose }: { onClose: () => void }) {
               {t({ en: 'Update check failed', fr: 'Échec de la vérification des mises à jour' })}
             </span>
           )}
-          {updateStatus === 'available' && (
+          {(updateStatus === 'available' || updateStatus === 'ready' || updateStatus === 'downloading') && (
             <button onClick={() => setShowUpdateModal(true)} className="text-sm text-accent-primary hover:underline">
-              {t(
-                { en: 'Update to v{{version}} →', fr: 'Mettre à jour vers la v{{version}} →' },
-                { version: latestVersion ?? '' },
-              )}
+              {updateStatus === 'ready'
+                ? t({ en: 'Install and restart →', fr: 'Installer et redémarrer →' })
+                : t(
+                    { en: 'Update to v{{version}} →', fr: 'Mettre à jour vers la v{{version}} →' },
+                    { version: stagedVersion ?? latestVersion ?? '' },
+                  )}
             </button>
           )}
         </div>
+        {updateStatus === 'downloading' && (
+          <p className="text-xs text-text-muted mt-2">
+            {t({ en: 'Downloading the new version…', fr: 'Téléchargement de la nouvelle version…' })}
+          </p>
+        )}
+        {updatePhase === 'error' && updateError && <p className="text-xs text-red-500 mt-2">{updateError}</p>}
+        {updateFlavor === 'release' && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary">
+                {t({ en: 'Automatic updates', fr: 'Mises à jour automatiques' })}
+              </div>
+              <p className="text-sm text-text-muted mt-0.5">
+                {t({
+                  en: 'Check and download new signed releases in the background. Installing still requires your click.',
+                  fr: 'Vérifie et télécharge les nouvelles releases signées en arrière-plan. L’installation demande toujours votre clic.',
+                })}
+              </p>
+            </div>
+            <Toggle enabled={autoUpdate} onClick={() => void setAutoUpdate(!autoUpdate)} />
+          </div>
+        )}
       </div>
-      <AutoUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={versionInfo} />
+      <UpdateDialog isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={versionInfo} />
       <div className="flex items-center justify-between pt-2">
         <button onClick={() => setShowChangelogModal(true)} className="text-sm text-accent-primary hover:underline">
           {t({ en: 'View Changelog →', fr: 'Voir le journal →' })}

@@ -57,6 +57,7 @@ export const SETTINGS_KEYS = {
   DEFAULT_AGENT: 'agent.defaultAgent',
   AGENT_MODEL_OVERRIDES: 'agent.modelOverrides',
   VSCODE_REMOTE_PREFIX: 'editor.vscodeRemotePrefix',
+  UPDATE_AUTO: 'update.auto',
 } as const
 
 export const SETTINGS_DEFAULTS: Record<string, string> = {
@@ -112,6 +113,7 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   [SETTINGS_KEYS.FEATURES_PER_SESSION_MCP]: 'false',
   [SETTINGS_KEYS.MAINTENANCE_SNAPSHOT_STREAMS_MIGRATED]: 'false',
   [SETTINGS_KEYS.VSCODE_REMOTE_PREFIX]: '',
+  [SETTINGS_KEYS.UPDATE_AUTO]: 'true',
 }
 
 export type SettingsKey = (typeof SETTINGS_KEYS)[keyof typeof SETTINGS_KEYS]

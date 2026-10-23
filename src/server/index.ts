@@ -66,6 +66,9 @@ import { WorkspaceInUseError } from './utils/errors.js'
 import { createDirectoryRoutes } from './routes/directories.js'
 import { createFileSearchRoutes } from './routes/file-search.js'
 import { createAutoUpdateRoutes } from './routes/auto-update.js'
+import { detectInstallFlavor, getReleaseRoot } from './update/install.js'
+import { ReleaseUpdateService } from './update/release-service.js'
+import { requestRestart, setRestartHandler } from './update/restart.js'
 import { createProviderAuthRoutes } from './routes/provider-auth.js'
 import { devServerManager } from './dev-server/manager.js'
 import { getGlobalConfigDir, getGlobalDataDir } from '../cli/paths.js'
@@ -155,6 +158,19 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Get config directory for loading user items
   const configDir = getGlobalConfigDir(config.mode ?? 'production')
+  const releaseRoot = getReleaseRoot()
+  const releaseUpdateService =
+    detectInstallFlavor() === 'release' && releaseRoot
+      ? new ReleaseUpdateService({
+          root: releaseRoot,
+          currentVersion: VERSION,
+          configDir,
+          databasePath: config.database.path,
+          onRestart: () => {
+            requestRestart()
+          },
+        })
+      : null
   const speechService = new SpeechService({
     dataDir: getGlobalDataDir(config.mode ?? 'production'),
   })
@@ -374,7 +390,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Health check (public)
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() })
+    res.json({ status: 'ok', version: VERSION, timestamp: new Date().toISOString() })
   })
 
   // Changelog (public)
@@ -3549,6 +3565,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         if (!token) return false
         return Boolean(await isValidToken(token))
       },
+      releaseService: releaseUpdateService,
     }),
   )
 
@@ -3990,6 +4007,11 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
           setMcpOAuthServerPort(actualPort)
           setMcpOAuthServerScheme(tlsMaterial !== null)
           mcpActualPort = actualPort
+          void releaseUpdateService?.start().catch((error: unknown) => {
+            logger.warn('[update] service start failed', {
+              error: error instanceof Error ? error.message : String(error),
+            })
+          })
           // The /mcp endpoint is only reachable once we're listening, so start
           // MCP client connections now — a self-referencing server (MorrisCode as
           // its own MCP client) would otherwise race the listen and fail.
@@ -4018,6 +4040,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         logger.info('Shutting down...')
         void (async () => {
           await devServerManager.stopAll()
+          releaseUpdateService?.stop()
           speechService.close()
           await mcpManager.disconnectAll()
           taskScheduler.stop()
@@ -4066,6 +4089,8 @@ export async function createServer(config: Config): Promise<void> {
 
     handle.close().then(() => process.exit(0))
   }
+
+  setRestartHandler(shutdown)
 
   // Prevent crash on unhandled promise rejections — log and continue
   process.on('unhandledRejection', (reason) => {

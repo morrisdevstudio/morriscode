@@ -4,9 +4,11 @@ import { spawn } from 'node:child_process'
 import { VERSION } from '../../constants.js'
 import { logger } from '../utils/logger.js'
 import { serverT } from '../i18n.js'
+import type { ReleaseUpdateService } from '../update/release-service.js'
 
 export interface AutoUpdateRoutesOptions {
   requireAuth?: (req: Request) => Promise<boolean>
+  releaseService?: ReleaseUpdateService | null
 }
 
 let updateInProgress = false
@@ -149,6 +151,12 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
   const router = Router()
 
   router.get('/check', async (req, res) => {
+    if (options.releaseService) {
+      const forceRefresh = req.query['force'] === 'true'
+      const status = await options.releaseService.check(forceRefresh)
+      res.json({ ...status, isUpdateAvailable: status.updateAvailable, isService: false })
+      return
+    }
     const isService = isRunningAsService()
     const isDev = isDevMode()
     const current = VERSION
@@ -215,6 +223,38 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
     }
   })
 
+  router.get('/status', async (_req, res) => {
+    if (options.releaseService) {
+      const status = options.releaseService.getStatus()
+      res.json({ ...status, isUpdateAvailable: status.updateAvailable, isService: false })
+      return
+    }
+    res.json({ flavor: 'npm', isService: isRunningAsService() })
+  })
+
+  router.put('/settings', async (req, res) => {
+    if (!(await requireAuth(req, res, options))) return
+    if (!options.releaseService) {
+      res.status(400).json({
+        error: serverT({
+          en: 'Release updates are not available',
+          fr: 'Les mises à jour par release ne sont pas disponibles',
+        }),
+      })
+      return
+    }
+    const body = req.body as { autoUpdate?: unknown }
+    if (typeof body.autoUpdate !== 'boolean') {
+      res
+        .status(400)
+        .json({ error: serverT({ en: 'autoUpdate must be a boolean', fr: 'autoUpdate doit être un booléen' }) })
+      return
+    }
+    await options.releaseService.setAutoUpdate(body.autoUpdate)
+    const status = options.releaseService.getStatus()
+    res.json({ success: true, autoUpdate: status.autoUpdate })
+  })
+
   router.post('/', async (req, res) => {
     if (!(await requireAuth(req, res, options))) return
 
@@ -228,6 +268,12 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
     updateInProgress = true
 
     try {
+      if (options.releaseService) {
+        const result = await options.releaseService.apply()
+        res.json({ success: true, version: result.version, isService: false, restarting: true })
+        options.releaseService.requestRestart()
+        return
+      }
       const isService = isRunningAsService()
       // Single command string through the shell: resolves morriscode on PATH on
       // every platform (was hardcoded `bash -c`, broken on Windows).
@@ -284,6 +330,11 @@ export function createAutoUpdateRoutes(options: AutoUpdateRoutesOptions = {}): R
     if (!(await requireAuth(req, res, options))) return
 
     try {
+      if (options.releaseService) {
+        await options.releaseService.restart()
+        res.json({ success: true })
+        return
+      }
       const child = spawn('morriscode service restart', {
         detached: true,
         stdio: 'ignore',

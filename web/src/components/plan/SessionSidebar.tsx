@@ -18,7 +18,7 @@ import { CriteriaEditor } from './CriteriaEditor'
 import { DevServerFooter } from './DevServerFooter'
 import { BackgroundProcesses } from './BackgroundProcesses'
 import { ReloadIcon } from '../shared/icons'
-import { AutoUpdateModal } from '../AutoUpdateModal'
+import { UpdateDialog } from '../UpdateDialog'
 import { PluginZone } from '../plugins/PluginZone'
 import { WorkspaceBranchSection } from './WorkspaceBranchSection'
 import { ContextPopover } from './ContextPopover'
@@ -231,7 +231,7 @@ export function SessionSidebar({ workdir }: SessionSidebarProps) {
         )}
       </PluginZone>
 
-      <AutoUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={null} />
+      <UpdateDialog isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={null} />
 
       <MetadataModal
         isOpen={activeMetadataKey !== null}

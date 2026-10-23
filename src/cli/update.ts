@@ -19,6 +19,19 @@ function npm(args: string[], inherit = false): { ok: boolean; stdout: string } {
 }
 
 export async function runUpdate(options: { refreshLauncher?: () => Promise<number> } = {}): Promise<number> {
+  const releaseInstall =
+    process.env['MORRISCODE_INSTALL_FLAVOR'] === 'release' ||
+    /[\\/]releases[\\/][^\\/]+[\\/]dist[\\/]/.test(process.argv[1] ?? '')
+  if (releaseInstall) {
+    console.log(
+      cliT({
+        en: 'This installation is updated from signed GitHub releases. Use the update button in the MorrisCode app.',
+        fr: 'Cette installation se met à jour depuis les releases GitHub signées. Utilisez le bouton de mise à jour dans l’application MorrisCode.',
+      }),
+    )
+    return 0
+  }
+
   const view = npm(['view', 'morriscode', 'version'])
   if (!view.ok) {
     console.error(
