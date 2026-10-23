@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3 - 2026-10-23
+
+### Bug Fixes
+
+- **Automatic retry** — a failed preparation no longer prevents the next check from downloading the release again.
+- **Update diagnostics** — background download and preparation failures are now logged and kept visible.
+
 ## 0.3.2 - 2026-10-23
 
 ### Bug Fixes

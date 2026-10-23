@@ -247,8 +247,12 @@ export class ReleaseUpdateService {
 
   async check(force: boolean): Promise<ReleaseUpdateStatus> {
     if (!force && !this.getAutoUpdate()) return this.getStatus()
+    if (this.downloadPromise) {
+      this.phase = 'downloading'
+      return this.getStatus()
+    }
     if (this.checkPromise) return this.checkPromise
-    this.checkPromise = this.runCheck()
+    this.checkPromise = this.runCheck(force)
     try {
       return await this.checkPromise
     } finally {
@@ -256,13 +260,20 @@ export class ReleaseUpdateService {
     }
   }
 
-  private async runCheck(): Promise<ReleaseUpdateStatus> {
+  private async runCheck(force: boolean): Promise<ReleaseUpdateStatus> {
     this.phase = 'checking'
     this.error = null
     try {
-      const result = await this.fetchLatestImpl(this.etag ?? undefined)
+      const result = await this.fetchLatestImpl(force ? undefined : (this.etag ?? undefined))
       if (result.etag) this.etag = result.etag
       if (result.notModified) {
+        if (this.candidate && this.updateAvailable && !this.staged && this.getAutoUpdate()) {
+          void this.download().catch((error: unknown) => {
+            logger.error('[update] download retry failed', { error: String(error) })
+          })
+          this.phase = 'downloading'
+          return this.getStatus()
+        }
         this.phase = this.staged ? 'ready' : 'idle'
         return this.getStatus()
       }
@@ -314,7 +325,9 @@ export class ReleaseUpdateService {
       this.updateAvailable = true
       this.candidate = { manifest, asset, release }
       if (this.autoUpdateEnabledOrForced()) {
-        void this.download().catch(() => undefined)
+        void this.download().catch((error: unknown) => {
+          logger.error('[update] download failed', { error: String(error) })
+        })
       }
       this.phase = this.staged?.version === version ? 'ready' : this.downloadPromise ? 'downloading' : 'idle'
       return this.getStatus()
@@ -367,7 +380,15 @@ export class ReleaseUpdateService {
         throw new Error('The downloaded package checksum is incorrect')
 
       const payload = join(staging, 'payload')
-      await this.extractImpl(archivePath, payload, this.platform)
+      try {
+        await this.extractImpl(archivePath, payload, this.platform)
+      } catch (firstError) {
+        logger.warn('[update] first extraction failed, retrying once', {
+          error: firstError instanceof Error ? firstError.message : String(firstError),
+        })
+        await rm(payload, { recursive: true, force: true })
+        await this.extractImpl(archivePath, payload, this.platform)
+      }
       await this.validatePayload(payload, manifest.version)
 
       const destination = versionDir(this.root, manifest.version)
@@ -392,6 +413,7 @@ export class ReleaseUpdateService {
     } catch (error) {
       this.error = error instanceof Error ? error.message : String(error)
       this.phase = 'error'
+      logger.error('[update] release preparation failed', { error: this.error })
       await rm(staging, { recursive: true, force: true }).catch(() => undefined)
       throw error
     }
@@ -408,7 +430,7 @@ export class ReleaseUpdateService {
     try {
       const { stdout } = await execFileAsync(process.execPath, [cliPath, '--version'], {
         cwd: payload,
-        timeout: 30_000,
+        timeout: 60_000,
         windowsHide: true,
       })
       if (stdout.trim() !== version) throw new Error('The release package failed its version check')
