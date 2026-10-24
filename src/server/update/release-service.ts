@@ -324,7 +324,7 @@ export class ReleaseUpdateService {
 
       this.updateAvailable = true
       this.candidate = { manifest, asset, release }
-      if (this.autoUpdateEnabledOrForced()) {
+      if (this.getAutoUpdate()) {
         void this.download().catch((error: unknown) => {
           logger.error('[update] download failed', { error: String(error) })
         })
@@ -339,12 +339,9 @@ export class ReleaseUpdateService {
     }
   }
 
-  private autoUpdateEnabledOrForced(): boolean {
-    return this.getAutoUpdate()
-  }
-
   async download(): Promise<void> {
     if (this.downloadPromise) return this.downloadPromise
+    if (this.candidate && this.staged?.version === this.candidate.manifest.version) return
     this.downloadPromise = this.runDownload()
     try {
       await this.downloadPromise
@@ -545,7 +542,11 @@ export class ReleaseUpdateService {
     try {
       const current = await readCurrentRelease(this.root)
       if (!current?.previous) return
-      const keep = new Set([current?.version, current?.previous?.version].filter(Boolean) as string[])
+      const keep = new Set(
+        [this.currentVersion, this.staged?.version, current?.version, current?.previous?.version].filter(
+          Boolean,
+        ) as string[],
+      )
       const releasesDir = join(this.root, 'releases')
       const entries = await readdir(releasesDir, { withFileTypes: true })
       for (const entry of entries) {
