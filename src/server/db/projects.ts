@@ -5,6 +5,12 @@ import { getDatabase } from './index.js'
 // Project Operations
 // ============================================================================
 
+const PROJECT_SELECT = `
+  SELECT p.*,
+    (SELECT COUNT(*) FROM sessions s WHERE s.project_id = p.id) AS session_count
+  FROM projects p
+`
+
 export function createProject(name: string, workdir: string): Project {
   const db = getDatabase()
 
@@ -28,6 +34,7 @@ export function createProject(name: string, workdir: string): Project {
     id,
     name,
     workdir,
+    sessionCount: 0,
     createdAt: now,
     updatedAt: now,
   }
@@ -39,7 +46,7 @@ export function getProject(id: string): Project | null {
   const row = db
     .prepare(
       `
-    SELECT * FROM projects WHERE id = ?
+    ${PROJECT_SELECT} WHERE p.id = ?
   `,
     )
     .get(id) as ProjectRow | undefined
@@ -57,7 +64,7 @@ export function getProjectByWorkdir(workdir: string): Project | null {
   const row = db
     .prepare(
       `
-    SELECT * FROM projects WHERE workdir = ?
+    ${PROJECT_SELECT} WHERE p.workdir = ?
   `,
     )
     .get(workdir) as ProjectRow | undefined
@@ -75,7 +82,7 @@ export function listProjects(): Project[] {
   const rows = db
     .prepare(
       `
-    SELECT * FROM projects ORDER BY updated_at DESC
+    ${PROJECT_SELECT} ORDER BY p.updated_at DESC
   `,
     )
     .all() as ProjectRow[]
@@ -179,6 +186,7 @@ interface ProjectRow {
   id: string
   name: string
   workdir: string
+  session_count: number
   custom_instructions: string | null
   danger_level: string | null
   default_agent: string | null
@@ -194,6 +202,7 @@ function rowToProject(row: ProjectRow): Project {
     id: row.id,
     name: row.name,
     workdir: row.workdir,
+    sessionCount: row.session_count ?? 0,
     ...(row.custom_instructions ? { customInstructions: row.custom_instructions } : {}),
     ...(row.danger_level ? { dangerLevel: row.danger_level as DangerLevel } : {}),
     ...(row.default_agent ? { defaultAgent: row.default_agent } : {}),

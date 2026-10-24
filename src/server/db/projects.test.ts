@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { loadConfig } from '../config.js'
-import { closeDatabase, initDatabase } from './index.js'
+import { closeDatabase, getDatabase, initDatabase } from './index.js'
 import {
   createProject,
   deleteProject,
@@ -69,6 +69,22 @@ describe('db projects', () => {
     deleteProject(projectA.id)
     expect(getProject(projectA.id)).toBeNull()
     expect(listProjects()).toHaveLength(1)
+  })
+
+  it('reports the discussion count for each project', () => {
+    const projectA = createProject('Counted', workdirA)
+    const projectB = createProject('Other', workdirB)
+    const db = getDatabase()
+    const insert = db.prepare(
+      'INSERT INTO sessions (id, project_id, workdir, phase, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    const now = new Date().toISOString()
+    insert.run('session-a1', projectA.id, workdirA, 'idle', now, now)
+    insert.run('session-a2', projectA.id, workdirA, 'idle', now, now)
+
+    expect(getProject(projectA.id)?.sessionCount).toBe(2)
+    expect(listProjects().find((p) => p.id === projectA.id)?.sessionCount).toBe(2)
+    expect(listProjects().find((p) => p.id === projectB.id)?.sessionCount).toBe(0)
   })
 
   it('sets and clears the project default agent', () => {

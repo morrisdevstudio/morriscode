@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createRoot } from 'react-dom/client'
+import { fireEvent } from '@testing-library/react'
 import { act } from 'react'
 import { Sidebar } from './Sidebar'
 import type { SessionSummary } from '@shared/types.js'
@@ -17,8 +18,8 @@ vi.mock('../../stores/project', () => ({
 vi.mock('../../hooks/useProjects', () => ({
   useProjects: () => ({
     projects: [
-      { id: 'project-1', name: 'Alpha project', isStarred: false },
-      { id: 'project-2', name: 'Beta project', isStarred: true },
+      { id: 'project-1', name: 'Alpha project', workdir: '/tmp/alpha', isStarred: false, sessionCount: 7 },
+      { id: 'project-2', name: 'Beta project', workdir: '/tmp/beta', isStarred: true, sessionCount: 0 },
     ],
   }),
 }))
@@ -35,7 +36,7 @@ vi.mock('wouter', () => ({
 const sessionStoreState = {
   sessions: [] as SessionSummary[],
   currentSession: null as { id: string } | null,
-  unreadSessionIds: [],
+  unreadSessionIds: [] as string[],
   sessionsWithPendingConfirmations: [],
   pendingPathConfirmations: [],
   sessionsHasMore: false,
@@ -268,6 +269,30 @@ describe('Sidebar favorites', () => {
     expect(mockToggleStar).toHaveBeenCalledWith('project-2', false)
     expect(document.querySelector('button[title="Alpha project"]')?.getAttribute('aria-expanded')).toBe('true')
     expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('shows discussion count, unread count, path, and edit action on project hover', async () => {
+    sessionStoreState.sessions = [
+      session({ id: 'session-1', title: 'First' }),
+      session({ id: 'session-2', title: 'Second', isFavorite: true }),
+    ]
+    sessionStoreState.unreadSessionIds = ['session-2']
+    renderSidebar()
+
+    const projectButton = document.querySelector('button[title="Alpha project"]')
+    const row = projectButton?.parentElement
+    if (!row) throw new Error('project row missing')
+    fireEvent.mouseEnter(row)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 320))
+    })
+
+    const card = document.querySelector('[role="dialog"]')
+    expect(card?.textContent).toContain('7 discussions')
+    expect(card?.textContent).toContain('1 unread')
+    expect(card?.textContent).toContain('/tmp/alpha')
+    expect(card?.textContent).toContain('Edit project')
   })
 
   it('places favorite projects first', () => {

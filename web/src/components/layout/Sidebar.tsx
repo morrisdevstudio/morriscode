@@ -7,8 +7,9 @@ import type { PendingPathConfirmation } from '../../stores/session/types'
 import { useCurrentProject } from '../../hooks/useCurrentProject'
 import { useProjects } from '../../hooks/useProjects'
 import { useT } from '../../hooks/useT'
-import type { SessionSummary } from '@shared/types.js'
+import type { Project, SessionSummary } from '@shared/types.js'
 import { ProjectSettingsModal } from '../settings/ProjectSettingsModal'
+import { ProjectHoverCard } from './ProjectHoverCard'
 import { DropdownMenu } from '../shared/DropdownMenu'
 import { ScrollArea } from '../shared/ScrollArea'
 import { CloseButton } from '../shared/CloseButton'
@@ -66,7 +67,7 @@ interface SidebarProps {
 export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: SidebarProps) {
   const t = useT()
   const [, navigate] = useLocation()
-  const [showSettings, setShowSettings] = useState(false)
+  const [settingsProject, setSettingsProject] = useState<Project | null>(null)
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
   const [sessionToRename, setSessionToRename] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -97,6 +98,9 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   const toggleProjectStar = useProjectStore((state) => state.toggleStar)
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
   const [revealedProjects, setRevealedProjects] = useState<Set<string>>(new Set())
+  const [hoveredProject, setHoveredProject] = useState<{ id: string; rect: DOMRect } | null>(null)
+  const projectHoverShowTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const projectHoverHideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const searchRef = useRef<HTMLInputElement>(null)
   const sessionListRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +164,30 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
   // Every loaded session takes part in the tree, grouped by project below.
   const projectSessions = sessions
 
+  const sessionProjectById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const session of sessions) map.set(session.id, session.projectId)
+    return map
+  }, [sessions])
+
+  const sessionCountByProject = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const session of sessions) {
+      map.set(session.projectId, (map.get(session.projectId) ?? 0) + 1)
+    }
+    return map
+  }, [sessions])
+
+  const unreadCountByProject = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const sessionId of unreadSessionIds) {
+      const projectKey = sessionProjectById.get(sessionId)
+      if (!projectKey) continue
+      map.set(projectKey, (map.get(projectKey) ?? 0) + 1)
+    }
+    return map
+  }, [unreadSessionIds, sessionProjectById])
+
   const [favoriteSessions, otherSessions] = useMemo(() => {
     const favs: SessionSummary[] = []
     const others: SessionSummary[] = []
@@ -220,19 +248,32 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
    * project list is still loading (or when it is unavailable).
    */
   const treeProjects = useMemo(() => {
-    const nodes: { id: string; name: string; isStarred?: boolean }[] = projects.map((project) => ({
+    const nodes: {
+      id: string
+      name: string
+      workdir: string
+      isStarred?: boolean
+      sessionCount: number
+    }[] = projects.map((project) => ({
       id: project.id,
       name: project.name,
+      workdir: project.workdir,
       isStarred: project.isStarred ?? false,
+      sessionCount: Math.max(project.sessionCount ?? 0, sessionCountByProject.get(project.id) ?? 0),
     }))
     const known = new Set(nodes.map((node) => node.id))
     for (const session of filteredOthers) {
       if (known.has(session.projectId)) continue
       known.add(session.projectId)
-      nodes.push({ id: session.projectId, name: session.projectId })
+      nodes.push({
+        id: session.projectId,
+        name: session.projectId,
+        workdir: session.workdir,
+        sessionCount: sessionCountByProject.get(session.projectId) ?? 0,
+      })
     }
     return sortProjectsStarredFirst(nodes)
-  }, [projects, filteredOthers])
+  }, [projects, filteredOthers, sessionCountByProject])
 
   const toggleProject = useCallback((targetId: string) => {
     setCollapsedProjects((prev) => {
@@ -254,6 +295,51 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
     [listSessions],
   )
 
+  const cancelProjectHoverHide = useCallback(() => {
+    if (projectHoverHideTimer.current) {
+      clearTimeout(projectHoverHideTimer.current)
+      projectHoverHideTimer.current = undefined
+    }
+  }, [])
+
+  const hideProjectHover = useCallback(() => {
+    if (projectHoverShowTimer.current) {
+      clearTimeout(projectHoverShowTimer.current)
+      projectHoverShowTimer.current = undefined
+    }
+    cancelProjectHoverHide()
+    projectHoverHideTimer.current = setTimeout(() => setHoveredProject(null), 120)
+  }, [cancelProjectHoverHide])
+
+  const showProjectHover = useCallback(
+    (targetProjectId: string, row: HTMLElement) => {
+      cancelProjectHoverHide()
+      if (projectHoverShowTimer.current) clearTimeout(projectHoverShowTimer.current)
+      projectHoverShowTimer.current = setTimeout(() => {
+        setHoveredProject({ id: targetProjectId, rect: row.getBoundingClientRect() })
+      }, 280)
+    },
+    [cancelProjectHoverHide],
+  )
+
+  useEffect(() => {
+    if (!hoveredProject) return
+    const closeHoverCard = () => setHoveredProject(null)
+    window.addEventListener('scroll', closeHoverCard, true)
+    window.addEventListener('resize', closeHoverCard)
+    return () => {
+      window.removeEventListener('scroll', closeHoverCard, true)
+      window.removeEventListener('resize', closeHoverCard)
+    }
+  }, [hoveredProject])
+
+  useEffect(
+    () => () => {
+      if (projectHoverShowTimer.current) clearTimeout(projectHoverShowTimer.current)
+      if (projectHoverHideTimer.current) clearTimeout(projectHoverHideTimer.current)
+    },
+    [],
+  )
   const openSettingsTab = useCallback((tab: Tab) => {
     window.dispatchEvent(new CustomEvent(OPEN_SETTINGS_EVENT, { detail: { tab } }))
   }, [])
@@ -419,7 +505,11 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
 
           return (
             <div key={project.id}>
-              <div className="flex items-center gap-1 pr-2 hover:bg-bg-tertiary/40">
+              <div
+                className="flex items-center gap-1 pr-2 hover:bg-bg-tertiary/40"
+                onMouseEnter={(event) => showProjectHover(project.id, event.currentTarget)}
+                onMouseLeave={hideProjectHover}
+              >
                 <button
                   type="button"
                   onClick={() => toggleProject(project.id)}
@@ -611,7 +701,9 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
                     {
                       label: t({ en: 'Edit project settings', fr: 'Modifier les paramètres du projet' }),
                       icon: <GearIcon className="w-3.5 h-3.5" />,
-                      onClick: () => setShowSettings(true),
+                      onClick: () => {
+                        if (currentProject) setSettingsProject(currentProject)
+                      },
                     },
                     {
                       label: t({ en: 'Delete all sessions', fr: 'Supprimer toutes les sessions' }),
@@ -692,12 +784,8 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
             </div>
 
             {/* Project Settings Modal */}
-            {currentProject && (
-              <ProjectSettingsModal
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-                project={currentProject}
-              />
+            {settingsProject && (
+              <ProjectSettingsModal isOpen onClose={() => setSettingsProject(null)} project={settingsProject} />
             )}
 
             <ConfirmModal
@@ -812,6 +900,32 @@ export function Sidebar({ projectId, isOpen = true, overlay = false, onClose }: 
                 )}
               </ScrollArea>
             </PluginZone>
+
+            {hoveredProject &&
+              (() => {
+                const node = treeProjects.find((candidate) => candidate.id === hoveredProject.id)
+                if (!node) return null
+                const fullProject = projects.find((candidate) => candidate.id === node.id)
+                return (
+                  <ProjectHoverCard
+                    project={node}
+                    anchorRect={hoveredProject.rect}
+                    unreadCount={unreadCountByProject.get(node.id) ?? 0}
+                    onMouseEnter={cancelProjectHoverHide}
+                    onMouseLeave={hideProjectHover}
+                    onClose={() => setHoveredProject(null)}
+                    onToggleStar={(isStarred) => void toggleProjectStar(node.id, isStarred)}
+                    onEdit={
+                      fullProject
+                        ? () => {
+                            setSettingsProject(fullProject)
+                            setHoveredProject(null)
+                          }
+                        : undefined
+                    }
+                  />
+                )
+              })()}
           </PluginZone>
         )
 

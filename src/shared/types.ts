@@ -9,6 +9,7 @@ export interface Project {
   id: string
   name: string
   workdir: string
+  sessionCount?: number // Total discussion count for the project (list payloads)
   customInstructions?: string // Project-specific instructions injected into prompts
   dangerLevel?: DangerLevel // Project default danger level for new sessions
   defaultAgent?: string // Project default agent for new sessions (overrides global)
