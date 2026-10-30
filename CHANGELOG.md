@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.4 - 2026-10-30
+
+### Features
+
+- **Project details on hover** — chat and unread counts, full path, favorite and settings, right from the sidebar.
+
+### Bug Fixes
+
+- **Startup opens the last project** — a full page load now waits for the project list instead of falling back to the split view.
+- **Prepared updates survive cleanup** — a downloaded release is kept instead of being pruned or downloaded again.
+- **Updates install after a restart** — a release prepared before a server restart is now found and applied.
+
 ## 0.3.3 - 2026-10-23
 
 ### Bug Fixes
