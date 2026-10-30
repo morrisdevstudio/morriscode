@@ -8,7 +8,12 @@ vi.mock('wouter', () => ({
   Redirect: ({ to }: { to: string }) => <div data-redirect={to} />,
 }))
 
-const projectsState = vi.hoisted(() => ({ projects: [] as Project[], loading: false }))
+const projectsState = vi.hoisted(() => ({
+  projects: [] as Project[],
+  loading: false,
+  loaded: true,
+  error: undefined as unknown,
+}))
 vi.mock('../hooks/useProjects', () => ({
   useProjects: () => projectsState,
 }))
@@ -50,6 +55,8 @@ beforeEach(() => {
   localStorage.clear()
   projectsState.projects = projects
   projectsState.loading = false
+  projectsState.loaded = true
+  projectsState.error = undefined
   sessionState.connectionStatus = 'connected'
   tokenState.hasToken = true
 })
@@ -69,9 +76,24 @@ describe('LandingRedirect', () => {
     expect(redirectTarget(render())).toBe('/split-view')
   })
 
+  it('waits for the first project snapshot instead of bouncing to the split view', () => {
+    projectsState.projects = []
+    projectsState.loaded = false
+    expect(redirectTarget(render())).toBeNull()
+  })
+
+  it('opens the remembered project when the project list cannot be loaded', () => {
+    localStorage.setItem(LAST_PROJECT_KEY, 'older')
+    projectsState.projects = []
+    projectsState.loaded = false
+    projectsState.error = new Error('Failed to load projects (401)')
+    expect(redirectTarget(render())).toBe('/p/older')
+  })
+
   it('waits for the projects before choosing a destination', () => {
     projectsState.projects = []
     projectsState.loading = true
+    projectsState.loaded = false
     expect(redirectTarget(render())).toBeNull()
   })
 

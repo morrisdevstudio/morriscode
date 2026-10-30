@@ -13,11 +13,13 @@ import { Spinner } from './shared/Spinner'
  * lands in the split view, where the header exposes the project menu.
  */
 export function LandingRedirect() {
-  const { projects, loading } = useProjects()
+  const { projects, loaded, error } = useProjects()
   const connectionStatus = useSessionStore((state) => state.connectionStatus)
   const canLoad = connectionStatus === 'connected' || hasStoredToken()
 
-  if (!canLoad || loading) {
+  // The project list is empty until its fetch settles, so routing on the first
+  // render would always redirect to the split view. Wait for an answer instead.
+  if (!canLoad || (!loaded && !error)) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Spinner />
@@ -25,6 +27,15 @@ export function LandingRedirect() {
     )
   }
 
-  const project = resolveLandingProject(projects, readLastProjectId())
+  const lastProjectId = readLastProjectId()
+
+  // A failed fetch (expired token, server restarting) says nothing about the
+  // projects: trust the remembered one rather than dropping the user into the
+  // split view. The project page retries its own data.
+  if (!loaded) {
+    return <Redirect to={lastProjectId ? `/p/${lastProjectId}` : SPLIT_ROUTE} />
+  }
+
+  const project = resolveLandingProject(projects, lastProjectId)
   return <Redirect to={project ? `/p/${project.id}` : SPLIT_ROUTE} />
 }

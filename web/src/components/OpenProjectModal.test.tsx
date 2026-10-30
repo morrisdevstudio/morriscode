@@ -40,6 +40,8 @@ describe('OpenProjectModal', () => {
       projects: mockProjects,
       refresh: vi.fn(),
       loading: false,
+      error: undefined,
+      loaded: true,
     })
     vi.mocked(useProjectStore).mockImplementation((selector: any) =>
       selector({
