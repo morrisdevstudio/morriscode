@@ -22,7 +22,7 @@ describe.skip('Auth', () => {
 
   beforeAll(async () => {
     const e2eDir = process.cwd().endsWith('/e2e') ? process.cwd() : join(process.cwd(), 'e2e')
-    const authDir = join(e2eDir, '.openfox-test')
+    const authDir = join(e2eDir, '.morriscode-test')
     await mkdir(authDir, { recursive: true })
 
     const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -48,7 +48,7 @@ describe.skip('Auth', () => {
 
   afterAll(async () => {
     const e2eDir = process.cwd().endsWith('/e2e') ? process.cwd() : join(process.cwd(), 'e2e')
-    await rm(join(e2eDir, '.openfox-test'), { recursive: true, force: true })
+    await rm(join(e2eDir, '.morriscode-test'), { recursive: true, force: true })
   })
 
   it('rejects connection without token', async () => {

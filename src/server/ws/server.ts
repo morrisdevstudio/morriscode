@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { createHash } from 'node:crypto'
-import type { Server } from 'node:http'
+import type { Server as HttpServer } from 'node:http'
+import type { Server as HttpsServer } from 'node:https'
 import type { ServerMessage } from '../../shared/protocol.js'
 import type { GitDiffFile } from '../../shared/protocol.js'
 import { createServerMessage } from '../../shared/protocol.js'
@@ -35,6 +36,9 @@ import { generateSessionNameForSession, needsNameGeneration } from '../session/n
 import { getSessionMessageCount } from '../utils/session-utils.js'
 import { serverT } from '../i18n.js'
 import type { Translation } from '../../shared/i18n/index.js'
+
+/** Path the web client connects to; the shared listener also carries Vite's HMR socket. */
+const APP_WS_PATH = '/ws'
 
 const MSG_INVALID_MESSAGE_FORMAT: Translation = { en: 'Invalid message format', fr: 'Format de message invalide' }
 const MSG_NO_ACTIVE_SESSION: Translation = { en: 'No active session', fr: 'Aucune session active' }
@@ -90,7 +94,7 @@ async function moduleGitDiff(cwd: string): Promise<{ hash: string; files: GitDif
 
 const moduleWorkdirLastHash = new Map<string, string>()
 const moduleWorkdirInterval = new Map<string, ReturnType<typeof setInterval>>()
-const gitPollInterval = parseInt(process.env['OPENFOX_GIT_POLL_INTERVAL'] ?? '', 10) || 10_000
+const gitPollInterval = parseInt(process.env['MORRISCODE_GIT_POLL_INTERVAL'] ?? '', 10) || 10_000
 let moduleClients: Map<WebSocket, ClientConnection> | null = null
 let moduleEnqueueSend: ((client: ClientConnection, data: string, seq: number) => void) | null = null
 
@@ -264,11 +268,11 @@ const MAX_SEND_QUEUE_SIZE = 1000 // Maximum messages to queue before dropping
  * 4. Queue Size Limit: MAX_SEND_QUEUE_SIZE prevents memory leaks on
  *    slow or disconnected clients. Messages are dropped if queue is full.
  *
- * @see https://github.com/conrad/openfox/issues/XXX
+ * @see https://github.com/conrad/morriscode/issues/XXX
  */
 
 export function createWebSocketServer(
-  httpServer: Server,
+  httpServer: HttpServer | HttpsServer,
   _config: Config,
   getLLMClient: () => LLMClientWithModel,
   getActiveProvider: (() => Provider | undefined) | undefined,
@@ -276,7 +280,24 @@ export function createWebSocketServer(
   providerManager?: ProviderManager,
   getMcpServers?: () => import('../mcp/types.js').McpServerState[],
 ): WebSocketServerExports {
-  const wss = new WebSocketServer({ server: httpServer })
+  // Attached without claiming the server's upgrade events: the dev-mode Vite
+  // middleware shares this listener for HMR, so each side only takes its own path.
+  const wss = new WebSocketServer({ noServer: true })
+  const handleUpgrade = (
+    req: import('node:http').IncomingMessage,
+    socket: import('node:stream').Duplex,
+    head: Buffer,
+  ) => {
+    const pathname = (req.url ?? '').split('?')[0]
+    if (pathname !== APP_WS_PATH) {
+      // Not ours — another listener (Vite HMR) may handle it. Aborting here would
+      // kill that upgrade, so leave the socket alone.
+      return
+    }
+    wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req))
+  }
+  httpServer.on('upgrade', handleUpgrade)
+  wss.on('close', () => httpServer.off('upgrade', handleUpgrade))
   const clients = new Map<WebSocket, ClientConnection>()
   moduleClients = clients
 

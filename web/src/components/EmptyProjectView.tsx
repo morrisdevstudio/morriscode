@@ -20,7 +20,7 @@ export function EmptyProjectView() {
             <Link
               href={`/p/${currentProject.id}/new`}
               data-testid="create-new-session-button"
-              className="block w-full rounded font-medium transition-colors bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 px-3 py-2 text-center"
+              className="block w-full rounded-md font-medium transition-colors bg-text-primary text-bg-primary hover:opacity-90 px-3 py-2 text-center"
             >
               {t({ en: 'Create New Session', fr: 'Créer une nouvelle session' })}
             </Link>

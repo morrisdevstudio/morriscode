@@ -48,11 +48,11 @@ export function PageTitle() {
     const spinnerPrefix = isRunning ? `${SPINNER_CHARS[spinnerIndexRef.current]} ` : ''
 
     if (project && sessionTitle) {
-      document.title = `${spinnerPrefix}${project.name} - ${sessionTitle} | OpenFox${devSuffix}`
+      document.title = `${spinnerPrefix}${project.name} - ${sessionTitle} | MorrisCode${devSuffix}`
     } else if (project) {
-      document.title = `${spinnerPrefix}${project.name} | OpenFox${devSuffix}`
+      document.title = `${spinnerPrefix}${project.name} | MorrisCode${devSuffix}`
     } else {
-      document.title = `${spinnerPrefix}OpenFox`
+      document.title = `${spinnerPrefix}MorrisCode`
     }
   }
 

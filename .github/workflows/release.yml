@@ -1,0 +1,143 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - run: cd web && npm ci
+      - run: npm run typecheck
+      - run: npm run test:unit
+
+  build:
+    needs: checks
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            archive: zip
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            archive: tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - run: cd web && npm ci
+      - run: npm run build
+      - run: npm prune --omit=dev
+
+      - name: Package (Windows)
+        if: matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Get-ChildItem dist -Recurse -Filter *.map | Remove-Item -Force
+          $asset = "morriscode-$version-win32-x64.zip"
+          tar.exe -a -c -f $asset dist package.json plugins-registry.json CHANGELOG.md node_modules
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "ASSET=$asset" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Package (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          find dist -name '*.map' -delete
+          ASSET="morriscode-$VERSION-linux-x64.tar.gz"
+          tar -czf "$ASSET" dist package.json plugins-registry.json CHANGELOG.md node_modules
+          echo "ASSET=$ASSET" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ env.ASSET }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Verify tag matches package version
+        run: |
+          node -e "const p=require('./package.json'); if ('v'+p.version !== process.env.GITHUB_REF_NAME) { console.error('Tag and package version do not match'); process.exit(1) }"
+
+      - name: Prepare notes and installers
+        run: |
+          if [ ! -f release-public-key.pem ]; then
+            echo "release-public-key.pem is missing; run scripts/setup-release-signing.mjs first." >&2
+            exit 1
+          fi
+          if ! grep -q "BEGIN PUBLIC KEY" src/server/update/trusted-keys.ts; then
+            echo "trusted-keys.ts has no public key; run scripts/setup-release-signing.mjs --update-code first." >&2
+            exit 1
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          node scripts/release/extract-notes.mjs --version "$VERSION" --out release-notes.md
+          cp scripts/install.ps1 release-assets/install.ps1
+          cp scripts/install.sh release-assets/install.sh
+          cp scripts/launcher.mjs release-assets/launcher.mjs
+          cp scripts/release/verify-release.mjs release-assets/verify-release.mjs
+          if [ -f release-public-key.pem ]; then cp release-public-key.pem release-assets/release-public-key.pem; fi
+
+      - name: Build and sign manifest
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+          KEY_ID: ${{ vars.RELEASE_KEY_ID || 'release' }}
+        run: |
+          printf '%s' "$RELEASE_SIGNING_KEY" | base64 -d > "$RUNNER_TEMP/release.key"
+          node scripts/release/create-manifest.mjs \
+            --version "$VERSION" \
+            --tag "$GITHUB_REF_NAME" \
+            --commit "$GITHUB_SHA" \
+            --assets-dir release-assets \
+            --out release-assets/manifest.json \
+            --key-id "$KEY_ID" \
+            --key-file "$RUNNER_TEMP/release.key"
+
+      - name: Publish signed release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
+          RELEASES_REPO: morrisdevstudio/morriscode-releases
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$RELEASES_REPO" \
+            --title "MorrisCode $VERSION" \
+            --notes-file release-notes.md \
+            --draft
+          gh release upload "$GITHUB_REF_NAME" release-assets/* --repo "$RELEASES_REPO" --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false --repo "$RELEASES_REPO"

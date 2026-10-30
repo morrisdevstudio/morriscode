@@ -10,10 +10,10 @@ import {
   StarFilledIcon,
   PlusMdIcon,
   FolderIcon,
-  HomeIcon,
   SearchIcon,
 } from '../shared/icons'
 import { CreateProjectModal } from '../CreateProjectModal.js'
+import { OpenProjectModal } from '../CreateSessionModal.js'
 import { DirectoryBrowser } from '../shared/DirectoryBrowser.js'
 import { useWorkdir } from '../../hooks/useWorkdir.js'
 import { pathBasename } from '../../lib/path'
@@ -32,6 +32,7 @@ export function ProjectDropdown({ projects, currentProject }: ProjectDropdownPro
   const toggleStar = useProjectStore((state) => state.toggleStar)
   const createProject = useProjectStore((state) => state.createProject)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showManageModal, setShowManageModal] = useState(false)
   const [showBrowser, setShowBrowser] = useState(false)
   const [search, setSearch] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -123,11 +124,11 @@ export function ProjectDropdown({ projects, currentProject }: ProjectDropdownPro
     {
       label: (
         <div className="flex items-center gap-2">
-          <HomeIcon className="w-4 h-4" />
-          <span>{t({ en: 'Home', fr: 'Accueil' })}</span>
+          <FolderIcon className="w-4 h-4" />
+          <span>{t({ en: 'Manage projects', fr: 'Gérer les projets' })}</span>
         </div>
       ),
-      href: '/',
+      onClick: () => setShowManageModal(true),
     },
     {
       label: (
@@ -191,6 +192,7 @@ export function ProjectDropdown({ projects, currentProject }: ProjectDropdownPro
         minWidth="250px"
       />
       {showCreateModal && <CreateProjectModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />}
+      {showManageModal && <OpenProjectModal isOpen={showManageModal} onClose={() => setShowManageModal(false)} />}
       {showBrowser && (
         <DirectoryBrowser
           initialPath={baseWorkdir ?? undefined}

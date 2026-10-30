@@ -47,8 +47,11 @@ export function modelMatchesQuery(model: { name?: string; id: string }, query: s
 }
 
 export function getVisibleModels(provider: Provider): ModelWithConfig[] {
-  const hasSelected = provider.models.some((m) => m.selected)
-  const source = hasSelected ? provider.models.filter((m) => m.selected) : provider.models
+  // A list that carries the flag at all is authoritative: only ticked models are offered,
+  // even when that means none. A list with no flag anywhere predates the tick box, so
+  // everything it holds stays offered.
+  const hasFlags = provider.models.some((m) => m.selected !== undefined)
+  const source = hasFlags ? provider.models.filter((m) => m.selected) : provider.models
   return source.map((m) => {
     const reasoningEfforts = m.reasoningEfforts?.length
       ? m.reasoningEfforts

@@ -106,7 +106,7 @@ async function switchToBuilder() {
 }
 
 async function run() {
-  console.log('=== OpenFox Debug ===')
+  console.log('=== MorrisCode Debug ===')
 
   const ready = await waitForServer()
   if (!ready) {

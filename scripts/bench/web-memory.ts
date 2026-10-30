@@ -533,10 +533,10 @@ async function run(): Promise<void> {
 
   const port = await findFreePort()
   const serverUrl = `http://127.0.0.1:${port}`
-  const benchRoot = await mkdtemp(join(tmpdir(), 'openfox-bench-'))
+  const benchRoot = await mkdtemp(join(tmpdir(), 'morriscode-bench-'))
   const workdir = join(benchRoot, 'project')
   const homeDir = join(benchRoot, 'home')
-  const configDir = join(homeDir, 'openfox')
+  const configDir = join(homeDir, 'morriscode')
   await mkdir(workdir, { recursive: true })
   await mkdir(configDir, { recursive: true })
   // A pre-existing config file keeps the CLI out of its interactive first-run
@@ -558,11 +558,11 @@ async function run(): Promise<void> {
         HOME: homeDir,
         XDG_CONFIG_HOME: homeDir,
         XDG_DATA_HOME: homeDir,
-        OPENFOX_PORT: String(port),
-        OPENFOX_DB_PATH: ':memory:',
-        OPENFOX_MOCK_LLM: 'true',
-        OPENFOX_WORKDIR: workdir,
-        OPENFOX_LOG_LEVEL: 'warn',
+        MORRISCODE_PORT: String(port),
+        MORRISCODE_DB_PATH: ':memory:',
+        MORRISCODE_MOCK_LLM: 'true',
+        MORRISCODE_WORKDIR: workdir,
+        MORRISCODE_LOG_LEVEL: 'warn',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })

@@ -1,4 +1,4 @@
-import type { ModelConfig } from '../shared/types.js'
+import type { ModelConfig, ProviderUsage } from '../shared/types.js'
 import type { LLMCompletionRequest, LLMCompletionResponse, LLMStreamEvent } from '../server/llm/types.js'
 
 // ============================================================================
@@ -60,6 +60,13 @@ export interface ProviderRequestContext {
 export interface ProviderTransportAdapter {
   readonly id: string
   listModels(context: ProviderRequestContext): Promise<ModelConfig[]>
+  /**
+   * Optional. Latest metered usage this account reported, or undefined when the
+   * provider does not meter usage — or when nothing was observed yet. Returning
+   * undefined instead of failing is the friendly contract: the caller reads the
+   * absence as 'nothing to show'.
+   */
+  getUsage?(context: ProviderRequestContext): Promise<ProviderUsage | undefined>
   complete(request: LLMCompletionRequest, context: ProviderRequestContext): Promise<LLMCompletionResponse>
   stream(request: LLMCompletionRequest, context: ProviderRequestContext): AsyncIterable<LLMStreamEvent>
 }
@@ -169,4 +176,4 @@ export type {
   LLMStreamEvent,
   LLMToolDefinition,
 } from '../server/llm/types.js'
-export type { ModelConfig, ToolCall } from '../shared/types.js'
+export type { ModelConfig, ProviderUsage, ProviderUsageWindow, ToolCall } from '../shared/types.js'

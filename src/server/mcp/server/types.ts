@@ -12,7 +12,7 @@ export interface WorkflowListItem {
   parameters?: WorkflowParameter[]
 }
 
-export interface OpenFoxMcpToolDeps {
+export interface MorrisCodeMcpToolDeps {
   sessionManager: SessionManager
   listProjects(): Project[]
   /** Create a project at the given directory (creates the dir, initializes git if enabled, then registers it). */
@@ -37,15 +37,15 @@ export interface OpenFoxMcpToolDeps {
   recentMessages(sessionId: string, limit: number): { messages: Message[]; hiddenCount: number }
 }
 
-export interface OpenFoxMcpToolResult {
+export interface MorrisCodeMcpToolResult {
   content: Array<{ type: 'text'; text: string }>
   isError?: boolean
   [key: string]: unknown
 }
 
-export interface OpenFoxMcpTool {
+export interface MorrisCodeMcpTool {
   name: string
   description: string
   inputSchema: Record<string, unknown>
-  handler: (args: Record<string, unknown>) => Promise<OpenFoxMcpToolResult>
+  handler: (args: Record<string, unknown>) => Promise<MorrisCodeMcpToolResult>
 }

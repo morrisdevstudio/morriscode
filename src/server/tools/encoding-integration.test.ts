@@ -45,7 +45,7 @@ describe('encoding integration', () => {
     initDatabase(createTestConfig())
     initEventStore(getDatabase())
 
-    testDir = join(tmpdir(), `openfox-encoding-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-encoding-test-${Date.now()}`)
     await rm(testDir, { recursive: true, force: true })
     await mkdir(testDir, { recursive: true })
 

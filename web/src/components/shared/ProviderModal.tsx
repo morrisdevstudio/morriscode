@@ -1013,8 +1013,10 @@ export function ProviderModal({
             compactionThreshold: m.compactionThreshold,
           }
         }
-        // Auto-select all models if none explicitly selected (legacy / single-model)
-        if (selected.size === 0) {
+        // Legacy lists predate the `selected` flag: nothing was ever ticked there, so
+        // the whole list is offered. Once flags exist, an empty selection is the answer.
+        const hasExplicitFlags = providerModels.some((m) => m.selected !== undefined)
+        if (selected.size === 0 && !hasExplicitFlags) {
           for (const m of providerModels) selected.add(m.id)
         }
         setSelectedModelIds(selected)
@@ -1437,7 +1439,9 @@ export function ProviderModal({
         reasoningEffortOverride: modelConfigs[m.id]?.reasoningEffortOverride ?? m.reasoningEffortOverride,
         modes: m.modes,
         contextWindow: modelConfigs[m.id]?.contextWindow ?? m.contextWindow,
-        selected: selectedModelIds.has(m.id) || undefined,
+        // Written even when false: an unticked model must stay unticked after a save,
+        // otherwise the whole list looks untouched and gets offered again.
+        selected: selectedModelIds.has(m.id),
         supportsVision: modelConfigs[m.id]?.supportsVision,
         thinkingEnabled: modelConfigs[m.id]?.thinkingEnabled,
         thinkingLevel: modelConfigs[m.id]?.thinkingLevel,
@@ -1648,8 +1652,8 @@ export function ProviderModal({
                     <InfoIcon className="w-4 h-4 text-accent-primary flex-shrink-0" />
                     <span className="leading-snug">
                       {t({
-                        en: "Can't find your AI provider? Check OpenFox plugins to see if one is available.",
-                        fr: "Vous ne trouvez pas votre fournisseur d'IA ? Consultez les plugins OpenFox qui pourraient le proposer.",
+                        en: "Can't find your AI provider? Check MorrisCode plugins to see if one is available.",
+                        fr: "Vous ne trouvez pas votre fournisseur d'IA ? Consultez les plugins MorrisCode qui pourraient le proposer.",
                       })}
                     </span>
                   </div>

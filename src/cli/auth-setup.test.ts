@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { generateKeyPairSync } from 'node:crypto'
 
-const TEST_DIR = join(tmpdir(), `openfox-auth-setup-test-${Date.now()}`)
+const TEST_DIR = join(tmpdir(), `morriscode-auth-setup-test-${Date.now()}`)
 
 vi.mock('./paths.js', () => ({
   getGlobalConfigDir: () => TEST_DIR,

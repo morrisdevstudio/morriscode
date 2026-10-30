@@ -92,7 +92,25 @@ const serverSchema = z.object({
   port: z.number().default(10369),
   host: z.string().default('127.0.0.1'),
   openBrowser: z.boolean().default(true),
+  /** Serve the UI and API over TLS on the same port (generated self-signed cert unless httpsCert/httpsKey are set). */
+  https: z.boolean().optional(),
+  /** PEM files to use instead of the generated certificate. Both are required together. */
+  httpsCert: z.string().optional(),
+  httpsKey: z.string().optional(),
 })
+
+/** Fallback server block used wherever a config file is written without an explicit server entry. */
+export const defaultServerConfig: {
+  port: number
+  host: string
+  openBrowser: boolean
+  https: boolean
+} = {
+  port: 10369,
+  host: '127.0.0.1',
+  openBrowser: true,
+  https: false,
+}
 
 const loggingSchema = z.object({
   level: z.enum(['debug', 'info', 'warn', 'error']).default('error'),
@@ -159,7 +177,7 @@ const configSchema = z
     defaultModelSelection: z.string().optional(),
     activeProviderId: z.string().optional(),
     activeWorkflowId: z.string().optional(),
-    server: serverSchema.default({ port: 10369, host: '127.0.0.1', openBrowser: true }),
+    server: serverSchema.default(defaultServerConfig),
     logging: loggingSchema.default({ level: 'error' as const }),
     database: databaseSchema.default({ path: '' }),
     workspace: workspaceSchema.default(() => ({ workdir: process.cwd() })),
@@ -174,7 +192,7 @@ const configSchema = z
     defaultModelSelection: data.defaultModelSelection,
     activeProviderId: data.activeProviderId,
     activeWorkflowId: data.activeWorkflowId,
-    server: data.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: data.server ?? defaultServerConfig,
     logging: data.logging ?? { level: 'error' },
     database: data.database ?? { path: '' },
     workspace: data.workspace ?? { workdir: process.cwd() },
@@ -276,7 +294,7 @@ export async function saveGlobalConfig(
     defaultModelSelection: config.defaultModelSelection,
     activeProviderId: config.activeProviderId,
     activeWorkflowId: config.activeWorkflowId,
-    server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: config.server ?? defaultServerConfig,
     logging: config.logging ?? { level: 'error' },
     database: config.database ?? { path: '' },
     workspace: config.workspace ?? { workdir: process.cwd() },
@@ -326,7 +344,7 @@ export function setDefaultModelSelection(
     defaultModelSelection,
     activeProviderId: providerId,
     activeWorkflowId: config.activeWorkflowId,
-    server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: config.server ?? defaultServerConfig,
     logging: config.logging ?? { level: 'error' },
     database: config.database ?? { path: '' },
     workspace: config.workspace ?? { workdir: process.cwd() },
@@ -358,7 +376,7 @@ export function addProvider(config: Partial<GlobalConfig>, provider: Omit<Provid
         : config.defaultModelSelection,
     activeProviderId: shouldActivate ? newProvider.id : config.activeProviderId,
     activeWorkflowId: config.activeWorkflowId,
-    server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: config.server ?? defaultServerConfig,
     logging: config.logging ?? { level: 'error' },
     database: config.database ?? { path: '' },
     workspace: config.workspace ?? { workdir: process.cwd() },
@@ -408,7 +426,7 @@ export function removeProvider(config: Partial<GlobalConfig>, providerId: string
     activeProviderId: newActiveId,
     defaultModelSelection: newDefaultModelSelection,
     activeWorkflowId: config.activeWorkflowId,
-    server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: config.server ?? defaultServerConfig,
     logging: config.logging ?? { level: 'error' },
     database: config.database ?? { path: '' },
     workspace: config.workspace ?? { workdir: process.cwd() },
@@ -448,7 +466,7 @@ export function activateProvider(config: Partial<GlobalConfig>, providerId: stri
       defaultModelSelection: config.defaultModelSelection,
       activeProviderId: config.activeProviderId,
       activeWorkflowId: config.activeWorkflowId,
-      server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+      server: config.server ?? defaultServerConfig,
       logging: config.logging ?? { level: 'error' },
       database: config.database ?? { path: '' },
       workspace: config.workspace ?? { workdir: process.cwd() },
@@ -463,7 +481,7 @@ export function activateProvider(config: Partial<GlobalConfig>, providerId: stri
     defaultModelSelection: config.defaultModelSelection,
     activeProviderId: providerId,
     activeWorkflowId: config.activeWorkflowId,
-    server: config.server ?? { port: 10369, host: '127.0.0.1', openBrowser: true },
+    server: config.server ?? defaultServerConfig,
     logging: config.logging ?? { level: 'error' },
     database: config.database ?? { path: '' },
     workspace: config.workspace ?? { workdir: process.cwd() },

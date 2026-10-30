@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import express from 'express'
+import { homedir } from 'node:os'
 import { terminalManager } from '../terminal/manager.js'
 import { createTerminalRoutes } from './terminals.js'
 
@@ -40,7 +41,7 @@ describe('Terminal Routes', () => {
 
     it('returns all sessions for a project', async () => {
       const s1 = terminalManager.create(undefined, 'project-a')
-      const s2 = terminalManager.create('/tmp', 'project-a')
+      const s2 = terminalManager.create(homedir(), 'project-a')
 
       const res = await fetch(`${baseUrl}/api/terminals?projectId=project-a`)
       expect(res.status).toBe(200)
@@ -87,14 +88,15 @@ describe('Terminal Routes', () => {
     })
 
     it('creates a terminal with workdir', async () => {
+      const workdir = homedir()
       const res = await fetch(`${baseUrl}/api/terminals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workdir: '/tmp', projectId: 'project-b' }),
+        body: JSON.stringify({ workdir, projectId: 'project-b' }),
       })
       expect(res.status).toBe(201)
       const body = await json<{ id: string; workdir: string; projectId: string }>(res)
-      expect(body.workdir).toBe('/tmp')
+      expect(body.workdir).toBe(workdir)
       expect(body.projectId).toBe('project-b')
     })
   })
@@ -121,13 +123,14 @@ describe('Terminal Routes', () => {
 
   describe('GET /api/terminals/:id', () => {
     it('returns terminal by id', async () => {
-      const session = terminalManager.create('/home')
+      const workdir = homedir()
+      const session = terminalManager.create(workdir)
 
       const res = await fetch(`${baseUrl}/api/terminals/${session.id}`)
       expect(res.status).toBe(200)
       const body = await json<{ id: string; workdir: string }>(res)
       expect(body.id).toBe(session.id)
-      expect(body.workdir).toBe('/home')
+      expect(body.workdir).toBe(workdir)
     })
 
     it('returns 404 for non-existent id', async () => {

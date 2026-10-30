@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { closeDatabase, initDatabase } from '../db/index.js'
 import { loadConfig } from '../config.js'
 import { PluginHost } from './host.js'
+import type { PluginDiagnostic } from './loader.js'
+import { isBuiltInProviderPluginId } from '../providers/builtin/index.js'
 import { emitPluginHook } from './hook-emitter.js'
 import { listPluginModelMetadataProviders } from './model-metadata.js'
 import { listPluginMessageTransforms } from './message-transforms.js'
@@ -45,6 +47,25 @@ function makeHost(configDirectory: string, rpcTimeoutMs?: number): PluginHost {
   })
 }
 
+/**
+ * Diagnostics for the plugins a test installed. MorrisCode also loads the provider
+ * plugins it ships with, so a bare count would include those.
+ */
+function installedDiagnostics(diagnostics: PluginDiagnostic[]): PluginDiagnostic[] {
+  return diagnostics.filter((diagnostic) => diagnostic.source !== 'builtin')
+}
+
+/** Preset ids contributed by installed plugins, ignoring the built-in providers. */
+function installedPresetIds(host: PluginHost): string[] {
+  return host.registry
+    .getPresets()
+    .filter((preset) => {
+      const pluginId = host.registry.getPluginIdFor('preset', preset.id)
+      return pluginId !== undefined && !isBuiltInProviderPluginId(pluginId)
+    })
+    .map((preset) => preset.id)
+}
+
 describe('PluginHost', () => {
   let configDirectory: string
 
@@ -53,7 +74,7 @@ describe('PluginHost', () => {
     const config = loadConfig()
     config.database.path = ':memory:'
     initDatabase(config)
-    configDirectory = await mkdtemp(join(tmpdir(), 'openfox-plugin-host-'))
+    configDirectory = await mkdtemp(join(tmpdir(), 'morriscode-plugin-host-'))
     vi.clearAllMocks()
   })
 
@@ -84,9 +105,9 @@ describe('PluginHost', () => {
     const host = makeHost(configDirectory)
     const diagnostics = await host.start()
 
-    expect(diagnostics).toHaveLength(1)
+    expect(installedDiagnostics(diagnostics)).toHaveLength(1)
     expect(diagnostics[0]!.loaded).toBe(true)
-    const info = host.getPlugins()[0]!
+    const info = host.getPlugins().find((plugin) => plugin.id === 'demo-plugin')!
     expect(info.id).toBe('demo-plugin')
     expect(info.enabled).toBe(true)
     expect(info.contributions.tools).toBe(1)
@@ -135,7 +156,7 @@ describe('PluginHost', () => {
     const diagnostics = await host.start()
 
     expect(diagnostics[0]!.loaded).toBe(true)
-    expect(host.registry.getPresets()).toHaveLength(1)
+    expect(installedPresetIds(host)).toEqual(['v1-preset'])
   })
 
   it('rejects duplicate contribution ids from different plugins', async () => {
@@ -198,9 +219,9 @@ describe('PluginHost', () => {
     const host = makeHost(configDirectory)
     const diagnostics = await host.start()
 
-    expect(diagnostics).toHaveLength(2)
+    expect(installedDiagnostics(diagnostics)).toHaveLength(2)
     expect(diagnostics.every((diagnostic) => diagnostic.loaded)).toBe(true)
-    expect(host.registry.getPresets()).toHaveLength(1)
+    expect(installedPresetIds(host)).toEqual(['legacy-preset'])
     expect(host.registry.getTools()).toHaveLength(1)
   })
 
@@ -304,7 +325,7 @@ describe('PluginHost', () => {
     const info = host.getPlugins().find((plugin) => plugin.id === 'external-plugin')
     expect(info).toBeDefined()
     expect(info!.removable).toBe(false)
-    await expect(host.uninstall('external-plugin')).rejects.toThrow('cannot be removed by OpenFox')
+    await expect(host.uninstall('external-plugin')).rejects.toThrow('cannot be removed by MorrisCode')
     expect(host.getPlugins().some((plugin) => plugin.id === 'external-plugin')).toBe(true)
   })
 

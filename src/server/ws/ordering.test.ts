@@ -100,7 +100,7 @@ describe('WebSocket Message Ordering Integration', () => {
     } else {
       throw new Error('Could not get server port')
     }
-    wsUrl = `ws://localhost:${port}`
+    wsUrl = `ws://localhost:${port}/ws`
   })
 
   afterEach(async () => {

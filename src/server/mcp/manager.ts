@@ -107,7 +107,7 @@ export class McpManager {
     try {
       await this.disconnectServer(name)
 
-      const client = new Client({ name: 'openfox-mcp', version: '2.0.0' })
+      const client = new Client({ name: 'morriscode-mcp', version: '2.0.0' })
       let transport: Transport | null = null
 
       if (entry.config.transport === 'stdio') {

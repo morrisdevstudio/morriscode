@@ -86,13 +86,13 @@ describe('syntax-highlighter', () => {
       expect(theme).toBe('vitesse-light')
     })
 
-    it('maps custom theme with dark basePreset to github-dark-default', async () => {
+    it('maps custom theme with dark basePreset to vesper', async () => {
       const { useThemeStore } = await import('../stores/theme')
       useThemeStore.setState({ isCustom: true, basePreset: 'dark', currentPreset: 'dark' })
 
       const mod = await import('./syntax-highlighter')
       const theme = mod.getShikiTheme()
-      expect(theme).toBe('github-dark-default')
+      expect(theme).toBe('vesper')
     })
 
     it('maps custom theme with dracula basePreset to dracula', async () => {
@@ -122,13 +122,13 @@ describe('syntax-highlighter', () => {
       expect(theme).toBe('nord')
     })
 
-    it('falls back to github-dark-default for unknown basePreset', async () => {
+    it('falls back to vesper for unknown basePreset', async () => {
       const { useThemeStore } = await import('../stores/theme')
       useThemeStore.setState({ isCustom: true, basePreset: '', currentPreset: 'dark' })
 
       const mod = await import('./syntax-highlighter')
       const theme = mod.getShikiTheme()
-      expect(theme).toBe('github-dark-default')
+      expect(theme).toBe('vesper')
     })
 
     it('uses THEME_MAP for non-custom preset', async () => {

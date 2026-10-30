@@ -57,7 +57,7 @@ describe('project tasks service — slash resolver failure handling', () => {
     const config = loadConfig()
     config.database.path = ':memory:'
     initDatabase(config)
-    root = await mkdtemp(join(tmpdir(), 'openfox-tasks-slashfail-'))
+    root = await mkdtemp(join(tmpdir(), 'morriscode-tasks-slashfail-'))
     await mkdir(join(root, 'nested'), { recursive: true })
     projectId = createProject('Slash Fail', root).id
 

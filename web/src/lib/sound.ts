@@ -55,8 +55,8 @@ function sendBrowserNotification(event: SoundEvent) {
 
   new Notification(NOTIFICATION_TITLES[event], {
     body: NOTIFICATION_BODIES[event],
-    icon: appUrl('/fox.svg'),
-    tag: `openfox-${event}`, // Prevents duplicate notifications
+    icon: appUrl('/morriscode.svg'),
+    tag: `morriscode-${event}`, // Prevents duplicate notifications
   })
 }
 

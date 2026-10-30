@@ -3,7 +3,7 @@ import { saveEntity, duplicateEntity } from './entity-mutations'
 import { skillsResource, skillResource, scopedUrl } from './resources'
 
 export type SkillSource =
-  'bundled' | 'global-shared' | 'global-openfox' | 'selected' | 'project-shared' | 'project-openfox'
+  'bundled' | 'global-shared' | 'global-morriscode' | 'selected' | 'project-shared' | 'project-morriscode'
 
 export interface SelectedSkillDirectory {
   configuredPath: string

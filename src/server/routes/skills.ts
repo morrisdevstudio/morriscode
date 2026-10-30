@@ -71,7 +71,7 @@ export function estimateSkillTokens(prompt: string): number {
 }
 
 function mapToResponse(skill: SkillDefinition) {
-  const source = skill.source ?? 'global-openfox'
+  const source = skill.source ?? 'global-morriscode'
   return {
     ...skill.metadata,
     estimatedTokens: estimateSkillTokens(skill.prompt),

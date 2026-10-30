@@ -3,13 +3,17 @@ import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-const TEST_DIR = join(tmpdir(), `openfox-pwa-test-${Date.now()}`)
+const TEST_DIR = join(tmpdir(), `morriscode-pwa-test-${Date.now()}`)
 
 vi.mock('./paths.js', () => ({
   getGlobalConfigDir: (mode: string) => join(TEST_DIR, mode),
 }))
 
-vi.mock('./config.js', () => ({}))
+vi.mock('./config.js', () => ({
+  loadGlobalConfig: vi.fn(async () => ({
+    server: { port: 10369, host: '127.0.0.1', openBrowser: true, https: false },
+  })),
+}))
 
 describe('pwa', () => {
   beforeEach(async () => {
@@ -36,6 +40,13 @@ describe('pwa', () => {
     it('returns localhost:10369 for test mode (falls back to production port)', async () => {
       const { getManifestUrl } = await import('./pwa.js')
       expect(getManifestUrl('test')).toBe('http://127.0.0.1:10369/manifest.webmanifest')
+    })
+
+    it('switches to https once the server is served over TLS', async () => {
+      const { getManifestUrl, setPwaHttpsMode } = await import('./pwa.js')
+      setPwaHttpsMode(true)
+      expect(getManifestUrl('production')).toBe('https://127.0.0.1:10369/manifest.webmanifest')
+      setPwaHttpsMode(false)
     })
   })
 
@@ -112,11 +123,11 @@ describe('pwa', () => {
 
       expect(mockLog).toHaveBeenCalled()
       const output = mockLog.mock.calls.flat().join('\n')
-      expect(output).toContain('openfox pwa install')
-      expect(output).toContain('openfox pwa uninstall')
-      expect(output).toContain('openfox pwa launch')
-      expect(output).toContain('openfox pwa update')
-      expect(output).toContain('openfox pwa status')
+      expect(output).toContain('morriscode pwa install')
+      expect(output).toContain('morriscode pwa uninstall')
+      expect(output).toContain('morriscode pwa launch')
+      expect(output).toContain('morriscode pwa update')
+      expect(output).toContain('morriscode pwa status')
 
       mockLog.mockRestore()
     })

@@ -90,7 +90,7 @@ export default tseslint.config(
           '|',
           '+',
           '#',
-          'OpenFox',
+          'MorrisCode',
           'OpenAI',
           'GitHub',
           '/home/user/projects',
@@ -181,7 +181,7 @@ export default tseslint.config(
       })
       .getConfig(),
     files: ['web/src/**/*.{ts,tsx}'],
-    name: 'openfox/i18n/jsx-no-literals',
+    name: 'morriscode/i18n/jsx-no-literals',
   },
   // i18n gate does not apply to test files (they assert English strings)
   {

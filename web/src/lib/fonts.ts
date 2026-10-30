@@ -3,7 +3,7 @@ export const GENERIC_FONT_FAMILIES = ['monospace', 'serif', 'sans-serif'] as con
 /**
  * Ordered fallback stack used as the terminal default.
  *
- * No font is bundled with OpenFox, so the default must only reference families
+ * No font is bundled with MorrisCode, so the default must only reference families
  * that ship with an OS: Menlo/Monaco (macOS), Consolas/Cascadia Mono (Windows),
  * DejaVu/Liberation/Ubuntu Mono (Linux). Nicer fonts come first and are used
  * when the user happens to have them installed.

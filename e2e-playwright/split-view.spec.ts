@@ -15,18 +15,18 @@ async function createSession(serverUrl: string, projectId: string, title: string
   return data.session.id
 }
 
-test('opens the split view from the homepage and manages panes', async ({ page, projectId, serverUrl }) => {
+test('opens the split view and manages panes', async ({ page, projectId, serverUrl }) => {
   const [a, b, c] = await Promise.all([
     createSession(serverUrl, projectId, 'Split pane A'),
     createSession(serverUrl, projectId, 'Split pane B'),
     createSession(serverUrl, projectId, 'Split pane C'),
   ])
 
+  // The app root opens the last project directly — no launcher screen.
   await page.goto(`${serverUrl}/`)
-  await expect(page.locator('a[href="/split-view"]')).toBeVisible({ timeout: 10000 })
+  await expect(page).toHaveURL(/\/p\/[^/]+$/, { timeout: 10000 })
 
-  // Enter split view from the homepage entry point
-  await page.locator('a[href="/split-view"]').click()
+  await page.goto(`${serverUrl}/split-view`)
   await expect(page).toHaveURL(/\/split-view$/, { timeout: 5000 })
 
   // Fresh visit: no panes yet, empty state shown, sessions listed on the left
@@ -77,8 +77,7 @@ test('streams a message into only its own pane', async ({ page, projectId, serve
   ])
   const marker = 'streaming marker alpha'
 
-  await page.goto(`${serverUrl}/`)
-  await page.locator('a[href="/split-view"]').click()
+  await page.goto(`${serverUrl}/split-view`)
   await expect(page).toHaveURL(/\/split-view$/, { timeout: 5000 })
   await page.locator(`[data-session-item="${a}"]`).click()
   await expect(page.locator(`[data-split-pane="${a}"]`)).toBeVisible({ timeout: 5000 })
@@ -113,8 +112,7 @@ test('supports unlimited panes, layout switching and a collapsible control colum
     ),
   )
 
-  await page.goto(`${serverUrl}/`)
-  await page.locator('a[href="/split-view"]').click()
+  await page.goto(`${serverUrl}/split-view`)
   await expect(page).toHaveURL(/\/split-view$/, { timeout: 5000 })
 
   // No cap: all five sessions open as panes at once (default columns layout)

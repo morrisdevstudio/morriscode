@@ -1,7 +1,7 @@
 /**
  * Global setup for E2E tests.
  *
- * Starts OpenFox server with mock LLM for fast deterministic testing.
+ * Starts MorrisCode server with mock LLM for fast deterministic testing.
  */
 
 import { spawn, execSync, type ChildProcess } from 'node:child_process'
@@ -14,9 +14,9 @@ import { fileURLToPath } from 'node:url'
 config({ path: new URL('../.env', import.meta.url).pathname })
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const TEST_CONFIG_DIR = join(__dirname, '.openfox-test')
+const TEST_CONFIG_DIR = join(__dirname, '.morriscode-test')
 
-const TEST_PORT = process.env['OPENFOX_TEST_PORT'] ?? '3999'
+const TEST_PORT = process.env['MORRISCODE_TEST_PORT'] ?? '3999'
 let serverProcess: ChildProcess | null = null
 
 function killProcessOnPort(port: string): void {
@@ -47,9 +47,9 @@ export async function setup(): Promise<void> {
   killProcessOnPort(TEST_PORT)
   await sleep(300)
 
-  const verbose = process.env['OPENFOX_TEST_VERBOSE'] === 'true'
+  const verbose = process.env['MORRISCODE_TEST_VERBOSE'] === 'true'
   if (verbose) {
-    console.log('\n🚀 Starting OpenFox with Mock LLM...')
+    console.log('\n🚀 Starting MorrisCode with Mock LLM...')
   }
 
   // Spawn with completely isolated stdio to avoid vitest conflicts
@@ -57,13 +57,13 @@ export async function setup(): Promise<void> {
     cwd: new URL('..', import.meta.url).pathname,
     env: {
       ...process.env,
-      OPENFOX_PORT: TEST_PORT,
-      OPENFOX_DB_PATH: ':memory:',
-      OPENFOX_HOST: '127.0.0.1',
-      OPENFOX_LOG_LEVEL: 'error',
-      OPENFOX_MOCK_LLM: 'true',
-      OPENFOX_MODEL_NAME: 'mock-model',
-      OPENFOX_MODE: 'test',
+      MORRISCODE_PORT: TEST_PORT,
+      MORRISCODE_DB_PATH: ':memory:',
+      MORRISCODE_HOST: '127.0.0.1',
+      MORRISCODE_LOG_LEVEL: 'error',
+      MORRISCODE_MOCK_LLM: 'true',
+      MORRISCODE_MODEL_NAME: 'mock-model',
+      MORRISCODE_MODE: 'test',
     },
     stdio: 'ignore',
     detached: true,
@@ -78,8 +78,8 @@ export async function setup(): Promise<void> {
     console.log(`✅ Mock server ready at ${serverUrl}`)
   }
 
-  process.env['OPENFOX_TEST_URL'] = serverUrl
-  process.env['OPENFOX_TEST_WS_URL'] = `ws://localhost:${TEST_PORT}/ws`
+  process.env['MORRISCODE_TEST_URL'] = serverUrl
+  process.env['MORRISCODE_TEST_WS_URL'] = `ws://localhost:${TEST_PORT}/ws`
 
   const cleanup = () => {
     if (serverProcess?.pid) {
@@ -97,7 +97,7 @@ export async function setup(): Promise<void> {
 
 export async function teardown(): Promise<void> {
   if (serverProcess?.pid) {
-    const verbose = process.env['OPENFOX_TEST_VERBOSE'] === 'true'
+    const verbose = process.env['MORRISCODE_TEST_VERBOSE'] === 'true'
     if (verbose) {
       console.log('\n🛑 Stopping server...')
     }

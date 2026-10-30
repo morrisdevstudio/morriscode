@@ -58,11 +58,11 @@ test.describe('Git Status Watcher', () => {
       cwd: join(import.meta.dirname, '..'),
       env: {
         ...process.env,
-        OPENFOX_PORT: String(SERVER_PORT),
-        OPENFOX_DB_PATH: ':memory:',
-        OPENFOX_MOCK_LLM: 'true',
-        OPENFOX_LOG_LEVEL: 'error',
-        OPENFOX_GIT_POLL_INTERVAL: '1000',
+        MORRISCODE_PORT: String(SERVER_PORT),
+        MORRISCODE_DB_PATH: ':memory:',
+        MORRISCODE_MOCK_LLM: 'true',
+        MORRISCODE_LOG_LEVEL: 'error',
+        MORRISCODE_GIT_POLL_INTERVAL: '1000',
       },
       stdio: 'ignore',
       detached: true,
@@ -70,7 +70,7 @@ test.describe('Git Status Watcher', () => {
     serverProcess.unref()
     await waitForServer(SERVER_URL)
 
-    workdir = join(tmpdir(), `openfox-git-test-${Date.now()}`)
+    workdir = join(tmpdir(), `morriscode-git-test-${Date.now()}`)
     await mkdir(workdir, { recursive: true })
     await mkdir(join(workdir, 'src'), { recursive: true })
     await writeFile(join(workdir, 'src', 'index.ts'), '// Initial content\n')

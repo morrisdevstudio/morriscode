@@ -13,7 +13,7 @@ export interface SkillMetadata {
 }
 
 export type SkillSource =
-  'bundled' | 'global-shared' | 'global-openfox' | 'selected' | 'project-shared' | 'project-openfox' | 'plugin'
+  'bundled' | 'global-shared' | 'global-morriscode' | 'selected' | 'project-shared' | 'project-morriscode' | 'plugin'
 
 export interface SkillDefinition {
   metadata: SkillMetadata

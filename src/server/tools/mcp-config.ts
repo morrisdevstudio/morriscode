@@ -65,7 +65,7 @@ export const mcpConfigTool: Tool = createTool<McpConfigArgs>(
     function: {
       name: 'mcp_config',
       description:
-        'Configure MCP servers (Model Context Protocol). Actions: list (show all servers and tools), add (add a server), update (modify an existing server — all fields are optional and merged with the current config, transport-incompatible fields are cleared on transport change), remove (delete a server), toggle-tool (enable/disable a tool), bootstrap (get a ready-to-paste client config for this OpenFox server itself, so the session can connect to it as an MCP client). Use this when the user asks to add, remove, update, or configure MCP servers or tools.',
+        'Configure MCP servers (Model Context Protocol). Actions: list (show all servers and tools), add (add a server), update (modify an existing server — all fields are optional and merged with the current config, transport-incompatible fields are cleared on transport change), remove (delete a server), toggle-tool (enable/disable a tool), bootstrap (get a ready-to-paste client config for this MorrisCode server itself, so the session can connect to it as an MCP client). Use this when the user asks to add, remove, update, or configure MCP servers or tools.',
       parameters: {
         type: 'object',
         properties: {

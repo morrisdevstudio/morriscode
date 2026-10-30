@@ -34,7 +34,7 @@ describe('plugin routes (v2)', () => {
     config.database.path = ':memory:'
     initDatabase(config)
 
-    configDirectory = await mkdtemp(join(tmpdir(), 'openfox-plugin-routes-'))
+    configDirectory = await mkdtemp(join(tmpdir(), 'morriscode-plugin-routes-'))
     await writePlugin(
       configDirectory,
       'demo-plugin',

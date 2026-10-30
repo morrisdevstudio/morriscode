@@ -16,19 +16,23 @@ export interface CreateTestServerOptions {
   maxContext?: number
   /** Fixed port to listen on (defaults to a dynamic port). */
   port?: number
-  /** MCP servers to configure at startup, e.g. a self-referencing openfox entry. */
+  /** MCP servers to configure at startup, e.g. a self-referencing morriscode entry. */
   mcpServers?: Config['mcpServers']
+  /** Serve over TLS. Pass a cert/key pair, or omit them to exercise the generated certificate. */
+  https?: boolean
+  httpsCert?: string
+  httpsKey?: string
 }
 
 // Create test config by modifying env vars before calling loadConfig
 function createTestConfig(options: CreateTestServerOptions = {}): Config {
   // Set test-specific env vars (loadConfig reads from process.env)
-  process.env['OPENFOX_DB_PATH'] = ':memory:'
-  process.env['OPENFOX_LOG_LEVEL'] = 'error'
-  process.env['OPENFOX_HOST'] = '127.0.0.1'
-  process.env['OPENFOX_PORT'] = '0' // Will be overridden by start(0) anyway
+  process.env['MORRISCODE_DB_PATH'] = ':memory:'
+  process.env['MORRISCODE_LOG_LEVEL'] = 'error'
+  process.env['MORRISCODE_HOST'] = '127.0.0.1'
+  process.env['MORRISCODE_PORT'] = '0' // Will be overridden by start(0) anyway
   if (options.maxContext !== undefined) {
-    process.env['OPENFOX_MAX_CONTEXT'] = String(options.maxContext)
+    process.env['MORRISCODE_MAX_CONTEXT'] = String(options.maxContext)
   }
 
   const config = loadConfig()
@@ -41,7 +45,7 @@ function createTestConfig(options: CreateTestServerOptions = {}): Config {
   config.mode = 'test'
 
   // Give this server its own isolated config file so parallel tests don't clash
-  config.globalConfigPath = join(tmpdir(), `openfox-e2e-config-${randomUUID()}.json`)
+  config.globalConfigPath = join(tmpdir(), `morriscode-e2e-config-${randomUUID()}.json`)
 
   return config
 }
@@ -75,7 +79,7 @@ export interface TestServerHandle extends ServerHandle {
  */
 export async function createTestServer(options: CreateTestServerOptions = {}): Promise<TestServerHandle> {
   // Set mock LLM env before importing server (it reads env at module load time)
-  process.env['OPENFOX_MOCK_LLM'] = 'true'
+  process.env['MORRISCODE_MOCK_LLM'] = 'true'
 
   // Dynamic import to ensure fresh module state and env vars are applied
   // Use src/ - tsx loader in vitest config will resolve TypeScript files
@@ -85,11 +89,17 @@ export async function createTestServer(options: CreateTestServerOptions = {}): P
   if (options.mcpServers !== undefined) {
     config.mcpServers = options.mcpServers
   }
+  if (options.https === true) {
+    config.server.https = true
+    if (options.httpsCert !== undefined) config.server.httpsCert = options.httpsCert
+    if (options.httpsKey !== undefined) config.server.httpsKey = options.httpsKey
+  }
   const handle = await createServerHandle(config)
   const { port } = await handle.start(options.port ?? 0) // Dynamic port by default
 
-  const url = `http://127.0.0.1:${port}`
-  const wsUrl = `ws://127.0.0.1:${port}/ws`
+  const scheme = config.server.https === true ? 'https' : 'http'
+  const url = `${scheme}://127.0.0.1:${port}`
+  const wsUrl = `${scheme === 'https' ? 'wss' : 'ws'}://127.0.0.1:${port}/ws`
 
   return {
     ...handle,

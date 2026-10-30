@@ -13,7 +13,7 @@ import {
   type TestServerHandle,
   type SessionPool,
 } from './utils/index.js'
-import type { Message } from '@openfox/shared'
+import type { Message } from '@morriscode/shared'
 
 // Server and pool are created in beforeAll
 let server: TestServerHandle

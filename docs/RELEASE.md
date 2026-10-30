@@ -1,11 +1,11 @@
 # Release Process
 
-> Playbook for AI agents publishing OpenFox releases.
+> Playbook for AI agents publishing MorrisCode releases.
 > Read this before every release to ensure CHANGELOG.md stays accurate and useful.
 
 ## Overview
 
-OpenFox ships frequently — 2–3 patch versions per day.
+MorrisCode ships frequently — 2–3 patch versions per day.
 Each release gets its own section in CHANGELOG.md with three categories:
 
 | Category         | What goes here                                           |
@@ -34,7 +34,7 @@ If the last tag is `v2.0.87` and you're releasing `v2.0.88`, the range is `v2.0.
 Call the **explorer** sub-agent with this prompt (replace the tag range):
 
 ```
-Analyze OpenFox commits between v2.0.87..HEAD and produce a changelog for version 2.0.88.
+Analyze MorrisCode commits between v2.0.87..HEAD and produce a changelog for version 2.0.88.
 
 For each commit:
 1. `git show <sha>` — examine the diff
@@ -145,6 +145,10 @@ npm run patch
 
 This runs `npm version patch` which creates a commit (`2.0.88`) and a tag (`v2.0.88`).
 
+The first release that ships the automatic updater is `0.3.1`: use
+`npm version 0.3.1` once, then return to `npm run patch` for later
+releases.
+
 ### 8b. Sync the web lockfile version
 
 `npm version patch` bumps the root package but not `web/package-lock.json`, which embeds the root version in its `".."` reference — the next `npm install` in `web/` then rewrites it, producing a spurious diff. Sync it now (produces a minimal, dependency-free diff):
@@ -155,32 +159,35 @@ git add web/package-lock.json
 git commit -m "chore: sync web lockfile to the released version"
 ```
 
-**Do NOT "fix" the `".."` entry's name.** npm intentionally omits `"name": "openfox"` from the `".."` entry when the checkout folder is named `openfox` (to prevent churn based on the project's directory name), and adds it back when the folder has any other name. So the committed lockfile is folder-dependent: a workspace or clone named anything other than `openfox` will always show a `+ "name": "openfox"` diff after `npm install` — that is expected npm behavior, not a regression. Never commit that diff.
+**Do NOT "fix" the `".."` entry's name.** npm intentionally omits `"name": "morriscode"` from the `".."` entry when the checkout folder is named `morriscode` (to prevent churn based on the project's directory name), and adds it back when the folder has any other name. So the committed lockfile is folder-dependent: a workspace or clone named anything other than `morriscode` will always show a `+ "name": "morriscode"` diff after `npm install` — that is expected npm behavior, not a regression. Never commit that diff.
 
-### 9. Publish
-
-```bash
-npm publish 2>&1 | tail -10
-```
-
-This triggers `prepublishOnly` which builds and runs e2e tests.
-
-**Local model server unavailable?** The prepublish full-stack test normally drives onboarding against the hardcoded local model server. Set `OPENFOX_PUBLISH_E2E_LLM=prod` to instead use the provider configured in your production config (`~/.config/openfox/config.json`):
-
-```bash
-OPENFOX_PUBLISH_E2E_LLM=prod npm publish 2>&1 | tail -10
-# or run the test alone:
-npm run test:publish:e2e:prod
-```
-
-Defaults to `local` (off). Pick a specific provider with `OPENFOX_PUBLISH_E2E_PROVIDER="DeepSeek API"` and override the config path with `OPENFOX_PUBLISH_E2E_PROD_CONFIG`.
-
-### 10. Push and create GitHub Release
+### 9. Push the tag and let GitHub Actions publish
 
 ```bash
 git push --follow-tags
-gh release create "$(git describe --tags --abbrev=0)" --generate-notes
 ```
+
+The `v*` tag starts `.github/workflows/release.yml`. The workflow reruns the
+checks, builds the Windows x64 and Linux x64 packages, signs the manifest, and
+publishes a release in `morrisdevstudio/morriscode-releases`. npm is no longer
+the distribution channel. The signing key and repository token are described in
+[AUTO-UPDATE.md](AUTO-UPDATE.md).
+
+### 10. Verify the public release
+
+Wait for the `Release packages` workflow to finish, then verify that the public
+release contains:
+
+- `morriscode-<version>-win32-x64.zip`
+- `morriscode-<version>-linux-x64.tar.gz`
+- `manifest.json` and `manifest.json.sig`
+- `release-public-key.pem`, `install.ps1`, `install.sh`, `launcher.mjs`,
+  `verify-release.mjs`
+
+Download the manifest, signature and public key and run
+`node verify-release.mjs --manifest ... --signature ... --public-key ...`. A
+failure here means the release must be deleted and the tag recreated; the app
+will not accept it.
 
 ### 11. Merge the successful release to main
 

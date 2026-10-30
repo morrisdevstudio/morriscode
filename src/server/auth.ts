@@ -3,6 +3,7 @@ import { join, dirname, basename } from 'node:path'
 import { createHash, privateDecrypt, createPublicKey, constants } from 'node:crypto'
 import { getRuntimeConfig } from './runtime-config.js'
 import type { Mode } from '../cli/main.js'
+import { getAuthConfigPath as getCliAuthConfigPath } from '../cli/paths.js'
 
 function getAuthConfigPath(): string {
   const configDir = getRuntimeConfig()
@@ -12,16 +13,11 @@ function getAuthConfigPath(): string {
   if (mode === 'test') {
     const cwd = process.cwd()
     const base = basename(cwd) === 'e2e' ? cwd : join(cwd, 'e2e')
-    const testAuthPath = join(base, '.openfox-test', 'auth.json')
+    const testAuthPath = join(base, '.morriscode-test', 'auth.json')
     return testAuthPath
   }
 
-  const home = process.env['HOME'] || process.env['USERPROFILE'] || ''
-  const basePath = process.env['XDG_CONFIG_HOME'] || `${home}/.config`
-
-  const suffix = mode === 'development' ? '-dev' : ''
-
-  return `${basePath}/openfox${suffix}/auth.json`
+  return getCliAuthConfigPath(mode)
 }
 
 function getKeyPath(): string {
@@ -132,6 +128,18 @@ export function requiresAuth(): boolean {
 
 export function hasPassword(): boolean {
   return cachedAuth?.encryptedPassword != null && cachedAuth.encryptedPassword.length > 0
+}
+
+/** Check existing credentials without creating or replacing a missing key. */
+export async function hasEffectiveNetworkAuth(): Promise<boolean> {
+  if (!requiresAuth() || !hasPassword()) return false
+  try {
+    const privateKey = await readFile(getKeyPath(), 'utf-8')
+    const password = decryptPassword(privateKey, cachedAuth!.encryptedPassword!)
+    return password !== null && password.length > 0
+  } catch {
+    return false
+  }
 }
 
 export async function verifyPassword(password: string): Promise<boolean> {

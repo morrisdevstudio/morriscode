@@ -1,3 +1,4 @@
+import { withTimeout } from '../utils/promise-timeout.js'
 import { readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import { execFile } from 'node:child_process'
@@ -12,6 +13,7 @@ import { getBuiltInToolNames } from '../tools/index.js'
 import { setPluginCommands } from '../commands/registry.js'
 import { setPluginSkills } from '../skills/registry.js'
 import { getAllSettings, setSetting } from '../db/settings.js'
+import { serverT } from '../i18n.js'
 import type { ServerMessage } from '../../shared/protocol.js'
 import { createServerMessage } from '../../shared/protocol.js'
 import type {
@@ -34,7 +36,20 @@ import type {
 import { PluginRegistry } from './registry.js'
 import { HookBus, type HookLogger } from './hooks.js'
 import { NotificationService } from './notifications.js'
-import { loadPluginFromDirectory, loadPlugins, readPluginManifest, type PluginDiagnostic } from './loader.js'
+import {
+  loadPluginFromDirectory,
+  loadPlugins,
+  readPluginManifest,
+  pluginDiagnosticDetails,
+  type PluginDiagnostic,
+} from './loader.js'
+import {
+  BUILT_IN_PROVIDER_PLUGINS,
+  builtInSupersededPluginIds,
+  isBuiltInProviderPluginId,
+} from '../providers/builtin/index.js'
+import type { BuiltInProviderPlugin } from '../providers/builtin/index.js'
+import { EMPTY_PLUGIN_CONTRIBUTIONS } from '../../shared/plugin.js'
 import {
   buildIfNeeded,
   installPluginFromGithub,
@@ -100,6 +115,8 @@ export class PluginHost {
 
   async start(): Promise<PluginDiagnostic[]> {
     const disabled = this.readDisabled()
+    const superseded = builtInSupersededPluginIds()
+    const skipped = new Set([...disabled, ...superseded])
     this.registry.setReservedToolNames(getBuiltInToolNames())
     const diagnostics = await loadPlugins({
       registry: this.registry,
@@ -107,13 +124,15 @@ export class PluginHost {
       ...(this.options.cwd ? { cwd: this.options.cwd } : {}),
       createContext: (manifest, source) => this.createContext(manifest, source),
       onModule: (packageName, module) => this.captureModule(packageName, module),
-      shouldLoad: (packageName) => !disabled.includes(packageName),
+      shouldLoad: (packageName) => !skipped.has(packageName),
     })
+    diagnostics.push(...(await this.supersededPluginDiagnostics(superseded)))
+    diagnostics.push(...(await this.startBuiltInPlugins()))
     for (const diagnostic of diagnostics) {
       this.records.set(diagnostic.packageName, {
         diagnostic,
         context: this.contextFor(diagnostic),
-        enabled: !disabled.includes(diagnostic.packageName),
+        enabled: diagnostic.enabled && (diagnostic.source === 'builtin' || !disabled.includes(diagnostic.packageName)),
         ...(this.pendingDeactivates.has(diagnostic.packageName)
           ? { deactivate: this.pendingDeactivates.get(diagnostic.packageName)! }
           : {}),
@@ -141,23 +160,25 @@ export class PluginHost {
   }
 
   getPlugins(): PluginInfo[] {
-    return [...this.records.values()].map((record) => ({
-      id: record.diagnostic.packageName,
-      displayName: record.diagnostic.displayName,
-      ...(record.diagnostic.description ? { description: record.diagnostic.description } : {}),
-      ...(record.diagnostic.author ? { author: record.diagnostic.author } : {}),
-      ...(record.diagnostic.icon ? { icon: record.diagnostic.icon } : {}),
-      ...(record.diagnostic.logo ? { logo: record.diagnostic.logo } : {}),
-      version: record.diagnostic.version ?? '0.0.0',
-      apiVersion: (record.diagnostic.apiVersion === 1 ? 1 : 2) as 1 | 2,
-      source: record.diagnostic.source,
-      enabled: record.enabled,
-      loaded: record.diagnostic.loaded,
-      ...(record.diagnostic.error ? { error: record.diagnostic.error } : {}),
-      capabilities: record.diagnostic.capabilities,
-      contributions: record.diagnostic.contributions,
-      removable: this.isRemovable(record.diagnostic.source),
-    }))
+    return [...this.records.values()]
+      .filter((record) => record.diagnostic.source !== 'builtin')
+      .map((record) => ({
+        id: record.diagnostic.packageName,
+        displayName: record.diagnostic.displayName,
+        ...(record.diagnostic.description ? { description: record.diagnostic.description } : {}),
+        ...(record.diagnostic.author ? { author: record.diagnostic.author } : {}),
+        ...(record.diagnostic.icon ? { icon: record.diagnostic.icon } : {}),
+        ...(record.diagnostic.logo ? { logo: record.diagnostic.logo } : {}),
+        version: record.diagnostic.version ?? '0.0.0',
+        apiVersion: (record.diagnostic.apiVersion === 1 ? 1 : 2) as 1 | 2,
+        source: record.diagnostic.source,
+        enabled: record.enabled,
+        loaded: record.diagnostic.loaded,
+        ...(record.diagnostic.error ? { error: record.diagnostic.error } : {}),
+        capabilities: record.diagnostic.capabilities,
+        contributions: record.diagnostic.contributions,
+        removable: this.isRemovable(record.diagnostic.source),
+      }))
   }
 
   getContributions(pluginId: string): PluginContributionSummary {
@@ -206,7 +227,12 @@ export class PluginHost {
     }
     const handler = this.registry.getRpcHandler(pluginId, method)
     if (!handler) throw new Error(`Plugin '${pluginId}' has no RPC method '${method}'`)
-    return withTimeout(Promise.resolve(handler(params, context)), record.diagnostic.timeoutMs ?? this.rpcTimeoutMs)
+    const timeoutMs = record.diagnostic.timeoutMs ?? this.rpcTimeoutMs
+    return withTimeout(
+      Promise.resolve(handler(params, context)),
+      timeoutMs,
+      `Plugin RPC timed out after ${timeoutMs}ms`,
+    )
   }
 
   getPluginTools(): { name: string; description: string; pluginId: string }[] {
@@ -216,6 +242,7 @@ export class PluginHost {
   }
 
   async enable(pluginId: string): Promise<void> {
+    this.requireInstalledPlugin(pluginId)
     const record = this.records.get(pluginId)
     if (!record) throw new Error(`Plugin '${pluginId}' is not installed`)
     if (record.enabled) return
@@ -236,6 +263,7 @@ export class PluginHost {
   }
 
   async disable(pluginId: string): Promise<void> {
+    this.requireInstalledPlugin(pluginId)
     const record = this.records.get(pluginId)
     if (!record) throw new Error(`Plugin '${pluginId}' is not installed`)
     await this.runDeactivate(pluginId, record)
@@ -247,11 +275,12 @@ export class PluginHost {
   }
 
   async uninstall(pluginId: string): Promise<void> {
+    this.requireInstalledPlugin(pluginId)
     const record = this.records.get(pluginId)
     if (!record) throw new Error(`Plugin '${pluginId}' is not installed`)
     if (!this.isRemovable(record.diagnostic.source)) {
       throw new Error(
-        `Plugin '${pluginId}' was discovered outside ${this.pluginsDir()} and cannot be removed by OpenFox`,
+        `Plugin '${pluginId}' was discovered outside ${this.pluginsDir()} and cannot be removed by MorrisCode`,
       )
     }
     await this.runDeactivate(pluginId, record)
@@ -298,6 +327,7 @@ export class PluginHost {
   }
 
   async reinstall(pluginId: string): Promise<PluginDiagnostic> {
+    this.requireInstalledPlugin(pluginId)
     const record = this.records.get(pluginId)
     if (!record) throw new Error(`Plugin not found: ${pluginId}`)
     const source = record.diagnostic.source
@@ -328,7 +358,7 @@ export class PluginHost {
 
   private async installFromDirectory(dir: string): Promise<PluginDiagnostic> {
     const manifest = await readPluginManifest(dir)
-    if (!manifest) throw new Error('Installed package is not an OpenFox plugin (missing openfox manifest)')
+    if (!manifest) throw new Error('Installed package is not a MorrisCode plugin (missing openfox manifest)')
     const diagnostic = await loadPluginFromDirectory({
       registry: this.registry,
       packageDir: dir,
@@ -501,6 +531,80 @@ export class PluginHost {
     this.notifications.setBroadcaster(broadcaster)
   }
 
+  /** Loads the provider plugins that ship inside MorrisCode through the plugin registry. */
+  private async startBuiltInPlugins(): Promise<PluginDiagnostic[]> {
+    const diagnostics: PluginDiagnostic[] = []
+    for (const plugin of BUILT_IN_PROVIDER_PLUGINS) {
+      const diagnostic = await this.loadBuiltInPlugin(plugin)
+      if (diagnostic) diagnostics.push(diagnostic)
+    }
+    return diagnostics
+  }
+
+  /** Built-in providers are managed through provider settings, never as installed plugins. */
+  private requireInstalledPlugin(pluginId: string): void {
+    if (isBuiltInProviderPluginId(pluginId)) {
+      throw new Error(
+        serverT({
+          en: 'This built-in provider is managed in Providers, not Plugins.',
+          fr: 'Ce fournisseur intégré se gère dans Fournisseurs, pas dans Plugins.',
+        }),
+      )
+    }
+  }
+
+  /**
+   * Lists the installed plugins a built-in replaces, so the plugins panel shows why
+   * they are not loaded instead of them vanishing without a word.
+   */
+  private async supersededPluginDiagnostics(superseded: Set<string>): Promise<PluginDiagnostic[]> {
+    const diagnostics: PluginDiagnostic[] = []
+    for (const packageName of superseded) {
+      const source = join(this.pluginsDir(), packageName)
+      const manifest = await readPluginManifest(source)
+      if (!manifest) continue
+      diagnostics.push({
+        ...pluginDiagnosticDetails(manifest, source),
+        packageName,
+        capabilities: manifest.openfox.capabilities ?? [],
+        enabled: false,
+        error: 'Replaced by the built-in provider: MorrisCode ships a maintained version of this plugin.',
+        authAdapters: [],
+        transportAdapters: [],
+        presets: [],
+        contributions: { ...EMPTY_PLUGIN_CONTRIBUTIONS },
+      })
+    }
+    return diagnostics
+  }
+
+  /**
+   * Registers one built-in provider plugin, taking over from the installed package
+   * it supersedes. A collision with a plugin it does not own leaves the built-in out
+   * with an error, rather than half-registered.
+   */
+  private async loadBuiltInPlugin(plugin: BuiltInProviderPlugin): Promise<PluginDiagnostic | undefined> {
+    const diagnostic = builtInDiagnostic(plugin, { loaded: true, enabled: true })
+    try {
+      this.registry.beginPlugin(plugin.id, this.contextFor(diagnostic))
+      await plugin.register(this.registry)
+      const conflicts = this.registry.getConflicts()
+      if (conflicts.length > 0) throw new Error(conflicts.join('; '))
+    } catch (error) {
+      this.registry.removePlugin(plugin.id)
+      this.registry.clearConflicts()
+      return builtInDiagnostic(plugin, {
+        loaded: false,
+        enabled: true,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      this.registry.endPlugin()
+    }
+    diagnostic.contributions = this.registry.getContributionSummary(plugin.id)
+    return diagnostic
+  }
+
   private pluginsDir(): string {
     return joinPluginsDir(this.options.configDirectory)
   }
@@ -523,6 +627,29 @@ export class PluginHost {
 
 function joinPluginsDir(configDirectory: string): string {
   return `${configDirectory}/plugins`
+}
+
+function builtInDiagnostic(
+  plugin: BuiltInProviderPlugin,
+  state: { loaded: boolean; enabled: boolean; error?: string; contributions?: PluginContributionSummary },
+): PluginDiagnostic {
+  return {
+    packageName: plugin.id,
+    version: plugin.version,
+    source: 'builtin',
+    loaded: state.loaded,
+    apiVersion: 1,
+    displayName: plugin.displayName,
+    ...(plugin.description ? { description: plugin.description } : {}),
+    ...(plugin.author ? { author: plugin.author } : {}),
+    capabilities: plugin.capabilities,
+    enabled: state.enabled,
+    ...(state.error ? { error: state.error } : {}),
+    authAdapters: state.loaded ? plugin.authAdapterIds : [],
+    transportAdapters: state.loaded ? plugin.transportAdapterIds : [],
+    presets: state.loaded ? plugin.presetIds : [],
+    contributions: state.contributions ?? { ...EMPTY_PLUGIN_CONTRIBUTIONS },
+  }
 }
 
 function readStorageValue(pluginId: string, key: string): PluginSettingValue | undefined {
@@ -591,25 +718,9 @@ const EVENT_HOOK_MAP: Partial<Record<string, PluginHookEvent>> = {
   'tool.result': 'tool.completed',
   'criterion.updated': 'criterion.updated',
   'workflow.execution_changed': 'workflow.execution.changed',
-  // OpenFox-internal events (Plugin API v2). Mapped 1:1 from the
+  // MorrisCode-internal events (Plugin API v2). Mapped 1:1 from the
   // TurnEvent names so plugins can correlate hook payloads with the
   // session's EventStore stream.
   'context.compacted': 'context.compacted',
   'pattern.retry': 'retry.triggered',
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Plugin RPC timed out after ${timeoutMs}ms`)), timeoutMs)
-    promise.then(
-      (value) => {
-        clearTimeout(timer)
-        resolve(value)
-      },
-      (error: unknown) => {
-        clearTimeout(timer)
-        reject(error instanceof Error ? error : new Error(String(error)))
-      },
-    )
-  })
 }

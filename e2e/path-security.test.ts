@@ -13,15 +13,12 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
-import { writeFile, mkdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
+import { createOutsidePathFixture } from './utils/path-fixture.js'
 import {
   createTestClient,
   createTestProject,
   createTestServer,
   collectChatEvents,
-  assertNoErrors,
   createProject,
   createSession,
   setSessionMode,
@@ -31,7 +28,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { ServerMessage } from '@openfox/shared/protocol'
+import type { ServerMessage } from '@morriscode/shared/protocol'
 // Type for path confirmation payload
 interface PathConfirmationPayload {
   callId: string
@@ -65,7 +62,7 @@ describe('Path Security', () => {
   let server: TestServerHandle
   let client: TestClient
   let testDir: TestProject
-  let outsideDir: string
+  let outside: Awaited<ReturnType<typeof createOutsidePathFixture>>
 
   beforeAll(async () => {
     server = await createTestServer()
@@ -79,9 +76,7 @@ describe('Path Security', () => {
     client = await createTestClient({ url: server.wsUrl })
     testDir = await createTestProject({ template: 'typescript' })
 
-    // Create a directory outside the workdir for testing
-    outsideDir = join(tmpdir(), `openfox-outside-${Date.now()}`)
-    await mkdir(outsideDir, { recursive: true })
+    outside = await createOutsidePathFixture()
 
     const restProject = await createProject(server.url, { name: 'Path Security Test', workdir: testDir.path })
     const restSession = await createSession(server.url, { projectId: restProject.id })
@@ -90,9 +85,15 @@ describe('Path Security', () => {
   })
 
   afterEach(async () => {
-    await client.close()
-    await testDir.cleanup()
-    await rm(outsideDir, { recursive: true, force: true }).catch(() => {})
+    try {
+      await client.close()
+    } finally {
+      try {
+        await testDir.cleanup()
+      } finally {
+        await outside.cleanup()
+      }
+    }
   })
 
   describe('Outside Workdir Detection', () => {
@@ -100,65 +101,56 @@ describe('Path Security', () => {
       client.clearEvents()
 
       // Request write to a path outside the workdir
-      // The mock LLM should trigger a write_file to /tmp/outside
+      // The mock LLM should trigger a write_file to the disposable outside path
       await client.send('chat.send', {
-        content: 'Write a file to /tmp/outside/test.txt with content "hello"',
+        content: `Write to "${outside.path('test.txt')}" with content "hello"`,
       })
 
-      // Check for path_confirmation event
-      const allEvents = client.allEvents()
-      const confirmationEvent = allEvents.find((e) => e.type === 'chat.path_confirmation')
-
-      // If the path security kicked in, we should have a confirmation event
-      if (confirmationEvent) {
-        const payload = confirmationEvent.payload as PathConfirmationPayload
-        expect(payload.callId).toBeDefined()
-        expect(payload.tool).toBeDefined()
-        expect(payload.paths).toBeDefined()
-        expect(payload.paths.length).toBeGreaterThan(0)
-        expect(payload.workdir).toBe(testDir.path)
-        expect(payload.reason).toBe('outside_workdir')
-      }
-
-      // Wait for completion (will either be error or waiting for confirmation)
-      await client.waitFor('chat.done').catch(() => null)
+      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 3000)
+      const payload = confirmationEvent.payload as PathConfirmationPayload
+      expect(payload.callId).toBeDefined()
+      expect(payload.tool).toBe('write_file')
+      expect(payload.paths).toContain(outside.path('test.txt'))
+      expect(payload.workdir).toBe(testDir.path)
+      expect(payload.reason).toBe('outside_workdir')
+      await answerPathConfirmation(server.url, client.getSession()!.id, payload.callId, false)
     })
 
     it('includes correct paths in confirmation payload', async () => {
       client.clearEvents()
 
       await client.send('chat.send', {
-        content: 'Write to /home/test/secret.txt with content "data"',
+        content: `Write to "${outside.path('secret.txt')}" with content "data"`,
       })
 
       // Wait for path confirmation (short timeout since it should arrive quickly)
-      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 500).catch(() => null)
+      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 3000).catch(() => null)
 
-      // Path confirmation SHOULD happen for /home/test (outside workdir)
+      // The fresh path is outside both the workdir and allowed temp roots.
       expect(confirmationEvent).not.toBeNull()
 
       const payload = confirmationEvent!.payload as PathConfirmationPayload
-      expect(payload.paths.some((p: string) => p.includes('home'))).toBe(true)
+      expect(payload.paths).toContain(outside.path('secret.txt'))
+      await answerPathConfirmation(server.url, client.getSession()!.id, payload.callId, false)
     })
 
     it('emits path_confirmation for a path nested in quotes inside run_command', async () => {
       client.clearEvents()
 
-      // The path lives in single quotes nested inside a double-quoted program
-      // string. Without quote-aware extraction no path is detected at all and
-      // the command would run unconfirmed, so this assertion stays unconditional.
+      // Python triple quotes keep the native path inside the double-quoted
+      // program string and visible to the Windows command path scanner.
       await client.send('chat.send', {
-        content: `Run the exact command: python3 -c "print(open('/home/test/nested.txt').read())"`,
+        content: `Run the exact command: python3 -c "print(open('''${outside.path('nested.txt').replace(/\\/g, '/')}''').read())"`,
       })
 
-      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 500).catch(() => null)
+      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 3000).catch(() => null)
 
       expect(confirmationEvent).not.toBeNull()
 
       const payload = confirmationEvent!.payload as PathConfirmationPayload
       expect(payload.tool).toBe('run_command')
       expect(payload.reason).toBe('outside_workdir')
-      expect(payload.paths.some((p: string) => p.includes('/home/test/nested.txt'))).toBe(true)
+      expect(payload.paths.map((p) => p.replace(/\\/g, '/'))).toContain(outside.path('nested.txt').replace(/\\/g, '/'))
 
       // Resolve the confirmation: an unanswered one leaves the tool call
       // suspended for the rest of the file's shared server.
@@ -214,11 +206,11 @@ describe('Path Security', () => {
       // Send request that triggers path confirmation
       // Note: /tmp is in ALLOWED_ROOTS, so we must use a path outside /tmp
       await client.send('chat.send', {
-        content: 'Write to /home/test/approved.txt with content "approved"',
+        content: `Write to "${outside.path('approved.txt')}" with content "approved"`,
       })
 
       // Wait for path_confirmation event (short timeout since it should arrive quickly)
-      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 500).catch(() => null)
+      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 3000).catch(() => null)
 
       // For debugging - log all events if no confirmation
       if (!confirmationEvent) {
@@ -230,7 +222,7 @@ describe('Path Security', () => {
         )
       }
 
-      // Path confirmation SHOULD happen for /home/test (outside workdir and not in /tmp)
+      // The fresh path is outside both the workdir and allowed temp roots.
       expect(confirmationEvent).not.toBeNull()
 
       const payload = confirmationEvent!.payload as PathConfirmationPayload
@@ -250,11 +242,11 @@ describe('Path Security', () => {
 
       // Note: /tmp is in ALLOWED_ROOTS, so we must use a path outside /tmp
       await client.send('chat.send', {
-        content: 'Write to /home/test/denied.txt with content "denied"',
+        content: `Write to "${outside.path('denied.txt')}" with content "denied"`,
       })
 
       // Wait for path_confirmation event (short timeout)
-      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 500).catch(() => null)
+      const confirmationEvent = await client.waitFor('chat.path_confirmation', undefined, 3000).catch(() => null)
 
       // Path confirmation SHOULD happen
       expect(confirmationEvent).not.toBeNull()
@@ -266,7 +258,7 @@ describe('Path Security', () => {
       await answerPathConfirmation(server.url, session.id, payload.callId, false)
 
       // Wait for chat.done (may be error or complete)
-      await client.waitFor('chat.done', undefined, 500).catch(() => null)
+      await client.waitFor('chat.done', undefined, 3000).catch(() => null)
     })
   })
 
@@ -277,7 +269,7 @@ describe('Path Security', () => {
       // First request - triggers confirmation
       // Note: /tmp is in ALLOWED_ROOTS, so we must use a path outside /tmp
       await client.send('chat.send', {
-        content: 'Write to /home/test/first.txt with content "first"',
+        content: `Write to "${outside.path('first.txt')}" with content "first"`,
       })
 
       const confirmationEvent = await client.waitFor('chat.path_confirmation').catch(() => null)
@@ -293,7 +285,7 @@ describe('Path Security', () => {
 
         // Second request to same path - should not trigger confirmation
         await client.send('chat.send', {
-          content: 'Write to /home/test/second.txt with content "second"',
+          content: `Write to "${outside.path('second.txt')}" with content "second"`,
         })
 
         // Should not see another confirmation for same directory
@@ -439,7 +431,7 @@ describe('Path Security', () => {
       // The mock LLM emits three write_file calls to outside-workdir paths in a
       // single response, so three path confirmations go pending in parallel.
       await client.send('chat.send', {
-        content: 'Write three files outside the project',
+        content: `Write three files to "${outside.path('alpha.txt')}", "${outside.path('beta.txt')}", "${outside.path('gamma.txt')}"`,
       })
 
       const callIds = await collectConfirmations()
@@ -470,7 +462,7 @@ describe('Path Security', () => {
       client.clearEvents()
 
       await client.send('chat.send', {
-        content: 'Write to /home/test/approved.txt with content "approved"',
+        content: `Write to "${outside.path('approved.txt')}" with content "approved"`,
       })
 
       const confirmation = await client.waitFor('chat.path_confirmation', undefined, 3000).catch(() => null)
@@ -492,7 +484,7 @@ describe('Path Security', () => {
       // run starts in dangerous mode.
       client.clearEvents()
       await client.send('chat.send', {
-        content: 'Write to /home/test/approved.txt with content "approved"',
+        content: `Write to "${outside.path('follow-up.txt')}" with content "approved"`,
       })
       await client.waitFor('chat.done', undefined, 5000).catch(() => null)
       const confirmations = client.allEvents().filter((e) => e.type === 'chat.path_confirmation')

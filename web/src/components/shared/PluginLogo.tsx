@@ -47,7 +47,7 @@ export function findPluginLogoForProvider(
     for (const plugin of plugins) {
       if (!plugin.icon && !plugin.logo) continue
       const pluginId = plugin.id.toLowerCase()
-      const cleanId = pluginId.replace(/^openfox-/, '')
+      const cleanId = pluginId.replace(/^morriscode-/, '')
 
       if (presetId && (presetId === cleanId || presetId === pluginId || cleanId.includes(presetId))) {
         return plugin.icon || plugin.logo

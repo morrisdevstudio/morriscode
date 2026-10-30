@@ -38,7 +38,7 @@ const DiffSection = memo(function DiffSection({ type, children }: DiffSectionPro
   return (
     <div className={`border-l-[3px] ${bgClass}`}>
       <div className={`min-w-0 py-3 ${lineClass}`}>
-        <div className="shiki-compact shiki-transparent-bg">{children}</div>
+        <div className="shiki-compact shiki-transparent-bg shiki-numbered">{children}</div>
       </div>
     </div>
   )
@@ -215,7 +215,7 @@ const SectionView = memo(function SectionView({ section, language }: SectionView
     return (
       <div>
         <div className="min-w-0 py-3">
-          <div className="shiki-compact shiki-transparent-bg">
+          <div className="shiki-compact shiki-transparent-bg shiki-numbered">
             <CodeHighlight
               code={content}
               language={language}

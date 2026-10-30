@@ -19,12 +19,25 @@ function npm(args: string[], inherit = false): { ok: boolean; stdout: string } {
 }
 
 export async function runUpdate(options: { refreshLauncher?: () => Promise<number> } = {}): Promise<number> {
-  const view = npm(['view', 'openfox', 'version'])
+  const releaseInstall =
+    process.env['MORRISCODE_INSTALL_FLAVOR'] === 'release' ||
+    /[\\/]releases[\\/][^\\/]+[\\/]dist[\\/]/.test(process.argv[1] ?? '')
+  if (releaseInstall) {
+    console.log(
+      cliT({
+        en: 'This installation is updated from signed GitHub releases. Use the update button in the MorrisCode app.',
+        fr: 'Cette installation se met à jour depuis les releases GitHub signées. Utilisez le bouton de mise à jour dans l’application MorrisCode.',
+      }),
+    )
+    return 0
+  }
+
+  const view = npm(['view', 'morriscode', 'version'])
   if (!view.ok) {
     console.error(
       cliT({
-        en: 'Failed to check the latest version (npm view openfox version)',
-        fr: 'Échec de la vérification de la dernière version (npm view openfox version)',
+        en: 'Failed to check the latest version (npm view morriscode version)',
+        fr: 'Échec de la vérification de la dernière version (npm view morriscode version)',
       }),
     )
     return 1
@@ -34,17 +47,20 @@ export async function runUpdate(options: { refreshLauncher?: () => Promise<numbe
   if (VERSION === latest) {
     console.log(
       cliT({
-        en: `OpenFox is already at the latest version: ${VERSION}`,
-        fr: `OpenFox est déjà à la dernière version : ${VERSION}`,
+        en: `MorrisCode is already at the latest version: ${VERSION}`,
+        fr: `MorrisCode est déjà à la dernière version : ${VERSION}`,
       }),
     )
     return 0
   }
 
   console.log(
-    cliT({ en: `Updating OpenFox: ${VERSION} -> ${latest}`, fr: `Mise à jour d’OpenFox : ${VERSION} -> ${latest}` }),
+    cliT({
+      en: `Updating MorrisCode: ${VERSION} -> ${latest}`,
+      fr: `Mise à jour d’MorrisCode : ${VERSION} -> ${latest}`,
+    }),
   )
-  if (!npm(['install', '-g', 'openfox@latest'], true).ok) {
+  if (!npm(['install', '-g', 'morriscode@latest'], true).ok) {
     return 1
   }
   const refreshLauncher =
@@ -57,8 +73,8 @@ export async function runUpdate(options: { refreshLauncher?: () => Promise<numbe
   if (installCode !== 0) {
     console.error(
       cliT({
-        en: 'OpenFox updated, but the persistent launcher could not be refreshed.',
-        fr: 'OpenFox a été mis à jour, mais le lanceur persistant n’a pas pu être actualisé.',
+        en: 'MorrisCode updated, but the persistent launcher could not be refreshed.',
+        fr: 'MorrisCode a été mis à jour, mais le lanceur persistant n’a pas pu être actualisé.',
       }),
     )
     return installCode
@@ -66,8 +82,8 @@ export async function runUpdate(options: { refreshLauncher?: () => Promise<numbe
   console.log(cliT({ en: `Updated: ${latest}`, fr: `Mis à jour : ${latest}` }))
   console.log(
     cliT({
-      en: 'Please restart OpenFox to use the new version.',
-      fr: 'Veuillez redémarrer OpenFox pour utiliser la nouvelle version.',
+      en: 'Please restart MorrisCode to use the new version.',
+      fr: 'Veuillez redémarrer MorrisCode pour utiliser la nouvelle version.',
     }),
   )
   return 0

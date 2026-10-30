@@ -27,7 +27,7 @@ function gcPending(): void {
 
 export function prefetchSession(sessionId: string): void {
   if (pending.has(sessionId)) return
-  const token = localStorage.getItem('openfox_token')
+  const token = localStorage.getItem('morriscode_token')
 
   const promise: Promise<PrefetchResult> = fetch(appUrl(`/api/sessions/${sessionId}`), {
     headers: token ? { 'x-session-token': token } : undefined,

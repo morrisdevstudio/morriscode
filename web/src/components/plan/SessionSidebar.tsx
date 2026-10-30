@@ -18,7 +18,7 @@ import { CriteriaEditor } from './CriteriaEditor'
 import { DevServerFooter } from './DevServerFooter'
 import { BackgroundProcesses } from './BackgroundProcesses'
 import { ReloadIcon } from '../shared/icons'
-import { AutoUpdateModal } from '../AutoUpdateModal'
+import { UpdateDialog } from '../UpdateDialog'
 import { PluginZone } from '../plugins/PluginZone'
 import { WorkspaceBranchSection } from './WorkspaceBranchSection'
 import { ContextPopover } from './ContextPopover'
@@ -193,12 +193,12 @@ export function SessionSidebar({ workdir }: SessionSidebarProps) {
           <div className="mt-4 pt-4 border-t border-border text-center text-xs text-text-muted">
             <div className="flex items-center justify-center gap-1">
               <a
-                href="https://github.com/co-l/openfox"
+                href="https://github.com/morrisdevstudio/morriscode"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-accent-primary transition-colors"
               >
-                OpenFox
+                MorrisCode
               </a>
               {' - '}
               <span className="font-mono">{`v${version}`}</span>
@@ -216,7 +216,7 @@ export function SessionSidebar({ workdir }: SessionSidebarProps) {
             </div>
             {updateStatus === 'available' && (
               <button onClick={() => setShowUpdateModal(true)} className="text-accent-primary hover:underline mt-1">
-                {t({ en: 'Update OpenFox →', fr: 'Mettre à jour OpenFox →' })}
+                {t({ en: 'Update MorrisCode →', fr: 'Mettre à jour MorrisCode →' })}
               </button>
             )}
             {manuallyChecked && updateStatus === 'upToDate' && (
@@ -231,7 +231,7 @@ export function SessionSidebar({ workdir }: SessionSidebarProps) {
         )}
       </PluginZone>
 
-      <AutoUpdateModal isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={null} />
+      <UpdateDialog isOpen={showUpdateModal} onClose={() => setShowUpdateModal(false)} versionInfo={null} />
 
       <MetadataModal
         isOpen={activeMetadataKey !== null}

@@ -109,7 +109,7 @@ export function createDevServerRoutes(): Router {
     }
   })
 
-  // GET /config — read .openfox/dev.json
+  // GET /config — read .morriscode/dev.json
   router.get('/config', async (req, res) => {
     const workdir = req.query['workdir'] as string
     if (!workdir) return res.status(400).json({ error: serverT({ en: 'workdir required', fr: 'workdir requis' }) })
@@ -117,7 +117,7 @@ export function createDevServerRoutes(): Router {
     res.json({ config })
   })
 
-  // POST /config — write .openfox/dev.json
+  // POST /config — write .morriscode/dev.json
   router.post('/config', async (req, res) => {
     const workdir = req.query['workdir'] as string
     if (!workdir) return res.status(400).json({ error: serverT({ en: 'workdir required', fr: 'workdir requis' }) })

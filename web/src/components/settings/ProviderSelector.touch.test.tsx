@@ -52,6 +52,7 @@ vi.mock('../../hooks/useSetting', () => ({
 
 vi.mock('../../hooks/useResource', () => ({
   useResource: () => ({ data: { defaults: [], userItems: [], modelOverrides: {} }, loading: false }),
+  useResourceWhen: () => ({ data: undefined, loading: false, error: undefined, refresh: vi.fn() }),
 }))
 
 vi.mock('../../hooks/useKeybindings', () => ({

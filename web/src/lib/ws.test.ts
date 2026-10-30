@@ -87,7 +87,7 @@ describe('WebSocketClient reconnect logic', () => {
   })
 
   it('triggers auto-reconnect on close code 1006 when token exists', async () => {
-    localStorage.setItem('openfox_token', 'valid-token')
+    localStorage.setItem('morriscode_token', 'valid-token')
 
     const client = new WebSocketClient('ws://localhost:9999/ws')
     const statusHandler = vi.fn()
@@ -101,7 +101,7 @@ describe('WebSocketClient reconnect logic', () => {
   })
 
   it('does NOT auto-reconnect on close code 4000 when token exists (auth failure)', async () => {
-    localStorage.setItem('openfox_token', 'valid-token')
+    localStorage.setItem('morriscode_token', 'valid-token')
 
     const client = new WebSocketClient('ws://localhost:9999/ws')
     const statusHandler = vi.fn()
@@ -127,7 +127,7 @@ describe('WebSocketClient reconnect logic', () => {
   })
 
   it('public reconnect() establishes a new connection', async () => {
-    localStorage.setItem('openfox_token', 'valid-token')
+    localStorage.setItem('morriscode_token', 'valid-token')
 
     const client = new WebSocketClient('ws://localhost:9999/ws')
     const statusHandler = vi.fn()

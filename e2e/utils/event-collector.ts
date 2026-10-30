@@ -4,7 +4,7 @@
  * Provides higher-level patterns for collecting and asserting on events.
  */
 
-import type { ServerMessage, ServerMessageType } from '@openfox/shared/protocol'
+import type { ServerMessage, ServerMessageType } from '@morriscode/shared/protocol'
 import type { TestClient } from './ws-client.js'
 
 const CI_MULTIPLIER = process.env['CI'] === 'true' ? 10 : 1

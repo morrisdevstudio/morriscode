@@ -6,6 +6,7 @@ import { confirm, isCancel, cancel, log } from '@clack/prompts'
 import type { Mode } from './main.js'
 import { getGlobalConfigDir } from './paths.js'
 import { cliT } from './i18n.js'
+import { loadGlobalConfig } from './config.js'
 
 const PWA_CONFIG_FILE = 'pwa.json'
 
@@ -45,9 +46,17 @@ function isRuntimeInstalled(): boolean {
   return out.includes('uninstall')
 }
 
+// Set by runPwaCommand before dispatching, so every manifest URL (install, update,
+// status, uninstall, launch) matches the scheme the server is actually served over.
+let httpsMode = false
+
+export function setPwaHttpsMode(https: boolean): void {
+  httpsMode = https
+}
+
 export function getManifestUrl(mode: Mode): string {
   const port = mode === 'development' ? 10469 : 10369
-  return `http://127.0.0.1:${port}/manifest.webmanifest`
+  return `${httpsMode ? 'https' : 'http'}://127.0.0.1:${port}/manifest.webmanifest`
 }
 
 function getPwaConfigPath(mode: Mode): string {
@@ -119,15 +128,27 @@ function probeInstalledApp(manifestUrl: string): { appId: string; profileId: str
   return null
 }
 
-export async function isServerReachable(port: number): Promise<boolean> {
+export async function isServerReachable(port: number, https = false): Promise<boolean> {
   try {
-    const res = await fetch(`http://127.0.0.1:${port}/manifest.webmanifest`, {
+    const res = await fetch(`${https ? 'https' : 'http'}://127.0.0.1:${port}/manifest.webmanifest`, {
       signal: AbortSignal.timeout(5000),
     })
     return res.ok
-  } catch {
-    return false
+  } catch (error) {
+    // A self-signed certificate fails the TLS check even though the server answered,
+    // and that is enough for the CLI to know it is up.
+    return isCertificateError(error)
   }
+}
+
+function isCertificateError(error: unknown): boolean {
+  const code = (error as { cause?: { code?: string } } | undefined)?.cause?.code ?? ''
+  return (
+    code.startsWith('ERR_TLS_') ||
+    code.includes('SELF_SIGNED') ||
+    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'CERT_HAS_EXPIRED'
+  )
 }
 
 export function printPwaHelp(): void {
@@ -136,12 +157,12 @@ export function printPwaHelp(): void {
       en: `
 PWA Commands (via Firefox PWAsForFirefox):
 
-  openfox pwa           Start the PWA install walkthrough
-  openfox pwa install   Install OpenFox as a desktop PWA
-  openfox pwa uninstall Remove the OpenFox PWA from your system
-  openfox pwa launch    Launch the OpenFox PWA
-  openfox pwa update    Re-register the PWA (use after upgrading OpenFox)
-  openfox pwa status    Check if the PWA is installed
+  morriscode pwa           Start the PWA install walkthrough
+  morriscode pwa install   Install MorrisCode as a desktop PWA
+  morriscode pwa uninstall Remove the MorrisCode PWA from your system
+  morriscode pwa launch    Launch the MorrisCode PWA
+  morriscode pwa update    Re-register the PWA (use after upgrading MorrisCode)
+  morriscode pwa status    Check if the PWA is installed
 
 Requirements:
   Install PWAsForFirefox first: https://pwasforfirefox.filips.si/installation/
@@ -149,12 +170,12 @@ Requirements:
       fr: `
 Commandes PWA (via Firefox PWAsForFirefox) :
 
-  openfox pwa           Démarrer l’assistant d’installation PWA
-  openfox pwa install   Installer OpenFox comme PWA de bureau
-  openfox pwa uninstall Supprimer la PWA OpenFox de votre système
-  openfox pwa launch    Lancer la PWA OpenFox
-  openfox pwa update    Réenregistrer la PWA (après une mise à jour d’OpenFox)
-  openfox pwa status    Vérifier si la PWA est installée
+  morriscode pwa           Démarrer l’assistant d’installation PWA
+  morriscode pwa install   Installer MorrisCode comme PWA de bureau
+  morriscode pwa uninstall Supprimer la PWA MorrisCode de votre système
+  morriscode pwa launch    Lancer la PWA MorrisCode
+  morriscode pwa update    Réenregistrer la PWA (après une mise à jour d’MorrisCode)
+  morriscode pwa status    Vérifier si la PWA est installée
 
 Prérequis :
   Installez d’abord PWAsForFirefox : https://pwasforfirefox.filips.si/installation/
@@ -164,6 +185,9 @@ Prérequis :
 }
 
 export async function runPwaCommand(mode: Mode, subcommand?: string): Promise<void> {
+  const config = await loadGlobalConfig(mode)
+  setPwaHttpsMode(config.server.https === true)
+
   switch (subcommand) {
     case 'install':
     case undefined:
@@ -238,15 +262,18 @@ async function pwaInstall(mode: Mode): Promise<void> {
   }
 
   const port = mode === 'development' ? 10469 : 10369
-  if (!(await isServerReachable(port))) {
+  if (!(await isServerReachable(port, httpsMode))) {
     log.error(
       cliT({
-        en: `OpenFox server is not reachable on port ${port}.`,
-        fr: `Le serveur OpenFox est injoignable sur le port ${port}.`,
+        en: `MorrisCode server is not reachable on port ${port}.`,
+        fr: `Le serveur MorrisCode est injoignable sur le port ${port}.`,
       }),
     )
     console.log(
-      cliT({ en: `\nStart OpenFox first:\n\n  openfox\n`, fr: `\nDémarrez d’abord OpenFox :\n\n  openfox\n` }),
+      cliT({
+        en: `\nStart MorrisCode first:\n\n  morriscode\n`,
+        fr: `\nDémarrez d’abord MorrisCode :\n\n  morriscode\n`,
+      }),
     )
     process.exit(1)
   }
@@ -255,14 +282,14 @@ async function pwaInstall(mode: Mode): Promise<void> {
   if (existing) {
     const installed = probeInstalledApp(manifestUrl)
     if (installed) {
-      log.info(cliT({ en: 'OpenFox PWA is already installed.', fr: 'La PWA OpenFox est déjà installée.' }))
+      log.info(cliT({ en: 'MorrisCode PWA is already installed.', fr: 'La PWA MorrisCode est déjà installée.' }))
       console.log(cliT({ en: `  App ID:    ${installed.appId}`, fr: `  ID de l’app :    ${installed.appId}` }))
       console.log(cliT({ en: `  Profile:   ${installed.profileId}`, fr: `  Profil :   ${installed.profileId}` }))
       console.log(cliT({ en: `  URL:       ${manifestUrl}`, fr: `  URL :       ${manifestUrl}` }))
       console.log(
         cliT({
-          en: `\nUse "openfox pwa launch" to start it, or "openfox pwa uninstall" to remove it.`,
-          fr: `\nUtilisez « openfox pwa launch » pour la lancer, ou « openfox pwa uninstall » pour la supprimer.`,
+          en: `\nUse "morriscode pwa launch" to start it, or "morriscode pwa uninstall" to remove it.`,
+          fr: `\nUtilisez « morriscode pwa launch » pour la lancer, ou « morriscode pwa uninstall » pour la supprimer.`,
         }),
       )
       return
@@ -273,7 +300,7 @@ async function pwaInstall(mode: Mode): Promise<void> {
     await removePwaConfig(mode)
   }
 
-  log.info(cliT({ en: 'Installing OpenFox PWA...', fr: 'Installation de la PWA OpenFox...' }))
+  log.info(cliT({ en: 'Installing MorrisCode PWA...', fr: 'Installation de la PWA MorrisCode...' }))
 
   let appId = ''
   let profileId = '00000000000000000000000000'
@@ -287,8 +314,8 @@ async function pwaInstall(mode: Mode): Promise<void> {
   } catch {
     log.error(
       cliT({
-        en: 'Failed to install PWA. Ensure OpenFox is running and try again.',
-        fr: 'Échec de l’installation de la PWA. Assurez-vous qu’OpenFox tourne et réessayez.',
+        en: 'Failed to install PWA. Ensure MorrisCode is running and try again.',
+        fr: 'Échec de l’installation de la PWA. Assurez-vous qu’MorrisCode tourne et réessayez.',
       }),
     )
     process.exit(1)
@@ -308,10 +335,10 @@ async function pwaInstall(mode: Mode): Promise<void> {
   const pwaConfig: PwaConfig = { appId, profileId, manifestUrl, installedAt: new Date().toISOString() }
   await savePwaConfig(mode, pwaConfig)
 
-  log.info(cliT({ en: 'OpenFox PWA installed successfully!', fr: 'PWA OpenFox installée avec succès !' }))
+  log.info(cliT({ en: 'MorrisCode PWA installed successfully!', fr: 'PWA MorrisCode installée avec succès !' }))
   console.log(cliT({ en: `\n  App ID:  ${appId}`, fr: `\n  ID de l’app :  ${appId}` }))
   console.log(cliT({ en: `  Profile: ${profileId}`, fr: `  Profil : ${profileId}` }))
-  console.log(cliT({ en: `\nLaunch it with: openfox pwa launch`, fr: `\nLancez-la avec : openfox pwa launch` }))
+  console.log(cliT({ en: `\nLaunch it with: morriscode pwa launch`, fr: `\nLancez-la avec : morriscode pwa launch` }))
 }
 
 async function pwaUninstall(mode: Mode): Promise<void> {
@@ -335,11 +362,11 @@ async function pwaUninstall(mode: Mode): Promise<void> {
   }
 
   if (!appId) {
-    log.info(cliT({ en: 'OpenFox PWA is not installed.', fr: 'La PWA OpenFox n’est pas installée.' }))
+    log.info(cliT({ en: 'MorrisCode PWA is not installed.', fr: 'La PWA MorrisCode n’est pas installée.' }))
     return
   }
 
-  log.info(cliT({ en: 'Removing OpenFox PWA...', fr: 'Suppression de la PWA OpenFox...' }))
+  log.info(cliT({ en: 'Removing MorrisCode PWA...', fr: 'Suppression de la PWA MorrisCode...' }))
   try {
     execSync(`firefoxpwa site uninstall ${appId} --quiet`, { encoding: 'utf-8', windowsHide: true })
   } catch {
@@ -353,7 +380,7 @@ async function pwaUninstall(mode: Mode): Promise<void> {
   }
 
   await removePwaConfig(mode)
-  log.info(cliT({ en: 'OpenFox PWA removed from your system.', fr: 'PWA OpenFox supprimée de votre système.' }))
+  log.info(cliT({ en: 'MorrisCode PWA removed from your system.', fr: 'PWA MorrisCode supprimée de votre système.' }))
   console.log(
     cliT({
       en: '\nNote: The Firefox PWA runtime is still installed.',
@@ -386,14 +413,14 @@ async function pwaLaunch(mode: Mode): Promise<void> {
   }
 
   if (!appId) {
-    log.info(cliT({ en: 'OpenFox PWA is not installed.', fr: 'La PWA OpenFox n’est pas installée.' }))
+    log.info(cliT({ en: 'MorrisCode PWA is not installed.', fr: 'La PWA MorrisCode n’est pas installée.' }))
     console.log(
-      cliT({ en: '\nInstall it first: openfox pwa install', fr: '\nInstallez-la d’abord : openfox pwa install' }),
+      cliT({ en: '\nInstall it first: morriscode pwa install', fr: '\nInstallez-la d’abord : morriscode pwa install' }),
     )
     return
   }
 
-  log.info(cliT({ en: 'Launching OpenFox PWA...', fr: 'Lancement de la PWA OpenFox...' }))
+  log.info(cliT({ en: 'Launching MorrisCode PWA...', fr: 'Lancement de la PWA MorrisCode...' }))
   spawn('firefoxpwa', ['site', 'launch', appId], { stdio: 'inherit', windowsHide: true })
 }
 
@@ -418,9 +445,9 @@ async function pwaUpdate(mode: Mode): Promise<void> {
   }
 
   if (!appId) {
-    log.info(cliT({ en: 'OpenFox PWA is not installed.', fr: 'La PWA OpenFox n’est pas installée.' }))
+    log.info(cliT({ en: 'MorrisCode PWA is not installed.', fr: 'La PWA MorrisCode n’est pas installée.' }))
     console.log(
-      cliT({ en: '\nInstall it first: openfox pwa install', fr: '\nInstallez-la d’abord : openfox pwa install' }),
+      cliT({ en: '\nInstall it first: morriscode pwa install', fr: '\nInstallez-la d’abord : morriscode pwa install' }),
     )
     return
   }
@@ -432,7 +459,7 @@ async function pwaUpdate(mode: Mode): Promise<void> {
     process.exit(1)
   }
 
-  log.info(cliT({ en: 'OpenFox PWA metadata updated.', fr: 'Métadonnées PWA OpenFox mises à jour.' }))
+  log.info(cliT({ en: 'MorrisCode PWA metadata updated.', fr: 'Métadonnées PWA MorrisCode mises à jour.' }))
   console.log(
     cliT({
       en: `\nThe manifest is re-fetched automatically on each launch.`,
@@ -441,8 +468,8 @@ async function pwaUpdate(mode: Mode): Promise<void> {
   )
   console.log(
     cliT({
-      en: `Launch to pick up OpenFox changes:\n\n  openfox pwa launch`,
-      fr: `Lancez la PWA pour appliquer les changements d’OpenFox :\n\n  openfox pwa launch`,
+      en: `Launch to pick up MorrisCode changes:\n\n  morriscode pwa launch`,
+      fr: `Lancez la PWA pour appliquer les changements d’MorrisCode :\n\n  morriscode pwa launch`,
     }),
   )
 }
@@ -480,12 +507,12 @@ async function pwaStatus(mode: Mode): Promise<void> {
   }
 
   if (!appId) {
-    log.info(cliT({ en: 'OpenFox PWA is not installed.', fr: 'La PWA OpenFox n’est pas installée.' }))
-    console.log(cliT({ en: '\nInstall it: openfox pwa install', fr: '\nInstallez-la : openfox pwa install' }))
+    log.info(cliT({ en: 'MorrisCode PWA is not installed.', fr: 'La PWA MorrisCode n’est pas installée.' }))
+    console.log(cliT({ en: '\nInstall it: morriscode pwa install', fr: '\nInstallez-la : morriscode pwa install' }))
     return
   }
 
-  log.info(cliT({ en: 'OpenFox PWA is installed.', fr: 'La PWA OpenFox est installée.' }))
+  log.info(cliT({ en: 'MorrisCode PWA is installed.', fr: 'La PWA MorrisCode est installée.' }))
   console.log(cliT({ en: `\n  App ID:      ${appId}`, fr: `\n  ID de l’app :      ${appId}` }))
   console.log(
     cliT({

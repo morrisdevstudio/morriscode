@@ -17,6 +17,7 @@ function seedConfig(platform: { isWSL: boolean; wslDistro: string } | null): voi
     platform,
     workdir: null,
     locale: 'automatic',
+    serverNetwork: null,
   })
 }
 

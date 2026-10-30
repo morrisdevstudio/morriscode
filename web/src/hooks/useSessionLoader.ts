@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { useSessionStore } from '../stores/session'
 import { useProjectStore } from '../stores/project'
 
@@ -30,7 +30,8 @@ export function useSessionLoader({
     }
   }, [canLoad, projectId, currentProjectId, setCurrentProjectId])
 
-  useEffect(() => {
+  // A cached pane can be focused synchronously, before a loading frame is painted.
+  useLayoutEffect(() => {
     if (canLoad && sessionId && currentSessionId !== sessionId) {
       loadSession(sessionId)
     }

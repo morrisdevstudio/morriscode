@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process'
 import { writeFile, mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { setTimeout as sleep } from 'node:timers/promises'
 import {
   createTestClient,
   createTestProject,
@@ -14,10 +13,35 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { GitStatusPayload, GitDiffFile } from '@openfox/shared/protocol'
+import type { GitStatusPayload, GitDiffFile } from '@morriscode/shared/protocol'
+
+// Hooks (e.g. Husky) export GIT_DIR/GIT_INDEX_FILE for the repo being committed.
+// The fixture repos must resolve their own .git, or git commands silently target
+// the parent repository instead.
+const fixtureGitEnv = { ...process.env }
+delete fixtureGitEnv['GIT_DIR']
+delete fixtureGitEnv['GIT_INDEX_FILE']
+delete fixtureGitEnv['GIT_WORK_TREE']
+delete fixtureGitEnv['GIT_PREFIX']
 
 function runGit(cwd: string, args: string[]): void {
-  execFileSync('git', args, { cwd, stdio: 'ignore' })
+  execFileSync('git', args, { cwd, stdio: 'ignore', env: fixtureGitEnv })
+}
+
+/**
+ * Wait for a git.status event matching the expected working-tree state.
+ *
+ * The server polls on an interval, and a busy machine can delay a poll well
+ * past a fixed sleep. Waiting for the event itself keeps the test stable
+ * without hiding a genuine detection failure.
+ */
+async function waitForGitStatus(
+  client: TestClient,
+  predicate: (payload: GitStatusPayload) => boolean,
+  timeout = 8_000,
+): Promise<GitStatusPayload> {
+  const message = await client.waitFor<GitStatusPayload>('git.status', predicate, timeout)
+  return message.payload
 }
 
 describe('Git Status Watcher', () => {
@@ -26,7 +50,7 @@ describe('Git Status Watcher', () => {
   let project: TestProject
 
   beforeAll(async () => {
-    process.env['OPENFOX_GIT_POLL_INTERVAL'] = '1000'
+    process.env['MORRISCODE_GIT_POLL_INTERVAL'] = '1000'
     server = await createTestServer()
   })
 
@@ -55,30 +79,19 @@ describe('Git Status Watcher', () => {
     const initialPayload = initialMsg.payload as GitStatusPayload
     expect(initialPayload.diff.files).toHaveLength(0)
 
-    // Wait for the first poll to complete and store the hash
-    await sleep(1_500)
-
-    client.clearEvents()
-
     const testFilePath = join(project.path, 'src', 'index.ts')
     await writeFile(testFilePath, '// Modified by test\n')
 
-    // Wait for the next poll cycle to detect the change
-    await sleep(1_500)
-
-    const events = client.allEvents()
-    const gitStatusEvents = events.filter((e) => e.type === 'git.status')
-
-    expect(gitStatusEvents.length).toBeGreaterThan(0)
-
-    const updatePayload = gitStatusEvents[0]!.payload as GitStatusPayload
+    const updatePayload = await waitForGitStatus(client, (payload) =>
+      payload.diff.files.some((file) => file.path.includes('src/index.ts') && file.status === 'modified'),
+    )
     const modifiedFiles = updatePayload.diff.files.filter((f: GitDiffFile) => f.path.includes('src/index.ts'))
     expect(modifiedFiles.length).toBe(1)
     expect(modifiedFiles[0]!.status).toBe('modified')
   }, 10_000)
 
   it('reports submodule changes when the submodule has untracked-only modifications', async () => {
-    const subDir = join(tmpdir(), `openfox-submodule-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    const subDir = join(tmpdir(), `morriscode-submodule-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     try {
       await mkdir(subDir, { recursive: true })
       runGit(subDir, ['init', '--initial-branch=main'])
@@ -95,18 +108,13 @@ describe('Git Status Watcher', () => {
       const restSession = await createSession(server.url, { projectId: restProject.id })
       await client.send('session.load', { sessionId: restSession.id })
       await client.waitFor<GitStatusPayload>('git.status', undefined, 3000)
-      await sleep(1_500)
-      client.clearEvents()
 
       // Untracked-only change inside the submodule — invisible to `git diff --name-status` by default
       await writeFile(join(project.path, 'libs', 'mod', 'generated.txt'), 'generated\n')
 
-      await sleep(1_500)
-
-      const gitStatusEvents = client.allEvents().filter((e) => e.type === 'git.status')
-      expect(gitStatusEvents.length).toBeGreaterThan(0)
-
-      const updatePayload = gitStatusEvents[gitStatusEvents.length - 1]!.payload as GitStatusPayload
+      const updatePayload = await waitForGitStatus(client, (payload) =>
+        payload.diff.files.some((file) => file.path.includes('libs/mod') && file.status === 'modified'),
+      )
       const submoduleFiles = updatePayload.diff.files.filter((f: GitDiffFile) => f.path.includes('libs/mod'))
       expect(submoduleFiles.length).toBe(1)
       expect(submoduleFiles[0]!.status).toBe('modified')

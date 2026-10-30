@@ -613,7 +613,7 @@ describe('createMcpTools', () => {
     expect(payload.arguments).not.toHaveProperty('props')
   })
 
-  it('passes the tool timeout arg through to the SDK request options (openfox_wait regression)', async () => {
+  it('passes the tool timeout arg through to the SDK request options (morriscode_wait regression)', async () => {
     const manager = new McpManager()
     await manager.addServer('test', { transport: 'stdio', command: 'node' })
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ProviderRegistry } from './registry.js'
 
 function registry() {
-  return new ProviderRegistry({ mode: 'production', configDirectory: '/tmp/openfox' })
+  return new ProviderRegistry({ mode: 'production', configDirectory: '/tmp/morriscode' })
 }
 
 describe('ProviderRegistry', () => {

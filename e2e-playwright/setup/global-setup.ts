@@ -8,7 +8,7 @@ export default async function globalSetup() {
   console.warn('[Global Setup] Setting up...')
 
   // Create temporary directory for test project
-  testProjectDir = join(tmpdir(), `openfox-test-${Date.now()}`)
+  testProjectDir = join(tmpdir(), `morriscode-test-${Date.now()}`)
   await mkdir(testProjectDir, { recursive: true })
 
   // Create minimal README.md
@@ -18,12 +18,12 @@ export default async function globalSetup() {
   )
 
   // Write placeholder — project will be created in test fixtures
-  const tempFile = join(tmpdir(), 'openfox-test-project-id.json')
+  const tempFile = join(tmpdir(), 'morriscode-test-project-id.json')
   await writeFile(
     tempFile,
     JSON.stringify({
       projectId: '__to_be_created__',
-      serverUrl: process.env['OPENFOX_E2E_SERVER_URL'] ?? 'http://localhost:10669',
+      serverUrl: process.env['MORRISCODE_E2E_SERVER_URL'] ?? 'http://localhost:10669',
       workdir: testProjectDir,
     }),
   )

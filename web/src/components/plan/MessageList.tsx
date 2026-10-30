@@ -19,6 +19,7 @@ import type { DisplayItem } from './groupMessages.js'
 import type { MetadataEntry, WorkflowScope } from '@shared/types.js'
 import type { LLMRetryState } from '../../stores/session/types'
 import { prettyPrintError } from '../../lib/prettyPrintError'
+import { stopSpeech } from '../../stores/speechPlayback'
 
 const EMPTY_CRITERIA: MetadataEntry[] = []
 
@@ -129,6 +130,9 @@ export const MessageList = memo(function MessageList({
     (state) => state.currentSession?.id ?? null,
     null,
   )
+  useEffect(() => {
+    stopSpeech()
+  }, [scopeId, sessionId])
   const sessionPhase = useScopedPaneState(
     scopeId,
     (pane) => pane.session?.phase ?? null,

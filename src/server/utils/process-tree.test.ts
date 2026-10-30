@@ -29,11 +29,11 @@ async function waitFor(condition: () => boolean | Promise<boolean>, timeoutMs = 
  * been forked yet, and a tree kill issued before they exist lets them escape
  * the taskkill snapshot on Windows and hold inherited pipes open forever.
  */
-async function waitForDescendants(rootPid: number, min: number): Promise<number[]> {
-  let descendants: number[] = []
+async function waitForDescendants(rootPid: number, min: number): Promise<number[] | null> {
+  let descendants: number[] | null = []
   await waitFor(async () => {
     descendants = await getDescendants(rootPid)
-    return descendants.length >= min
+    return descendants === null || descendants.length >= min
   })
   return descendants
 }
@@ -43,8 +43,12 @@ const allDead =
   () =>
     !pids.some(isAlive)
 
-/** Collect all descendant PIDs via ps (Unix) or CIM (Windows, where ps does not exist) */
-async function getDescendants(rootPid: number): Promise<number[]> {
+/**
+ * Collect all descendant PIDs via ps (Unix) or CIM (Windows, where ps usually does not exist).
+ * Returns null when the host cannot read the process table, so callers can skip instead of
+ * failing a test that depends on OS introspection.
+ */
+async function getDescendants(rootPid: number): Promise<number[] | null> {
   const [cmd, args] =
     process.platform === 'win32'
       ? ([
@@ -64,6 +68,7 @@ async function getDescendants(rootPid: number): Promise<number[]> {
       else resolve({ stdout: stdout ?? '' })
     })
   })
+  if (!stdout.trim()) return null
   const children = new Map<number, number[]>()
   for (const line of stdout.trim().split('\n')) {
     const parts = line.trim().split(/\s+/)
@@ -120,11 +125,15 @@ describe('terminateProcessTree', () => {
     expect(isAlive(proc.pid!)).toBe(false)
   })
 
-  it('kills all descendants of a shell process', async () => {
+  it('kills all descendants of a shell process', async (ctx) => {
     const proc = spawn(process.execPath, ['-e', TREE_SCRIPT], { stdio: 'ignore', detached: true })
 
     expect(proc.pid).toBeTruthy()
     const descendants = await waitForDescendants(proc.pid!, 2)
+    if (descendants === null) {
+      await terminateProcessTree(proc)
+      return ctx.skip('The host cannot enumerate its process tree')
+    }
     expect(descendants.length).toBeGreaterThanOrEqual(2)
 
     // All should be alive before termination
@@ -159,7 +168,7 @@ describe('terminateProcessTree', () => {
     await expect(terminateProcessTree(fakeProc)).resolves.toBeUndefined()
   })
 
-  it('fires close event after killing process group', async () => {
+  it('fires close event after killing process group', async (ctx) => {
     // Spawn a shell with a foreground child that holds the pipe open
     const proc = spawn('bash', ['-c', 'sleep 300'], {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -181,7 +190,13 @@ describe('terminateProcessTree', () => {
     // taskkill tree snapshot and keep the pipes open — 'close' then never
     // fires (flaked exactly this way on the CI runner). On Unix bash execs
     // into sleep, so there is no child to wait for.
-    if (process.platform === 'win32') await waitForDescendants(proc.pid!, 1)
+    if (process.platform === 'win32') {
+      const descendants = await waitForDescendants(proc.pid!, 1)
+      if (descendants === null) {
+        await terminateProcessTree(proc)
+        return ctx.skip('The host cannot enumerate its process tree')
+      }
+    }
 
     await terminateProcessTree(proc)
     await waitFor(() => closed && !isAlive(proc.pid!))
@@ -190,7 +205,7 @@ describe('terminateProcessTree', () => {
     expect(isAlive(proc.pid!)).toBe(false)
   })
 
-  it('kills process group with immediate mode', async () => {
+  it('kills process group with immediate mode', async (ctx) => {
     const proc = spawn(process.execPath, ['-e', TREE_SCRIPT], {
       stdio: 'ignore',
       detached: true,
@@ -201,6 +216,10 @@ describe('terminateProcessTree', () => {
     // race the second one's launch (its inherited pipe closes mid-start, which
     // surfaces as an ERROR_NO_DATA dialog on Windows and a possible orphan).
     const descendants = await waitForDescendants(proc.pid!, 2)
+    if (descendants === null) {
+      await terminateProcessTree(proc)
+      return ctx.skip('The host cannot enumerate its process tree')
+    }
     expect(descendants.length).toBeGreaterThanOrEqual(1)
 
     await terminateProcessTree(proc, { immediate: true })
@@ -212,7 +231,7 @@ describe('terminateProcessTree', () => {
     }
   }, 20000)
 
-  it('kills orphan-capable process group (child inheriting pipes)', async () => {
+  it('kills orphan-capable process group (child inheriting pipes)', async (ctx) => {
     // Simulate the pasta scenario: shell spawns a foreground child that
     // holds stdout/stderr pipes open. Process group kill must take down
     // both shell and child so pipes close and the parent gets EOF.
@@ -226,6 +245,10 @@ describe('terminateProcessTree', () => {
     // Confirm children are alive (TREE_SCRIPT spawns two — wait for both so
     // the kill cannot race the second child's launch)
     const descendants = await waitForDescendants(proc.pid!, 2)
+    if (descendants === null) {
+      await terminateProcessTree(proc)
+      return ctx.skip('The host cannot enumerate its process tree')
+    }
     expect(descendants.length).toBeGreaterThanOrEqual(1)
 
     let closed = false

@@ -57,7 +57,7 @@ export async function installSkillPackage(
 
   const destination = join(libraryDir, packageName)
   if (await pathExists(destination)) throw new SkillInstallError('A package with this name already exists', 409)
-  const staging = join(libraryDir, `.${packageName}.openfox-upload-${randomUUID()}`)
+  const staging = join(libraryDir, `.${packageName}.morriscode-upload-${randomUUID()}`)
 
   try {
     await mkdir(staging, { recursive: false })

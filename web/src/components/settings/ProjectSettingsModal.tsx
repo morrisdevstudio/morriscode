@@ -670,7 +670,7 @@ export function ProjectSettingsModal({ isOpen, onClose, project }: ProjectSettin
               en: 'Override the default workspace location. Leave empty to use the global directory',
               fr: 'Remplacez l’emplacement par défaut du workspace. Laissez vide pour utiliser le dossier global',
             })}{' '}
-            <code className="text-xs bg-bg-tertiary px-1 rounded">~/.local/share/openfox/workspaces/</code>.{' '}
+            <code className="text-xs bg-bg-tertiary px-1 rounded">~/.local/share/morriscode/workspaces/</code>.{' '}
             {t({
               en: 'Supports absolute paths or paths relative to the project.',
               fr: 'Accepte les chemins absolus ou relatifs au projet.',

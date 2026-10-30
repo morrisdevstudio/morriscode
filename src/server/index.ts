@@ -1,10 +1,14 @@
 import express from 'express'
 import cors from 'cors'
-import { createServer as createHttpServer } from 'node:http'
+import { createServer as createHttpServer, type Server as HttpServer } from 'node:http'
+import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve, join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { createServer as createViteServer, type ViteDevServer } from 'vite'
+
+/** Vite's HMR options expect a node:http server; an https.Server is compatible at runtime. */
+type ViteHmrServer = HttpServer | import('node:http2').Http2SecureServer
 
 import type { Config, ModelConfig, ProviderBackend } from '../shared/types.js'
 import type { ServerHandle } from './context.js'
@@ -36,7 +40,7 @@ import {
 } from './tools/mcp-config.js'
 import { getSessionDisabledServers, setSessionDisabledServers } from './mcp/session-overrides.js'
 import { setMcpOAuthStoreMode, setMcpOAuthStorePath } from './mcp/oauth-store.js'
-import { setMcpOAuthServerPort } from './mcp/oauth-provider.js'
+import { setMcpOAuthServerPort, setMcpOAuthServerScheme } from './mcp/oauth-provider.js'
 import { createServerMessage } from '../shared/protocol.js'
 import { createContextStateMessage } from './ws/protocol.js'
 import { createWebSocketServer } from './ws/index.js'
@@ -50,9 +54,11 @@ import { createAgentRoutes } from './routes/agents.js'
 import { loadAllAgentsDefault, getTopLevelAgents } from './agents/registry.js'
 import { createWorkflowRoutes } from './routes/workflows.js'
 import { listAvailableWorkflows } from './workflows/registry.js'
-import { createOpenFoxMcpRouter, extractSessionToken } from './mcp/server/endpoint.js'
-import { buildOpenFoxMcpBootstrap } from './mcp/server/bootstrap.js'
-import type { OpenFoxMcpToolDeps } from './mcp/server/types.js'
+import { createMorrisCodeMcpRouter, extractSessionToken } from './mcp/server/endpoint.js'
+import { buildMorrisCodeMcpBootstrap } from './mcp/server/bootstrap.js'
+import { describeCertificate, resolveTlsMaterial } from './tls.js'
+import { getServerUrls, serverScheme } from './utils/network.js'
+import type { MorrisCodeMcpToolDeps } from './mcp/server/types.js'
 import { createDevServerRoutes } from './routes/dev-server.js'
 import { createWorkspaceConfigRoutes } from './routes/workspace-config.js'
 import { createTerminalRoutes } from './routes/terminals.js'
@@ -60,13 +66,18 @@ import { WorkspaceInUseError } from './utils/errors.js'
 import { createDirectoryRoutes } from './routes/directories.js'
 import { createFileSearchRoutes } from './routes/file-search.js'
 import { createAutoUpdateRoutes } from './routes/auto-update.js'
+import { detectInstallFlavor, getReleaseRoot } from './update/install.js'
+import { ReleaseUpdateService } from './update/release-service.js'
+import { requestRestart, setRestartHandler } from './update/restart.js'
 import { createProviderAuthRoutes } from './routes/provider-auth.js'
 import { devServerManager } from './dev-server/manager.js'
-import { getGlobalConfigDir } from '../cli/paths.js'
+import { getGlobalConfigDir, getGlobalDataDir } from '../cli/paths.js'
 import { ProviderRegistry } from './providers/plugins/index.js'
 import { PluginHost } from './plugins/host.js'
 import { createPluginRoutes } from './routes/plugins.js'
 import { createNotificationRoutes } from './routes/notifications.js'
+import { createSpeechRoutes } from './routes/speech.js'
+import { SpeechService } from './speech/service.js'
 import { pluginAssetToken } from './plugins/asset-auth.js'
 import { registerSessionFavoriteRoute } from './routes/session-favorite.js'
 import { logger, setLogLevel } from './utils/logger.js'
@@ -75,12 +86,16 @@ import {
   loadServerAuthConfig,
   requiresAuth,
   hasPassword,
+  hasEffectiveNetworkAuth,
   getAuthConfig,
   verifyPassword,
   isValidToken,
   tokenFromPassword,
   currentSessionToken,
 } from './auth.js'
+import { isLoopbackHost, networkAccessError } from '../shared/network-security.js'
+import { serverT } from './i18n.js'
+import { cliT } from '../cli/i18n.js'
 import { detectWsl, type WslInfo } from './utils/wsl.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -111,6 +126,14 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   // Load auth config
   await loadServerAuthConfig()
 
+  const bindHost = config.server.host ?? '127.0.0.1'
+  const safetyError = networkAccessError(
+    bindHost,
+    config.server.https === true,
+    isLoopbackHost(bindHost) || (await hasEffectiveNetworkAuth()),
+  )
+  if (safetyError) throw new Error(cliT(safetyError))
+
   // Initialize database
   const db = initDatabase(config)
 
@@ -135,6 +158,22 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Get config directory for loading user items
   const configDir = getGlobalConfigDir(config.mode ?? 'production')
+  const releaseRoot = getReleaseRoot()
+  const releaseUpdateService =
+    detectInstallFlavor() === 'release' && releaseRoot
+      ? new ReleaseUpdateService({
+          root: releaseRoot,
+          currentVersion: VERSION,
+          configDir,
+          databasePath: config.database.path,
+          onRestart: () => {
+            requestRestart()
+          },
+        })
+      : null
+  const speechService = new SpeechService({
+    dataDir: getGlobalDataDir(config.mode ?? 'production'),
+  })
 
   // Discover provider plugins before creating transport-aware clients.
   const providerAdapters = new ProviderRegistry({
@@ -172,8 +211,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   // Wire sessionManager to devServerManager for inspect proxy feedback
   devServerManager.setSessionManager(sessionManager)
 
-  // Create LLM client - use mock if OPENFOX_MOCK_LLM is set
-  const useMock = process.env['OPENFOX_MOCK_LLM'] === 'true'
+  // Create LLM client - use mock if MORRISCODE_MOCK_LLM is set
+  const useMock = process.env['MORRISCODE_MOCK_LLM'] === 'true'
   // For mock mode, we bypass the provider manager
   const getMockClient = useMock ? createMockLLMClient : null
   const getLLMClient = () => (getMockClient ? getMockClient() : providerManager.getLLMClient())
@@ -275,7 +314,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   setMcpOAuthStorePath(config.globalConfigPath ? join(dirname(config.globalConfigPath), 'mcp-auth.json') : undefined)
   const mcpServers = (config.mcpServers ?? {}) as Record<string, import('./mcp/types.js').McpServerConfig>
   // Connect configured MCP servers only once the HTTP server is listening:
-  // a self-referencing server (OpenFox as its own MCP client) would otherwise
+  // a self-referencing server (MorrisCode as its own MCP client) would otherwise
   // race the listen and land in an error state. Invoked from start() below.
   async function connectMcpServers(): Promise<void> {
     await Promise.all(
@@ -329,7 +368,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   // Streamable HTTP MCP endpoint. Mounted before the SPA catch-all so /mcp is
   // never swallowed; tool deps are resolved lazily per request and filled in
   // once the WebSocket/queue plumbing exists below (requests only flow after start()).
-  let mcpToolDeps: OpenFoxMcpToolDeps | null = null
+  let mcpToolDeps: MorrisCodeMcpToolDeps | null = null
   const mcpAuth = {
     isAuthRequired: (): boolean => {
       const cfg = getAuthConfig()
@@ -342,7 +381,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   }
   app.use(
     '/mcp',
-    createOpenFoxMcpRouter({
+    createMorrisCodeMcpRouter({
       resolveDeps: () => mcpToolDeps,
       isAuthRequired: mcpAuth.isAuthRequired,
       isAuthorized: mcpAuth.isAuthorized,
@@ -351,7 +390,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   // Health check (public)
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() })
+    res.json({ status: 'ok', version: VERSION, timestamp: new Date().toISOString() })
   })
 
   // Changelog (public)
@@ -574,7 +613,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   })
   setTasksService(tasksService)
   // Periodic tick for scheduled tasks: runs once at boot (catch-up for tasks
-  // missed while OpenFox was off) then every 30s. Stopped in close().
+  // missed while MorrisCode was off) then every 30s. Stopped in close().
   const { createTaskScheduler } = await import('./tasks/scheduler.js')
   const taskScheduler = createTaskScheduler({ run: () => tasksService.runScheduled() })
   taskScheduler.start()
@@ -1847,7 +1886,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     try {
       const { buildSessionExport } = await import('./session/export-import.js')
       const payload = buildSessionExport(sessionManager, sessionId)
-      const filename = `${(payload.session.title ?? 'session').replace(/[^a-zA-Z0-9-_]/g, '_')}.openfox-session.json`
+      const filename = `${(payload.session.title ?? 'session').replace(/[^a-zA-Z0-9-_]/g, '_')}.morriscode-session.json`
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
       return res.json(payload)
     } catch (err) {
@@ -1961,6 +2000,39 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   })
 
   // Config endpoint
+  /**
+   * How peers reach this server: the bind address, the scheme, and the URLs to
+   * hand out. Computed from a server block so the settings UI can preview the
+   * values it just saved, before the restart makes them real.
+   */
+  // Mirrors Config['server'], but tolerates the optional-with-undefined shape the
+  // global config parses into (exactOptionalPropertyTypes rejects the narrower one).
+  type NetworkServerConfig = {
+    port: number
+    host?: string | undefined
+    openBrowser?: boolean | undefined
+    https?: boolean | undefined
+    httpsCert?: string | undefined
+    httpsKey?: string | undefined
+  }
+
+  const describeNetwork = (server: NetworkServerConfig) => {
+    const host = server.host ?? '127.0.0.1'
+    const https = server.https === true
+    const certificate = https
+      ? describeCertificate({ server, mode: config.mode, globalConfigPath: config.globalConfigPath })
+      : null
+
+    return {
+      host,
+      port: server.port,
+      https,
+      urls: getServerUrls({ host, port: server.port, https }),
+      certificatePath: certificate?.certPath ?? null,
+      certificateGenerated: certificate?.generated ?? false,
+    }
+  }
+
   app.get('/api/config', async (_req, res) => {
     const llmClient = getLLMClient()
     const activeProvider = providerManager.getActiveProvider()
@@ -2009,7 +2081,52 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
       visionFallback,
       platform: platformInfo,
       locale: (await import('./db/settings.js')).getSetting('display.locale') ?? 'automatic',
+      serverNetwork: describeNetwork(config.server),
     })
+  })
+
+  // Network access settings (bind address + HTTPS). Persisted to the global
+  // config; the listening socket and its TLS material are fixed at startup, so
+  // the change lands on the next start.
+  app.put('/api/config/network', async (req, res) => {
+    const { host, https } = req.body as { host?: unknown; https?: unknown }
+
+    if (host !== undefined && (typeof host !== 'string' || host.trim() === '')) {
+      return res.status(400).json({ error: 'host must be a non-empty string' })
+    }
+    if (https !== undefined && typeof https !== 'boolean') {
+      return res.status(400).json({ error: 'https must be a boolean' })
+    }
+
+    const mode = config.mode ?? 'production'
+
+    try {
+      const { loadGlobalConfig, saveGlobalConfig } = await import('../cli/config.js')
+      const globalConfig = await loadGlobalConfig(mode, config.globalConfigPath)
+      const nextHost =
+        typeof host === 'string' ? host.trim() : (globalConfig.server.host ?? config.server.host ?? '127.0.0.1')
+      const nextHttps =
+        typeof https === 'boolean' ? https : !isLoopbackHost(nextHost) || globalConfig.server.https === true
+      const safetyError = networkAccessError(
+        nextHost,
+        nextHttps,
+        isLoopbackHost(nextHost) || (await hasEffectiveNetworkAuth()),
+      )
+      if (safetyError) return res.status(400).json({ error: serverT(safetyError) })
+      const updated = {
+        ...globalConfig,
+        server: {
+          ...globalConfig.server,
+          host: nextHost,
+          https: nextHttps,
+        },
+      }
+
+      await saveGlobalConfig(mode, updated, config.globalConfigPath)
+      res.json({ restartRequired: true, serverNetwork: describeNetwork(updated.server) })
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+    }
   })
 
   // Model refresh endpoint
@@ -2646,6 +2763,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   app.use('/api/plugins', createPluginRoutes({ config, host: pluginHost, logger }))
   app.get('/api/plugins', (_req, res) => res.json({ plugins: pluginHost.getDiagnostics() }))
   app.use('/api/notifications', createNotificationRoutes(pluginHost.notifications))
+  app.use('/api/speech', createSpeechRoutes(speechService))
   app.get('/api/provider-presets', (_req, res) => res.json({ presets: pluginHost.registry.getPresets() }))
   app.get('/api/provider-adapters', (_req, res) =>
     res.json({
@@ -2825,6 +2943,12 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     const { id } = req.params
     const models = await providerManager.getProviderModels(id as string)
     res.json({ models })
+  })
+
+  // Metered usage of a provider's account (weekly window and short slot) when it reports one.
+  app.get('/api/providers/:id/usage', async (req, res) => {
+    const { id } = req.params
+    res.json({ usage: await providerManager.getProviderUsage(id as string) })
   })
 
   // Persist a single model's settings (e.g. the sticky reasoning-effort default
@@ -3200,7 +3324,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
 
   /** Rendered on the OAuth callback. The message is always one of ours, never anything the caller sent. */
   function oauthCallbackPage(message: string): string {
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>OpenFox</title></head><body style="font-family:system-ui;padding:2rem"><p>${message}</p><script>try{new BroadcastChannel('openfox-oauth').postMessage({type:'oauth-callback-complete'})}catch{}</script></body></html>`
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MorrisCode</title></head><body style="font-family:system-ui;padding:2rem"><p>${message}</p><script>try{new BroadcastChannel('morriscode-oauth').postMessage({type:'oauth-callback-complete'})}catch{}</script></body></html>`
   }
 
   /** Accepts the whole callback URL or just its query string. Anything else yields no state and is refused. */
@@ -3309,10 +3433,12 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     }
     try {
       await completeMcpOAuth(pending.name, pending.entry.serverUrl, code)
-      res.type('html').send(oauthCallbackPage('Authorization complete. You can close this tab and go back to OpenFox.'))
+      res
+        .type('html')
+        .send(oauthCallbackPage('Authorization complete. You can close this tab and go back to MorrisCode.'))
     } catch (error) {
       logger.error('MCP OAuth callback failed', { error: error instanceof Error ? error.message : String(error) })
-      res.status(400).type('html').send(oauthCallbackPage('Authorization failed. See the OpenFox logs for details.'))
+      res.status(400).type('html').send(oauthCallbackPage('Authorization failed. See the MorrisCode logs for details.'))
     }
   })
 
@@ -3334,7 +3460,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     if (!parsed.code || !parsed.state) {
       return res.status(400).json({ error: 'Paste the whole callback URL, both code and state are needed' })
     }
-    // Never optional: the state is what ties this code to the authorization OpenFox actually started.
+    // Never optional: the state is what ties this code to the authorization MorrisCode actually started.
     const { readMcpOAuthEntry } = await import('./mcp/oauth-store.js')
     const entry = await readMcpOAuthEntry(name, serverUrl)
     if (!entry?.state || entry.state !== parsed.state) {
@@ -3439,6 +3565,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         if (!token) return false
         return Boolean(await isValidToken(token))
       },
+      releaseService: releaseUpdateService,
     }),
   )
 
@@ -3476,6 +3603,14 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   app.use('/api/directories', createDirectoryRoutes())
   app.use('/api/files', createFileSearchRoutes())
 
+  // Create the listener before the dev-mode Vite middleware so Vite can share it
+  // for HMR: one port, one listener, one firewall rule, TLS included.
+  const tlsMaterial = await resolveTlsMaterial(config)
+  const httpServer: HttpServer | HttpsServer = tlsMaterial
+    ? createHttpsServer({ key: tlsMaterial.key, cert: tlsMaterial.cert }, app)
+    : createHttpServer(app)
+  const scheme = serverScheme(tlsMaterial !== null)
+
   // Serve static web UI
   const webDir = resolve(__dirname, '../../web')
   const isDev = config.mode === 'development'
@@ -3490,7 +3625,18 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     viteServer = await createViteServer({
       root: webDir,
       configFile: resolve(__dirname, '../../web/vite.config.ts'),
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        // The server is meant to be reachable from the LAN, and Vite's dev host
+        // check answers 403 for hostnames (literal IPs pass on their own).
+        allowedHosts: true,
+        // Ride the app server instead of Vite's own HMR port, so the WebSocket
+        // lands on the same origin and the same TLS listener as the page.
+        hmr: {
+          server: httpServer as unknown as ViteHmrServer,
+          ...(tlsMaterial ? { protocol: 'wss' } : {}),
+        },
+      },
       appType: 'spa',
       logLevel: 'warn',
     })
@@ -3514,8 +3660,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     })
 
     // Static files that Vite doesn't handle (after Vite middleware)
-    app.get('/fox.svg', (_req, res) => {
-      readFile(join(webDir, 'fox.svg'))
+    app.get('/morriscode.svg', (_req, res) => {
+      readFile(join(webDir, 'morriscode.svg'))
         .then((content) => {
           res.set('Content-Type', 'image/svg+xml')
           res.send(content)
@@ -3582,8 +3728,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     app.use('/sw.js', express.static(join(distWebDir, 'sw.js')))
 
     // Static files
-    app.get('/fox.svg', (_req, res) => {
-      readFile(join(distWebDir, 'fox.svg'))
+    app.get('/morriscode.svg', (_req, res) => {
+      readFile(join(distWebDir, 'morriscode.svg'))
         .then((content) => {
           res.set('Content-Type', 'image/svg+xml')
           res.send(content)
@@ -3629,7 +3775,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         req.path.startsWith('/manifest.webmanifest') ||
         req.path.startsWith('/registerSW.js') ||
         req.path.startsWith('/sw.js') ||
-        req.path === '/fox.svg'
+        req.path === '/morriscode.svg'
       ) {
         return
       }
@@ -3640,9 +3786,6 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         })
     })
   }
-
-  // Create HTTP server from Express app
-  const httpServer = createHttpServer(app)
 
   // Create WebSocket server attached to HTTP server
   const wssExports = createWebSocketServer(
@@ -3839,9 +3982,10 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   setMcpBootstrapForTools(async () => {
     const authRequired = mcpAuth.isAuthRequired()
     const sessionToken = authRequired ? await currentSessionToken() : null
-    return buildOpenFoxMcpBootstrap({
+    return buildMorrisCodeMcpBootstrap({
       host: config.server.host ?? '127.0.0.1',
       port: mcpActualPort ?? config.server.port,
+      https: tlsMaterial !== null,
       authRequired,
       sessionToken,
     })
@@ -3855,15 +3999,21 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     start: (port?: number) =>
       new Promise((resolve, reject) => {
         const listenPort = port ?? config.server.port
-        const host = config.server.host
+        const host = bindHost
 
         httpServer.listen(listenPort, host, () => {
           const addr = httpServer.address()
           const actualPort = typeof addr === 'object' && addr ? addr.port : listenPort
           setMcpOAuthServerPort(actualPort)
+          setMcpOAuthServerScheme(tlsMaterial !== null)
           mcpActualPort = actualPort
+          void releaseUpdateService?.start().catch((error: unknown) => {
+            logger.warn('[update] service start failed', {
+              error: error instanceof Error ? error.message : String(error),
+            })
+          })
           // The /mcp endpoint is only reachable once we're listening, so start
-          // MCP client connections now — a self-referencing server (OpenFox as
+          // MCP client connections now — a self-referencing server (MorrisCode as
           // its own MCP client) would otherwise race the listen and fail.
           // The very first requests may arrive before MCP tools register;
           // connectMcpServers settles shortly after, then signals MCP readiness.
@@ -3873,10 +4023,10 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
             })
           })
           const client = getLLMClient()
-          logger.info(`OpenFox server running at http://${host}:${actualPort}`)
-          logger.info(`WebSocket available at ws://${host}:${actualPort}/ws`)
+          logger.info(`MorrisCode server running at ${scheme}://${host}:${actualPort}`)
+          logger.info(`WebSocket available at ${scheme === 'https' ? 'wss' : 'ws'}://${host}:${actualPort}/ws`)
           logger.info(
-            `MCP endpoint available at http://${host}:${actualPort}/mcp — run 'openfox mcp' for a paste-ready client config`,
+            `MCP endpoint available at ${scheme}://${host}:${actualPort}/mcp — run 'morriscode mcp' for a paste-ready client config`,
           )
           logger.info(`LLM backend: ${client.getBackend()}, model: ${client.getModel()}, url: ${config.llm.baseUrl}`)
           resolve({ port: actualPort })
@@ -3890,6 +4040,8 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
         logger.info('Shutting down...')
         void (async () => {
           await devServerManager.stopAll()
+          releaseUpdateService?.stop()
+          speechService.close()
           await mcpManager.disconnectAll()
           taskScheduler.stop()
           const { stopAllInspectProxies } = await import('./dev-server/inspect-proxy.js')
@@ -3937,6 +4089,8 @@ export async function createServer(config: Config): Promise<void> {
 
     handle.close().then(() => process.exit(0))
   }
+
+  setRestartHandler(shutdown)
 
   // Prevent crash on unhandled promise rejections — log and continue
   process.on('unhandledRejection', (reason) => {

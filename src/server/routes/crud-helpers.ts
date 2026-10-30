@@ -65,7 +65,7 @@ export function validateNameIdPrompt(body: Record<string, unknown>): string | nu
 }
 
 export function getProjectItemPath(projectDir: string, dirName: string, id: string, ext: string): string {
-  return join(projectDir, '.openfox', dirName, `${id}${ext}`)
+  return join(projectDir, '.morriscode', dirName, `${id}${ext}`)
 }
 
 export async function isProjectItem(
@@ -78,7 +78,7 @@ export async function isProjectItem(
   // Fast path: check if {id}{ext} exists
   if (await pathExists(getProjectItemPath(projectDir, dirName, id, ext))) return true
   // Slow path: scan directory for a file whose internal ID matches
-  const dir = join(projectDir, '.openfox', dirName)
+  const dir = join(projectDir, '.morriscode', dirName)
   const found = await findFileByInternalId(dir, id, ext)
   return found !== null
 }

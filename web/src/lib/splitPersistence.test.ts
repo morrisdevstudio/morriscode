@@ -9,7 +9,7 @@ import {
   SPLIT_ROUTE,
 } from './splitPersistence'
 
-const KEY = 'openfox:split'
+const KEY = 'morriscode:split'
 
 describe('splitPersistence', () => {
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('splitPersistence', () => {
     expect(readSplitLayoutMode()).toBe('grid')
     writeSplitLayoutMode('columns')
     expect(readSplitLayoutMode()).toBe('columns')
-    localStorage.setItem('openfox:split:layout', 'garbage')
+    localStorage.setItem('morriscode:split:layout', 'garbage')
     expect(readSplitLayoutMode()).toBe('columns')
   })
 })

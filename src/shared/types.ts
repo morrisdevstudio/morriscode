@@ -9,6 +9,7 @@ export interface Project {
   id: string
   name: string
   workdir: string
+  sessionCount?: number // Total discussion count for the project (list payloads)
   customInstructions?: string // Project-specific instructions injected into prompts
   dangerLevel?: DangerLevel // Project default danger level for new sessions
   defaultAgent?: string // Project default agent for new sessions (overrides global)
@@ -53,7 +54,7 @@ export interface WorkflowParameter {
   required?: boolean
 }
 
-/** Where a workflow definition lives: bundled defaults, global config, or the project's .openfox/. */
+/** Where a workflow definition lives: bundled defaults, global config, or the project's .morriscode/. */
 export type WorkflowScope = 'builtin' | 'user' | 'project'
 
 /** Launch scope: an explicit bucket to resolve from, or 'auto' for server precedence (project > user > builtin). */
@@ -186,13 +187,13 @@ export type MessageSegment =
   { type: 'text'; content: string } | { type: 'thinking'; content: string } | { type: 'tool_call'; toolCallId: string }
 
 // ============================================================================
-// Token Usage (provider cache attribution — generic OpenFox contract)
+// Token Usage (provider cache attribution — generic MorrisCode contract)
 // ============================================================================
 
 /** Provenance of cache numbers reported by a provider.
  *  - `provider`:  value is reported by the provider's API response
  *                  (e.g. `prompt_tokens_details.cached_tokens`).
- *  - `estimated`: value is computed by OpenFox from context tracking
+ *  - `estimated`: value is computed by MorrisCode from context tracking
  *                  (heuristic, lower bound).
  *  - `unavailable`: no cache info available; absence is not zero cache. */
 export type CacheSource = 'provider' | 'estimated' | 'unavailable'
@@ -842,7 +843,7 @@ export type ProviderBackend = LlmBackend
 
 /** Model configuration with context window */
 export interface ModelConfig {
-  id: string // Model ID exposed in OpenFox (may be a projected mode such as "gpt-5.6-sol-fast")
+  id: string // Model ID exposed in MorrisCode (may be a projected mode such as "gpt-5.6-sol-fast")
   /** Human-readable model name from the provider catalog. */
   name?: string
   /** Actual model ID sent to the provider when `id` is a projected catalog mode. */
@@ -920,6 +921,36 @@ export interface Provider {
   pluginMetadata?: PluginModelMetadataView
 }
 
+/** One metered usage window, as a provider backend reports it. */
+export interface ProviderUsageWindow {
+  /** Share of the window already consumed, 0-100. */
+  usedPercent: number
+  /** Window length in minutes (300 for the short slot, 10080 for a week). */
+  windowMinutes?: number
+  /** Epoch seconds at which this window resets. */
+  resetsAt?: number
+}
+
+/** Read-only availability of earned usage resets, without account or credit identifiers. */
+export interface ProviderResetCredits {
+  /** Null means the count could not be fetched, never zero by inference. */
+  availableCount: number | null
+  /** Missing means only the count is known; no private identifiers reach the client. */
+  coupons?: { expiresAt?: number | null }[]
+}
+
+/** Metered usage of the account behind a provider, when it meters at all. */
+export interface ProviderUsage {
+  /** Windows as the backend reports them: the short slot first, then the long one. */
+  windows: ProviderUsageWindow[]
+  /** Label the backend gives the plan or limit (for example `Pro`). */
+  planType?: string
+  credits?: { hasCredits: boolean; unlimited: boolean; balance?: string }
+  resetCredits?: ProviderResetCredits
+  /** Epoch milliseconds of the observation, filled by the adapter. */
+  observedAt?: number
+}
+
 export interface Config {
   llm: {
     baseUrl: string
@@ -955,6 +986,11 @@ export interface Config {
     port: number
     host?: string
     openBrowser?: boolean
+    /** Serve the UI and API over TLS on the same port. */
+    https?: boolean
+    /** PEM certificate/key to use instead of the generated self-signed certificate. */
+    httpsCert?: string
+    httpsKey?: string
   }
   database: {
     path: string
@@ -963,7 +999,7 @@ export interface Config {
     level: 'debug' | 'info' | 'warn' | 'error'
   }
   mode?: 'development' | 'production' | 'test'
-  dev?: boolean // true when running in dev mode (OPENFOX_DEV=true or mode='development')
+  dev?: boolean // true when running in dev mode (MORRISCODE_DEV=true or mode='development')
   /** Configured providers (loaded from global config) */
   providers?: Provider[] | undefined
   /** Default model selection in format "providerId/modelName" */
@@ -1016,7 +1052,7 @@ export interface ElementData {
 // Event-derived session rollup
 // ============================================================================
 //
-// Generic OpenFox data derived from the EventStore stream. Plugins consume
+// Generic MorrisCode data derived from the EventStore stream. Plugins consume
 // this via `SessionStats.events` (server-computed by
 // `buildSessionStatsEventRollup`) or via the live plugin hooks
 // `context.compacted` / `retry.triggered`. The rollup is computed lazily

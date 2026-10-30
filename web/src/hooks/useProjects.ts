@@ -6,7 +6,9 @@ import { projectsResource } from '../lib/resources'
  * cache — no consumer needs to remember to fire a fetch.
  */
 export function useProjects() {
-  const { data, refresh, loading } = useResource(projectsResource)
+  const { data, refresh, loading, error } = useResource(projectsResource)
   const projects = data?.projects ?? []
-  return { projects, refresh, loading }
+  // `loaded` distinguishes "the server answered with no projects" from the
+  // first render, before the request has even started.
+  return { projects, refresh, loading, error, loaded: data !== undefined }
 }

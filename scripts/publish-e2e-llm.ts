@@ -1,7 +1,7 @@
 /**
  * Pure helpers backing the publish E2E LLM fallback.
  *
- * `OPENFOX_PUBLISH_E2E_LLM=prod` lets the prepublish full-stack test run against
+ * `MORRISCODE_PUBLISH_E2E_LLM=prod` lets the prepublish full-stack test run against
  * the LLM provider configured in the user's production config instead of the
  * hardcoded local model server — used when that server is unavailable.
  *
@@ -40,13 +40,13 @@ export function resolveLlmMode(raw: string | undefined): PublishE2eLlmMode {
   const value = raw?.trim().toLowerCase()
   if (!value || value === 'local') return 'local'
   if (value === 'prod') return 'prod'
-  throw new Error(`Invalid OPENFOX_PUBLISH_E2E_LLM="${raw}" (expected "local" or "prod")`)
+  throw new Error(`Invalid MORRISCODE_PUBLISH_E2E_LLM="${raw}" (expected "local" or "prod")`)
 }
 
-/** Production config path, overridable via `OPENFOX_PUBLISH_E2E_PROD_CONFIG`. */
+/** Production config path, overridable via `MORRISCODE_PUBLISH_E2E_PROD_CONFIG`. */
 export function resolveProdConfigPath(env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string {
-  const override = env['OPENFOX_PUBLISH_E2E_PROD_CONFIG']?.trim()
-  return override ? override : join(home, '.config', 'openfox', 'config.json')
+  const override = env['MORRISCODE_PUBLISH_E2E_PROD_CONFIG']?.trim()
+  return override ? override : join(home, '.config', 'morriscode', 'config.json')
 }
 
 function asString(value: unknown): string | undefined {

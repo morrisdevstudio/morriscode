@@ -26,7 +26,7 @@ import type { TestProject, TestProjectOptions } from './project-factory.js'
 import { createTestClient } from './ws-client.js'
 import { createTestProject } from './project-factory.js'
 import { createProject, createSession, setSessionMode, type Project } from './rest-client.js'
-import type { Session } from '@openfox/shared'
+import type { Session } from '@morriscode/shared'
 
 // Re-derive the template type from TestProjectOptions
 type ProjectTemplate = NonNullable<TestProjectOptions['template']>

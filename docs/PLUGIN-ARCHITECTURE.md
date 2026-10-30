@@ -1,6 +1,6 @@
 # Plugin System Architecture
 
-> How the OpenFox plugin system works under the hood — for maintainers and
+> How the MorrisCode plugin system works under the hood — for maintainers and
 > plugin authors who want to understand the machinery, not just the API.
 > For the authoring contract (manifest, registry methods, examples), read
 > [PLUGINS.md](PLUGINS.md) first. This document explains what the host does
@@ -107,7 +107,7 @@ Key points:
 
 - **Manifest validation is Zod** (`pluginManifestSchema`): name, version, and
   the `openfox` object. The host additionally rejects `apiVersion` other than
-  `1`/`2` with `Unsupported OpenFox plugin API version`.
+  `1`/`2` with `Unsupported MorrisCode plugin API version`.
 - **A plugin registers only while `beginPlugin` is active**: the registry tracks
   `currentPluginId` so every contribution is attributed to its owner, and
   `registry.context` is only valid during `register()`.
@@ -144,7 +144,7 @@ installFromPath(path)    copy (excluding node_modules/.git) → {configDir}/plug
                            package declares a build script
 
 all three  →  installFromDirectory()
-                  ├─ readPluginManifest()  → not an OpenFox plugin → throw
+                  ├─ readPluginManifest()  → not an MorrisCode plugin → throw
                   ├─ loadPluginFromDirectory({ cacheBust: true })
                   └─ applyContributions()
 ```
@@ -354,7 +354,7 @@ unchanged.
 - Working minimal plugin: [`examples/hello-plugin`](../examples/hello-plugin)
 - Kitchen-sink demo plugin exercising every capability: the
   `openfox-demo-plugin` package (companion `openfox-plugins` repository,
-  maintained alongside OpenFox — install it from a local clone via
+  maintained alongside MorrisCode — install it from a local clone via
   Settings → Plugins)
 - Server tests for the host: `src/server/plugins/host.test.ts`
 - E2E: `e2e/plugin-system.test.ts`

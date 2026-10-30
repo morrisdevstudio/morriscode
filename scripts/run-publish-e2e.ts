@@ -6,10 +6,10 @@ import { mkdir, rm } from 'node:fs/promises'
 import { resolveLlmMode } from './publish-e2e-llm.js'
 
 // The local model server is fast and local; a cloud API fallback needs headroom.
-const TIMEOUT_MS = resolveLlmMode(process.env['OPENFOX_PUBLISH_E2E_LLM']) === 'prod' ? 600000 : 300000
+const TIMEOUT_MS = resolveLlmMode(process.env['MORRISCODE_PUBLISH_E2E_LLM']) === 'prod' ? 600000 : 300000
 
 async function main() {
-  const llmMode = resolveLlmMode(process.env['OPENFOX_PUBLISH_E2E_LLM'])
+  const llmMode = resolveLlmMode(process.env['MORRISCODE_PUBLISH_E2E_LLM'])
   console.log('[publish-e2e] Starting full-stack E2E test...')
   console.log(
     llmMode === 'prod'
@@ -19,7 +19,7 @@ async function main() {
 
   // Create temp workdir for the test
   const timestamp = Date.now()
-  const workdir = join(tmpdir(), `openfox-publish-e2e-${timestamp}`)
+  const workdir = join(tmpdir(), `morriscode-publish-e2e-${timestamp}`)
   await mkdir(workdir, { recursive: true })
 
   console.log(`[publish-e2e] Workdir: ${workdir}`)

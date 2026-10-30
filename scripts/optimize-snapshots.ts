@@ -26,10 +26,10 @@ const REQUIRE_BACKUP = !process.argv.includes('--yes')
 
 async function main(): Promise<void> {
   const config = loadConfig()
-  // Mirror the server: an unset OPENFOX_DB_PATH (default './openfox.db') means
-  // "use the platform data dir" (~/.local/share/openfox[-dev]/sessions.db).
+  // Mirror the server: an unset MORRISCODE_DB_PATH (default './morriscode.db') means
+  // "use the platform data dir" (~/.local/share/morriscode[-dev]/sessions.db).
   const dbPath =
-    config.database.path !== './openfox.db'
+    config.database.path !== './morriscode.db'
       ? config.database.path
       : getDatabasePath(config.mode === 'development' ? 'development' : 'production')
   console.log(`[optimize-snapshots] Database: ${dbPath}`)

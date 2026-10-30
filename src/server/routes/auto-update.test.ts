@@ -31,11 +31,11 @@ describe('Auto Update Routes', () => {
 
   beforeEach(async () => {
     mockSpawn.mockReset()
-    // Default: npm view returns a version, openfox update succeeds
+    // Default: npm view returns a version, morriscode update succeeds
     mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
       // auto-update.ts spawns npm as a shell string on win32 (npm.cmd there,
       // CVE-2024-27980) and as argv elsewhere — match both.
-      if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+      if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
         return makeMockChild({ stdout: '1.2.3\n' })
       }
       // git fetch returns nothing
@@ -140,7 +140,7 @@ describe('Auto Update Routes', () => {
 
     it('parses the version from English CLI output', async () => {
       mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
-        if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+        if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
           return makeMockChild({ stdout: '1.2.3\n' })
         }
         return makeMockChild({ stdout: 'Updated: 1.2.3\n' })
@@ -154,7 +154,7 @@ describe('Auto Update Routes', () => {
 
     it('parses the version from French CLI output', async () => {
       mockSpawn.mockImplementation((cmd: unknown, args: unknown) => {
-        if (cmd === 'npm view openfox version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
+        if (cmd === 'npm view morriscode version' || (cmd === 'npm' && Array.isArray(args) && args[0] === 'view')) {
           return makeMockChild({ stdout: '1.2.3\n' })
         }
         return makeMockChild({ stdout: 'Mis à jour : 1.2.3\n' })
@@ -234,5 +234,85 @@ describe('Auto Update Routes (auth required)', () => {
       const res = await fetch(`${baseUrl}/api/auto-update/restart`, { method: 'POST' })
       expect(res.status).toBe(401)
     })
+  })
+})
+
+describe('Auto Update Routes (release installs)', () => {
+  it('exposes the release status and applies the prepared version', async () => {
+    let applied = false
+    let restarted = false
+    let autoUpdate = true
+    const status = {
+      flavor: 'release',
+      current: '0.1.0',
+      latest: '0.2.0',
+      phase: 'ready',
+      updateAvailable: true,
+      autoUpdate: true,
+      received: 10,
+      total: 10,
+      error: null,
+      stagedVersion: '0.2.0',
+      releaseUrl: 'https://github.com/example/releases/tag/v0.2.0',
+      notes: 'Notes',
+      checkedAt: '2026-10-23T00:00:00.000Z',
+      lastApplied: null,
+    }
+    const app = express()
+    app.use(express.json())
+    app.use(
+      '/api/auto-update',
+      createAutoUpdateRoutes({
+        releaseService: {
+          check: async () => status,
+          getStatus: () => ({ ...status, autoUpdate }),
+          apply: async () => {
+            applied = true
+            return { version: '0.2.0' }
+          },
+          requestRestart: () => {
+            restarted = true
+          },
+          setAutoUpdate: async (enabled: boolean) => {
+            autoUpdate = enabled
+          },
+          restart: async () => {
+            restarted = true
+          },
+        } as any,
+      }),
+    )
+    const server = app.listen(0)
+    const url = `http://localhost:${(server.address() as any).port}`
+    try {
+      const checked = (await (await fetch(`${url}/api/auto-update/check`)).json()) as {
+        flavor: string
+        isUpdateAvailable: boolean
+        stagedVersion: string
+      }
+      expect(checked.flavor).toBe('release')
+      expect(checked.isUpdateAvailable).toBe(true)
+      expect(checked.stagedVersion).toBe('0.2.0')
+
+      const statusResponse = (await (await fetch(`${url}/api/auto-update/status`)).json()) as { phase: string }
+      expect(statusResponse.phase).toBe('ready')
+
+      const settings = await fetch(`${url}/api/auto-update/settings`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ autoUpdate: false }),
+      })
+      expect(settings.status).toBe(200)
+      expect(((await settings.json()) as { autoUpdate: boolean }).autoUpdate).toBe(false)
+
+      const appliedResponse = await fetch(`${url}/api/auto-update`, { method: 'POST' })
+      expect(appliedResponse.status).toBe(200)
+      expect(((await appliedResponse.json()) as { success: boolean }).success).toBe(true)
+      expect(applied).toBe(true)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      expect(restarted).toBe(true)
+    } finally {
+      server.close()
+    }
   })
 })

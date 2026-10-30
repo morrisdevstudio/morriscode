@@ -49,7 +49,7 @@ export const CodeHighlight = memo(function CodeHighlight({
     return <span dangerouslySetInnerHTML={{ __html: html }} />
   }
 
-  const className = showLineNumbers ? '' : 'shiki-plain'
+  const className = showLineNumbers ? 'shiki-numbered' : 'shiki-plain'
   return (
     <div
       className={className}

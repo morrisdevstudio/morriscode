@@ -44,15 +44,15 @@ describe('loadWorkspaceConfig', () => {
 })
 
 describe('saveWorkspaceConfig', () => {
-  it('creates .openfox directory and writes config', async () => {
+  it('creates .morriscode directory and writes config', async () => {
     vi.mocked(mkdir).mockResolvedValue(undefined)
     vi.mocked(writeFile).mockResolvedValue(undefined)
 
     await saveWorkspaceConfig(WORKDIR, { setup: ['npm install --prefer-offline'] })
 
-    expect(mkdir).toHaveBeenCalledWith(expect.stringContaining('.openfox'), { recursive: true })
+    expect(mkdir).toHaveBeenCalledWith(expect.stringContaining('.morriscode'), { recursive: true })
     expect(writeFile).toHaveBeenCalledWith(
-      expect.stringContaining(join('.openfox', 'workspace.json')),
+      expect.stringContaining(join('.morriscode', 'workspace.json')),
       JSON.stringify({ setup: ['npm install --prefer-offline'] }, null, 2) + '\n',
       'utf-8',
     )
@@ -63,7 +63,7 @@ describe('saveWorkspaceConfig', () => {
 
     await saveWorkspaceConfig(WORKDIR, {})
 
-    expect(rm).toHaveBeenCalledWith(expect.stringContaining(join('.openfox', 'workspace.json')), { force: true })
+    expect(rm).toHaveBeenCalledWith(expect.stringContaining(join('.morriscode', 'workspace.json')), { force: true })
     expect(writeFile).not.toHaveBeenCalled()
     expect(mkdir).not.toHaveBeenCalled()
   })
@@ -73,7 +73,7 @@ describe('saveWorkspaceConfig', () => {
 
     await saveWorkspaceConfig(WORKDIR, { setup: [] })
 
-    expect(rm).toHaveBeenCalledWith(expect.stringContaining(join('.openfox', 'workspace.json')), { force: true })
+    expect(rm).toHaveBeenCalledWith(expect.stringContaining(join('.morriscode', 'workspace.json')), { force: true })
     expect(writeFile).not.toHaveBeenCalled()
   })
 })

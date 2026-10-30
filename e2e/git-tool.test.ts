@@ -22,6 +22,14 @@ import {
   type TestServerHandle,
 } from './utils/index.js'
 
+// Hooks (e.g. Husky) export GIT_DIR/GIT_INDEX_FILE for the repo being committed.
+// Fixture repositories must resolve their own .git and index.
+const fixtureGitEnv = { ...process.env }
+delete fixtureGitEnv['GIT_DIR']
+delete fixtureGitEnv['GIT_INDEX_FILE']
+delete fixtureGitEnv['GIT_WORK_TREE']
+delete fixtureGitEnv['GIT_PREFIX']
+
 describe('Git Tool', () => {
   let server: TestServerHandle
   let client: TestClient
@@ -211,11 +219,17 @@ describe('Git Tool', () => {
   describe('Git with Working Directory', () => {
     it('supports cwd parameter', async () => {
       // Create a subdirectory that's also a git repo
-      execSync('mkdir -p subproject && cd subproject && git init', { cwd: testDir.path })
-      execSync('git config user.email "test@example.com"', { cwd: join(testDir.path, 'subproject') })
-      execSync('git config user.name "Test"', { cwd: join(testDir.path, 'subproject') })
+      execSync('mkdir -p subproject && cd subproject && git init', { cwd: testDir.path, env: fixtureGitEnv })
+      execSync('git config user.email "test@example.com"', {
+        cwd: join(testDir.path, 'subproject'),
+        env: fixtureGitEnv,
+      })
+      execSync('git config user.name "Test"', { cwd: join(testDir.path, 'subproject'), env: fixtureGitEnv })
       await writeFile(join(testDir.path, 'subproject/file.txt'), 'content')
-      execSync('git add . && git commit -m "Sub commit"', { cwd: join(testDir.path, 'subproject') })
+      execSync('git add . && git commit -m "Sub commit"', {
+        cwd: join(testDir.path, 'subproject'),
+        env: fixtureGitEnv,
+      })
 
       // The git tool with cwd should work
       await client.send('chat.send', {

@@ -20,7 +20,7 @@ import {
   type TestProject,
   type TestServerHandle,
 } from './utils/index.js'
-import type { Message } from '@openfox/shared'
+import type { Message } from '@morriscode/shared'
 
 describe.skip('Verifier Mode', () => {
   let server: TestServerHandle

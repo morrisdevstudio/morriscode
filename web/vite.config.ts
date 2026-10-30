@@ -5,8 +5,16 @@ import path from 'path'
 import { createViteWatchOptions } from './vite-watch.js'
 import { existsSync } from 'fs'
 
+// The standalone dev server (npm run dev:web) proxies to the backend, so it has to
+// speak the backend's scheme: HTTPS on with a self-signed cert means https/wss plus
+// secure: false.
+const backendScheme = ['1', 'true', 'yes'].includes((process.env.MORRISCODE_HTTPS ?? '').toLowerCase())
+  ? 'https'
+  : 'http'
+const backendWsScheme = backendScheme === 'https' ? 'wss' : 'ws'
+
 const baseConfig = defineConfig({
-  base: process.env.OPENFOX_BASE_PATH || '/',
+  base: process.env.MORRISCODE_BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
@@ -14,10 +22,10 @@ const baseConfig = defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
-      includeAssets: ['assets/openfox-192.png', 'assets/openfox-512.png'],
+      includeAssets: ['assets/morriscode-192.png', 'assets/morriscode-512.png'],
       manifest: {
-        name: 'OpenFox',
-        short_name: 'OpenFox',
+        name: 'MorrisCode',
+        short_name: 'MorrisCode',
         description: 'Local-LLM-first agentic coding assistant',
         theme_color: '#0d1117',
         background_color: '#0d1117',
@@ -25,13 +33,13 @@ const baseConfig = defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'assets/openfox-192.png',
+            src: 'assets/morriscode-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'assets/openfox-512.png',
+            src: 'assets/morriscode-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
@@ -65,12 +73,14 @@ const baseConfig = defineConfig({
     // build behind the reverse proxy instead, or add custom rewrites.
     proxy: {
       '/api': {
-        target: 'http://localhost:10469',
+        target: backendScheme + '://localhost:10469',
         changeOrigin: true,
+        secure: false,
       },
       '/ws': {
-        target: 'ws://localhost:10469',
+        target: backendWsScheme + '://localhost:10469',
         ws: true,
+        secure: false,
       },
     },
   },

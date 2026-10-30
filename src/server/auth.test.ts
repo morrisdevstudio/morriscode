@@ -12,8 +12,12 @@ import {
   loadServerAuthConfig,
   getAuthConfig,
   hashPassword,
+  hasEffectiveNetworkAuth,
 } from './auth.js'
 import { setRuntimeConfig } from './runtime-config.js'
+import { getRuntimeConfig } from './runtime-config.js'
+import { getAuthConfigPath, getAuthKeyPath } from '../cli/paths.js'
+import { join } from 'node:path'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
@@ -24,7 +28,7 @@ vi.mock('node:fs/promises', () => ({
 describe('auth', () => {
   beforeEach(() => {
     resetAuthCache()
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     const config: Config = {
       mode: 'test',
       llm: { baseUrl: '', model: '', backend: 'unknown', timeout: 300000, idleTimeout: 300000 },
@@ -49,6 +53,20 @@ describe('auth', () => {
   })
 
   describe('hasPassword', () => {
+    it.each([
+      null,
+      { strategy: 'local', encryptedPassword: 'saved' },
+      { strategy: 'network', encryptedPassword: null },
+      { strategy: 'network', encryptedPassword: 'invalid' },
+    ])('rejects ineffective network authentication: %j', async (auth) => {
+      vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify(auth))
+      await loadServerAuthConfig()
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      expect(await hasEffectiveNetworkAuth()).toBe(false)
+      expect(writeFile).not.toHaveBeenCalled()
+      expect(mkdir).not.toHaveBeenCalled()
+    })
+
     it('returns false when no auth config', () => {
       expect(hasPassword()).toBe(false)
     })
@@ -112,6 +130,29 @@ describe('auth', () => {
   })
 
   describe('loadServerAuthConfig', () => {
+    it.each(['production', 'development'] as const)('uses the CLI credential paths in %s', async (mode) => {
+      setRuntimeConfig({ ...getRuntimeConfig(), mode })
+      vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify({ strategy: 'network', encryptedPassword: 'saved' }))
+      await loadServerAuthConfig()
+      expect(readFile).toHaveBeenCalledWith(getAuthConfigPath(mode), 'utf-8')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      await tokenFromPassword('test')
+      expect(readFile).toHaveBeenLastCalledWith(getAuthKeyPath(mode), 'utf-8')
+    })
+
+    it.each([false, true])('preserves the e2e cwd path (inside e2e: %s)', async (inside) => {
+      const root = process.cwd()
+      const cwd = inside ? join(root, 'e2e') : root
+      const spy = vi.spyOn(process, 'cwd').mockReturnValue(cwd)
+      try {
+        vi.mocked(readFile).mockResolvedValueOnce('{}')
+        await loadServerAuthConfig()
+        expect(readFile).toHaveBeenCalledWith(join(root, 'e2e', '.morriscode-test', 'auth.json'), 'utf-8')
+      } finally {
+        spy.mockRestore()
+      }
+    })
+
     it('loads auth config from file in test mode', async () => {
       const mockAuthConfig = { strategy: 'network', encryptedPassword: 'abc123' }
       vi.mocked(readFile).mockResolvedValueOnce(JSON.stringify(mockAuthConfig))
@@ -283,6 +324,8 @@ describe('auth', () => {
 
       const result = await verifyPassword('correctpassword')
       expect(result).toBe(true)
+      vi.mocked(readFile).mockResolvedValueOnce(privateKey)
+      expect(await hasEffectiveNetworkAuth()).toBe(true)
     })
 
     it('returns false for incorrect password', async () => {

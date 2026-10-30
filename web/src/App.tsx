@@ -32,8 +32,9 @@ if (typeof window !== 'undefined') {
 
 import { Header } from './components/layout/Header'
 import { Sidebar } from './components/layout/Sidebar'
+import { SessionLoadingView } from './components/layout/SessionLoadingView'
 import { PageTitle } from './components/layout/PageTitle'
-import { HomePage } from './components/HomePage'
+import { LandingRedirect } from './components/LandingRedirect'
 import { NewSessionHandler } from './components/NewSessionHandler'
 import { EmptyProjectView } from './components/EmptyProjectView'
 import { PlanPanel } from './components/plan/PlanPanel'
@@ -79,15 +80,15 @@ function ProjectView({
 
   useProjectLoader({ canLoad, projectId, currentProjectId: currentProject?.id })
 
-  if (!currentProject || currentProject.id !== projectId) {
+  if (!projectId) {
     return <LoadingSpinner />
   }
 
   return (
     <>
       <Sidebar projectId={projectId!} isOpen={sidebarOpen} overlay={sidebarOverlay} onClose={onSidebarToggle} />
-      <div className="flex-1 min-w-0 bg-primary">
-        <EmptyProjectView />
+      <div className="relative flex-1 min-w-0 bg-primary">
+        {currentProject?.id === projectId ? <EmptyProjectView /> : <SessionLoadingView />}
       </div>
     </>
   )
@@ -137,20 +138,25 @@ function ProjectSessionView({
     }
   }, [error, projectId, clearError, navigate])
 
-  if (!currentProject || currentProject.id !== projectId) {
+  if (!projectId) {
     return <LoadingSpinner />
   }
+
+  const isLoading = currentProject?.id !== projectId || session?.id !== sessionId
 
   return (
     <>
       <Sidebar projectId={projectId!} isOpen={sidebarOpen} overlay={sidebarOverlay} onClose={onSidebarToggle} />
-      <div className="flex-1 min-w-0 bg-primary flex flex-col">
-        <CrossSessionConfirmationBanner projectId={projectId} />
-        <PlanPanel
-          criteriaSidebarOpen={rightSidebarOpen}
-          criteriaSidebarOverlay={rightSidebarOverlay}
-          onCriteriaSidebarToggle={onRightSidebarToggle}
-        />
+      <div className="relative flex-1 min-w-0 bg-primary flex flex-col" aria-busy={isLoading}>
+        <div className={`flex-1 min-h-0 flex flex-col ${isLoading ? 'invisible' : ''}`} inert={isLoading}>
+          <CrossSessionConfirmationBanner projectId={projectId} />
+          <PlanPanel
+            criteriaSidebarOpen={rightSidebarOpen}
+            criteriaSidebarOverlay={rightSidebarOverlay}
+            onCriteriaSidebarToggle={onRightSidebarToggle}
+          />
+        </div>
+        {isLoading && <SessionLoadingView />}
       </div>
     </>
   )
@@ -249,11 +255,11 @@ function App() {
     const serverFollowSystem = followSystemSetting
 
     if (serverPresets) {
-      localStorage.setItem('openfox:userPresets', serverPresets)
+      localStorage.setItem('morriscode:userPresets', serverPresets)
     }
 
     if (serverTheme) {
-      localStorage.setItem('openfox:theme', serverTheme)
+      localStorage.setItem('morriscode:theme', serverTheme)
       try {
         const parsed = JSON.parse(serverTheme) as { preset?: string; tokens?: Record<string, string> }
         if (parsed.preset && parsed.tokens) {
@@ -332,12 +338,12 @@ function App() {
   }, [showChangelogSetting, configFetched])
 
   const getInitialLeftSidebar = () => {
-    const saved = localStorage.getItem('openfox:leftSidebar')
+    const saved = localStorage.getItem('morriscode:leftSidebar')
     return saved !== null ? saved === 'true' : true
   }
 
   const getInitialRightSidebar = () => {
-    const saved = localStorage.getItem('openfox:rightSidebar')
+    const saved = localStorage.getItem('morriscode:rightSidebar')
     return saved !== null ? saved === 'true' : true
   }
 
@@ -464,13 +470,13 @@ function App() {
 
   useEffect(() => {
     if (!isMobile) {
-      localStorage.setItem('openfox:leftSidebar', String(leftSidebarOpen))
+      localStorage.setItem('morriscode:leftSidebar', String(leftSidebarOpen))
     }
   }, [leftSidebarOpen, isMobile])
 
   useEffect(() => {
     if (!isMobile) {
-      localStorage.setItem('openfox:rightSidebar', String(rightSidebarOpen))
+      localStorage.setItem('morriscode:rightSidebar', String(rightSidebarOpen))
     }
   }, [rightSidebarOpen, isMobile])
 
@@ -543,7 +549,7 @@ function App() {
               />
             </Route>
             <Route path="/">
-              <HomePage />
+              <LandingRedirect />
             </Route>
           </Switch>
         </div>

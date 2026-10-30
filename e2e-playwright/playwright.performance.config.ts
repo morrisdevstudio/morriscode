@@ -28,9 +28,9 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
-      OPENFOX_DB_PATH: ':memory:',
-      OPENFOX_MOCK_LLM: 'true',
-      OPENFOX_E2E_SERVER_URL: serverUrl,
+      MORRISCODE_DB_PATH: ':memory:',
+      MORRISCODE_MOCK_LLM: 'true',
+      MORRISCODE_E2E_SERVER_URL: serverUrl,
     },
     stdout: 'pipe',
     stderr: 'pipe',

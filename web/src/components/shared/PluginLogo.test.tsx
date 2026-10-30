@@ -13,7 +13,7 @@ describe('findPluginLogoForProvider', () => {
   it('matches provider against loaded plugins', () => {
     const plugins: PluginInfo[] = [
       {
-        id: 'openfox-custom-ai',
+        id: 'morriscode-custom-ai',
         displayName: 'Custom AI',
         version: '1.0.0',
         icon: 'sparkles',
@@ -22,7 +22,7 @@ describe('findPluginLogoForProvider', () => {
 
     expect(findPluginLogoForProvider({ preset: 'custom-ai' }, plugins)).toBe('sparkles')
     expect(findPluginLogoForProvider({ backend: 'custom-ai' }, plugins)).toBe('sparkles')
-    expect(findPluginLogoForProvider({ id: 'openfox-custom-ai-provider' }, plugins)).toBe('sparkles')
+    expect(findPluginLogoForProvider({ id: 'morriscode-custom-ai-provider' }, plugins)).toBe('sparkles')
     expect(findPluginLogoForProvider({ name: 'Custom AI' }, plugins)).toBe('sparkles')
     expect(findPluginLogoForProvider({ id: 'ai' }, plugins)).toBeUndefined()
   })

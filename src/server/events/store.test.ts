@@ -1879,7 +1879,7 @@ describe('EventStore - Event Cleanup', () => {
     })
 
     it('creates a rollback backup on a file-backed database before rewriting', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'openfox-bak-'))
+      const dir = mkdtempSync(join(tmpdir(), 'morriscode-bak-'))
       const path = join(dir, 'test.db')
       const fileDb = new Database(path)
       fileDb.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)
@@ -1931,7 +1931,7 @@ describe('EventStore - Event Cleanup', () => {
     })
 
     it('prunes an expired rollback backup even when the migration is already done', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'openfox-bak-'))
+      const dir = mkdtempSync(join(tmpdir(), 'morriscode-bak-'))
       const path = join(dir, 'test.db')
       const fileDb = new Database(path)
       fileDb.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)
@@ -1958,7 +1958,7 @@ describe('EventStore - Event Cleanup', () => {
     })
 
     it('keeps a recently-created rollback backup', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'openfox-bak-'))
+      const dir = mkdtempSync(join(tmpdir(), 'morriscode-bak-'))
       const path = join(dir, 'test.db')
       const fileDb = new Database(path)
       fileDb.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)

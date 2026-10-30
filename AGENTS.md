@@ -1,10 +1,152 @@
-# OpenFox Codebase Guide
+# AGENTS.md — Brief de ce projet
+
+> Mémoire du projet côté humain. Elle vient avant le guide technique qui suit
+> (« MorrisCode Codebase Guide ») et se met à jour au fil des sessions.
+
+## Le projet
+
+- **Ce que fait le produit** : MorrisCode est un assistant de codage agentique, né
+  d'un fork d'OpenFox. Sa direction est assumée : moins « LLM local », plus
+  multi-fournisseurs en ligne (ChatGPT, Copilot, OpenRouter…), avec une interface
+  moderne.
+- **Pour qui** : avant tout pour moi. Je le partagerai peut-être plus tard, mais ce
+  n'est pas un objectif aujourd'hui.
+- **Ce que je ne veux jamais casser** :
+  - mes données locales — sessions, projets, historique (base SQLite) ;
+  - la filiation avec OpenFox : `upstream` reste joignable, je veux pouvoir
+    récupérer plus tard ses correctifs sans tout casser ;
+  - ma configuration de production (`~/.config/morriscode/`) ;
+  - mes workflows `.morriscode/` et les plugins que j'utilise ;
+  - ma chaîne de publication (changelog, tag, merge vers `main`), décrite dans
+    `docs/RELEASE.md`.
+
+## Langue
+
+- On se parle en **français**. Mais le **code** — noms de variables, de fichiers,
+  commentaires — s'écrit **en anglais** : c'est la convention du métier, et c'est là
+  que tu es le plus fiable.
+- Même règle sur le repo : commits, titres d'issues et de pull requests en anglais.
+- L'application, elle, est bilingue : toute chaîne visible par l'utilisateur existe
+  en anglais **et** en français (règle déjà en vigueur ici, voir `docs/I18N.md`).
+
+## Comment je veux qu'on travaille
+
+- Je pilote ce projet sans lire le code : je supervise le produit, pas les fichiers.
+- Applique les meilleures pratiques par défaut, même si je ne les demande pas —
+  c'est ton métier, pas le mien.
+- **Prends-moi par la main** : explique tes choix en langage courant, jamais en
+  jargon. Un mot technique = une définition en une phrase simple.
+- Avant de te lancer sur quelque chose de gros, dis-moi ton plan en clair et attends
+  mon feu vert.
+- À chaque fois que tu touches à Git ou à GitHub (commit, branche, pull request,
+  workflow), dis-moi en **une phrase simple** ce que tu fais et à quoi ça sert.
+- Quand une tâche est finie, dis-moi précisément quoi tester à la main, comme le
+  ferait un utilisateur.
+- Fais **toujours** des commits au format _conventional commits_ (`feat:`, `fix:`,
+  `refactor:`, `docs:`, `chore:`, `feat!:`/`BREAKING CHANGE:`) — c'est ce qui
+  alimente la publication. Je n'en écrirai jamais un moi-même : c'est ton travail, à
+  chaque fois.
+
+## RÈGLE VIVANTE
+
+Chaque fois qu'une ligne de ce fichier me gêne à l'usage — trop de questions, pas
+assez, du jargon, des explications inutiles — je te demande de la modifier ici, et tu
+t'y tiens ensuite. Ce brief s'ajuste à moi, pas l'inverse.
+
+## Garde-fous — demande-moi TOUJOURS avant de :
+
+- toucher à l'authentification, aux comptes ou aux mots de passe ;
+- toucher à un abonnement payant ou à un moyen de paiement ;
+- supprimer des données, des fichiers, ou faire une action irréversible ;
+- toucher à la base des sessions, aux workflows `.morriscode/` ou aux plugins que
+  j'utilise ;
+- modifier la configuration de production (`~/.config/morriscode/`) ;
+- ajouter un nouveau service externe ou une nouvelle dépendance importante ;
+- fusionner les commits d'OpenFox depuis `upstream` ;
+- publier une version ou mettre en production (changelog, tag, merge vers `main`).
+
+Dans ces cas : explique-moi le risque en langage simple, propose, et attends que je
+valide.
+
+## La ligne rouge — sécurité non négociable
+
+Ce projet doit, en permanence, respecter ces règles. Si tu vois que l'une d'elles est
+violée, préviens-moi immédiatement.
+
+1. Tout ce qui circule sur le réseau est chiffré : HTTPS dès que l'application sort
+   de `localhost`.
+2. Les mots de passe et les jetons d'authentification ne sont jamais lisibles par
+   personne, même moi.
+3. Personne ne parle directement à la base de données (pas d'injection).
+4. Les clés API des fournisseurs et les jetons OAuth ne partent jamais vers le
+   navigateur.
+5. L'agent ne touche jamais un fichier en dehors de son périmètre sans autorisation
+   explicite.
+6. Avant toute opération risquée sur la base (migration, bascule), une copie de
+   sauvegarde existe.
+7. Aucun secret (clé API, jeton, mot de passe) n'est écrit dans ce fichier, dans le
+   dépôt ou dans un log.
+
+## Conventions et décisions prises
+
+- Fork assumé d'OpenFox : on reste capable de récupérer les commits d'`upstream`.
+- Interface bilingue anglais + français, sans repli possible.
+- Conventional commits obligatoires : ils alimentent directement le changelog et la
+  publication.
+- Les connexions par abonnement (ChatGPT Plus, etc.) passent par des points d'entrée
+  non officiels, donc susceptibles de casser sans préavis : risque expliqué puis
+  assumé explicitement avant l'implémentation.
+- Le fournisseur ChatGPT est intégré au produit plutôt qu'installé comme plugin : le
+  plugin communautaire d'origine ignore silencieusement tout modèle plus récent que
+  `gpt-5` et n'est plus maintenu. Le code porté garde sa licence MIT, voir
+  `src/server/providers/builtin/chatgpt/NOTICE.md`. S'il est déjà installé, il est laissé
+  de côté au démarrage et affiché comme remplacé.
+  Les fournisseurs intégrés se gèrent dans Fournisseurs : ils n'apparaissent pas parmi
+  les plugins installés et ne peuvent pas être désactivés ou réinstallés comme plugins.
+  Les coupons de réinitialisation ChatGPT sont consultables avec leur expiration,
+  uniquement en lecture : leur utilisation reste dans ChatGPT, sans commande de
+  consommation dans MorrisCode.
+- L'usage d'un fournisseur se lit de deux façons : par son adaptateur de transport quand il
+  en a un, sinon par une source intégrée reconnue sur l'hôte du fournisseur
+  (`src/server/providers/builtin/usage-sources.ts`). Un point d'entrée non documenté n'est
+  jamais appelé sur une adresse ressemblante, pour ne pas y laisser la clé.
+- Un modèle décoché dans la fenêtre d'édition est enregistré avec `selected: false` : il
+  disparaît du sélecteur de modèles et reste décoché à la réouverture. Dérouler un
+  fournisseur dans le sélecteur ne resynchronise jamais sa liste — seule l'action
+  explicite de synchronisation le fait.
+- Cette liste vit : demande-moi de la tenir à jour quand on tranche quelque chose.
+
+## Où on en est
+
+- **Fait** : rebranding OpenFox → MorrisCode (serveur, web, docs, scripts), palette
+  sombre neutre, arborescence de projet dans la barre latérale. MorrisCode est
+  versionné 0.1.0, fork d'OpenFox 2.0.161.
+- **Fait** : fournisseur ChatGPT Plus / Pro intégré, catalogue actuel, sélection persistante des modèles
+  et indicateurs d’usage par fournisseur. Les erreurs de flux sont propagées et les images sont transmises.
+- **Fait** : lecture vocale locale des réponses avec Kokoro int8 sur processeur, voix française et anglaise,
+  installation guidée et contrôles lecture/pause/arrêt. Voir `docs/VOICE.md`.
+- **Fait** : interface revue, accès HTTPS, authentification Windows alignée entre serveur et CLI.
+  Tout accès hors localhost exige HTTPS et un mot de passe réseau valide.
+- **Préparation production locale** : les changements sont regroupés sur `morriscode-rebrand`.
+  Une installation Windows séparée conserve le code compilé ; les tâches MorrisCode remplacent celles
+  d’OpenFox après vérification. Voir `docs/WINDOWS-PRODUCTION.md`.
+- **Mise à jour automatique** : les releases signées sont publiées dans le dépôt public
+  `morrisdevstudio/morriscode-releases` ; l’application les télécharge et attend le clic
+  « Installer et redémarrer ». Voir `docs/AUTO-UPDATE.md`. Une installation manuelle d’une version 0.3.x
+  reste nécessaire sur les installations antérieures.
+- **Historique** : consolidation des bases OpenFox, MorrisCode et développement dans une nouvelle base,
+  avec sauvegardes et conservation séparée des conversations divergentes. Ne jamais utiliser le script
+  de remplacement historique pour réunir des conversations indépendantes.
+
+---
+
+# MorrisCode Codebase Guide
 
 > Guidelines for AI coding agents operating in this repository.
 
 ## Project Overview
 
-OpenFox is a local-LLM-first agentic coding assistant. It provides:
+MorrisCode is a local-LLM-first agentic coding assistant. It provides:
 
 - **Core Functionality**: Autonomous coding agent that plans, implements, and verifies tasks using local LLMs
 - **Dual Modes**: Planner (task breakdown) → Builder (implementation with verification loop)
@@ -86,7 +228,7 @@ npx vitest run                    # Run all e2e tests
 npx vitest run protocol.test.ts   # Run specific test
 
 # Verbose mode (shows tool calls, agent thinking, phase transitions)
-OPENFOX_TEST_VERBOSE=true npx vitest run
+MORRISCODE_TEST_VERBOSE=true npx vitest run
 ```
 
 ### Testing Workflow
@@ -145,7 +287,7 @@ import { FolderIcon, CheckIcon, ChevronDownIcon } from './shared/icons'
 
 ### Error Handling
 
-- Custom error classes extend `OpenFoxError`
+- Custom error classes extend `MorrisCodeError`
 - In tools, return result objects instead of throwing:
 
 ```typescript
@@ -217,19 +359,19 @@ component `useEffect` fetch.
   fetch lived in `DevServerFooter`. If a fetch is needed on mount, it belongs in
   the data hook or the resource itself.
 
-### `.openfox/` Directory Contract
+### `.morriscode/` Directory Contract
 
-Every file in `.openfox/` must be **committable** and **meaningful in the project context** — it describes how OpenFox interacts with _this repository_ for any contributor.
+Every file in `.morriscode/` must be **committable** and **meaningful in the project context** — it describes how MorrisCode interacts with _this repository_ for any contributor.
 
-**Belongs in `.openfox/`:** `dev.json`, `workspace.json`, `commands/*`, `skills/*`, `workflows/*`, `agents/*` — anything that shapes the project's tooling, automation, or agent behavior.
+**Belongs in `.morriscode/`:** `dev.json`, `workspace.json`, `commands/*`, `skills/*`, `workflows/*`, `agents/*` — anything that shapes the project's tooling, automation, or agent behavior.
 
 **Does NOT belong:** Personal preferences (model, theme, keybindings, API keys). Those go in the **database** — globally or project-scoped per user.
 
 **Rationale:** Clean repo, no leaked personal config, reliable source of truth for CI and collaborators.
 
-**Workflows:** When asked to create or edit a workflow, load the built-in `workflows` skill via `load_skill("workflows")` — it is the authoritative reference for workflow file format, storage locations (project `.openfox/workflows/` vs global `{configDir}/workflows/`), the full JSON schema, step types, transition conditions, and template variables ([docs/WORKFLOWS.md](docs/WORKFLOWS.md) is a pointer to it). Project workflows belong in `.openfox/workflows/` and are committable.
+**Workflows:** When asked to create or edit a workflow, load the built-in `workflows` skill via `load_skill("workflows")` — it is the authoritative reference for workflow file format, storage locations (project `.morriscode/workflows/` vs global `{configDir}/workflows/`), the full JSON schema, step types, transition conditions, and template variables ([docs/WORKFLOWS.md](docs/WORKFLOWS.md) is a pointer to it). Project workflows belong in `.morriscode/workflows/` and are committable.
 
-**Plugins:** When asked to create or edit a plugin, read [docs/PLUGINS.md](docs/PLUGINS.md) — the authoritative reference for the `openfox/plugin` contract (manifest, registry API, UI slots, settings, hooks, RPC, transitions, versioning, trust model). For host internals (lifecycle, install pipeline, wiring) see [docs/PLUGIN-ARCHITECTURE.md](docs/PLUGIN-ARCHITECTURE.md). The reference implementation lives in [examples/hello-plugin](examples/hello-plugin). Plugins run in-process with full trust; never load project-local plugin code from a cloned repo.
+**Plugins:** When asked to create or edit a plugin, read [docs/PLUGINS.md](docs/PLUGINS.md) — the authoritative reference for the `morriscode/plugin` contract (manifest, registry API, UI slots, settings, hooks, RPC, transitions, versioning, trust model). For host internals (lifecycle, install pipeline, wiring) see [docs/PLUGIN-ARCHITECTURE.md](docs/PLUGIN-ARCHITECTURE.md). The reference implementation lives in [examples/hello-plugin](examples/hello-plugin). Plugins run in-process with full trust; never load project-local plugin code from a cloned repo.
 
 ## TDD Workflow
 
@@ -243,13 +385,23 @@ Need to trace through a session, understand why the agent did something, or find
 
 ## Database & Config Locations
 
-|                | Production                           | Development                              |
-| -------------- | ------------------------------------ | ---------------------------------------- |
-| **Config dir** | `~/.config/openfox/`                 | `~/.config/openfox-dev/`                 |
-| **Database**   | `~/.local/share/openfox/sessions.db` | `~/.local/share/openfox-dev/sessions.db` |
+|                | Production                              | Development                                 |
+| -------------- | --------------------------------------- | ------------------------------------------- |
+| **Config dir** | `~/.config/morriscode/`                 | `~/.config/morriscode-dev/`                 |
+| **Database**   | `~/.local/share/morriscode/sessions.db` | `~/.local/share/morriscode-dev/sessions.db` |
 
 **Port-based distinction:** Port **10369** is always production. Dev servers start at **10370** and increment (10371, 10372, ...) depending on project startup order (prod proxifies the dev server on its own port + N).
 
 ## Production Config
 
-NEVER modify production configuration files (e.g., `~/.config/openfox/`). These are user-specific and should only be changed by the user.
+NEVER modify production configuration files (e.g., `~/.config/morriscode/`). These are user-specific and should only be changed by the user.
+
+## Local Network Access & HTTPS
+
+Reaching MorrisCode from other machines on the LAN (bind address + self-signed HTTPS) is documented
+in [docs/NETWORK-ACCESS.md](docs/NETWORK-ACCESS.md). The same switches live in Settings → Advanced →
+Network, and as CLI flags: `morriscode --network --https`.
+
+HTTPS is served by the same listener as the app: the HTTP(S) server is created before the dev-mode
+Vite middleware so Vite can share it for HMR (`server.hmr.server`), and the application WebSocket
+only claims upgrades on `/ws` — Vite owns every other upgrade path.

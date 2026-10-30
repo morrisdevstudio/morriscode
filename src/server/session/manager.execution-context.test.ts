@@ -1,7 +1,7 @@
 /**
  * Session Manager – Workspace Switch & Execution Context Integrity Tests
  *
- * Cache discipline: the cached system prompt is SACRED for local LLMs — OpenFox
+ * Cache discipline: the cached system prompt is SACRED for local LLMs — MorrisCode
  * never invalidates it on workspace or branch mutation. Those tests pin that
  * switchWorkspace:
  *   - MUST preserve the cached prompt untouched after a workspace/branch switch,
@@ -27,7 +27,7 @@ const {
   mockWorkspaceExists,
 } = vi.hoisted(() => {
   const mockGetGitBranch = vi.fn(async (_cwd: string) => 'feat-x' as string | null)
-  const mockGetWorkspacesDir = vi.fn(async (_projectName: string, _projectDir: string) => '/tmp/openfox-workspaces')
+  const mockGetWorkspacesDir = vi.fn(async (_projectName: string, _projectDir: string) => '/tmp/morriscode-workspaces')
   const mockRunGit = vi.fn(async (_cwd: string, _args: string[]) => undefined as void)
   const mockGetCommitsBehind = vi.fn(async (_cwd: string, _branch: string) => 0 as number | null)
   const mockEnsureWorkspace = vi.fn(async () => undefined)
@@ -147,7 +147,7 @@ vi.mock('../runtime-config.js', () => ({
 }))
 
 vi.mock('../../cli/paths.js', () => ({
-  getGlobalConfigDir: vi.fn(() => '/tmp/openfox-test-config'),
+  getGlobalConfigDir: vi.fn(() => '/tmp/morriscode-test-config'),
 }))
 
 vi.mock('../db/settings.js', () => ({
@@ -247,14 +247,14 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
     initDatabase(config)
     initEventStore(getDatabase())
 
-    workdir = await mkdtemp(join(tmpdir(), 'openfox-manager-exec-ctx-'))
-    projectId = createProject('OpenFox', workdir).id
+    workdir = await mkdtemp(join(tmpdir(), 'morriscode-manager-exec-ctx-'))
+    projectId = createProject('MorrisCode', workdir).id
     manager = new SessionManager(mockProviderManager as any)
 
     mockGetGitBranch.mockClear()
     mockGetGitBranch.mockResolvedValue('feat-x')
     mockGetWorkspacesDir.mockClear()
-    mockGetWorkspacesDir.mockResolvedValue('/tmp/openfox-workspaces')
+    mockGetWorkspacesDir.mockResolvedValue('/tmp/morriscode-workspaces')
     mockRunGit.mockClear()
     mockRunGit.mockResolvedValue(undefined)
     mockGetCommitsBehind.mockClear()
@@ -298,10 +298,10 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
   })
 
   it('preserves the cached prompt after a successful branch change on the current workspace (same-turn sees fresh context)', async () => {
-    // Session currently on /ws/openfox/feat-x with branch=feat-x (default mock)
-    const session = manager.createSession(projectId, 'Ctx-2', undefined, undefined, '/ws/openfox/feat-x')
+    // Session currently on /ws/morriscode/feat-x with branch=feat-x (default mock)
+    const session = manager.createSession(projectId, 'Ctx-2', undefined, undefined, '/ws/morriscode/feat-x')
     // Pre-seed a cached prompt referencing branch=feat-x workdir
-    manager.setCachedPrompt(session.id, 'System prompt with Working directory: /ws/openfox/feat-x', [], 'feat-hash')
+    manager.setCachedPrompt(session.id, 'System prompt with Working directory: /ws/morriscode/feat-x', [], 'feat-hash')
     expect(manager.getCachedPrompt(session.id)).toBeDefined()
 
     // Branch change: same workspace, different branch. The first getGitBranch
@@ -325,12 +325,12 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
   })
 
   it('does not invalidate the cached prompt when switchWorkspace is a no-op (no real mutation)', async () => {
-    // Session already on /ws/openfox/feat-x — switching to feat-x without branch change
+    // Session already on /ws/morriscode/feat-x — switching to feat-x without branch change
     // is a no-op and must NOT manufacture a fake refreshed context.
-    const session = manager.createSession(projectId, 'Ctx-3', undefined, undefined, '/ws/openfox/feat-x')
+    const session = manager.createSession(projectId, 'Ctx-3', undefined, undefined, '/ws/morriscode/feat-x')
     manager.setCachedPrompt(
       session.id,
-      'Stable system prompt with Working directory: /ws/openfox/feat-x',
+      'Stable system prompt with Working directory: /ws/morriscode/feat-x',
       [],
       'stable-hash',
     )
@@ -357,11 +357,11 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
 
       await manager.switchWorkspace(session.id, 'brand-new-ws')
 
-      expect(mockEnsureWorkspace).toHaveBeenCalledWith(workdir, 'brand-new-ws', 'OpenFox', 'feat-x', undefined)
+      expect(mockEnsureWorkspace).toHaveBeenCalledWith(workdir, 'brand-new-ws', 'MorrisCode', 'feat-x', undefined)
     })
 
     it('does not force a branch checkout into an existing workspace when no branch is given', async () => {
-      const session = manager.createSession(projectId, 'Ctx-inherit-2', undefined, undefined, '/ws/openfox/feat-x')
+      const session = manager.createSession(projectId, 'Ctx-inherit-2', undefined, undefined, '/ws/morriscode/feat-x')
       mockEnsureWorkspace.mockClear()
 
       await manager.switchWorkspace(session.id, 'feat-x')
@@ -412,7 +412,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
     })
 
     it('omits the commit recipe when switching back to the original repo', async () => {
-      const session = manager.createSession(projectId, 'Ctx-ws-commit-2', undefined, undefined, '/ws/openfox/feat-x')
+      const session = manager.createSession(projectId, 'Ctx-ws-commit-2', undefined, undefined, '/ws/morriscode/feat-x')
 
       await manager.switchWorkspace(session.id, 'original')
 
@@ -513,7 +513,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
       // Prevent createSession's async getGitBranch() from racing our branch write
       mockGetGitBranch.mockResolvedValue('feat-x')
 
-      const session = manager.createSession(projectId, 'Noop-1', undefined, undefined, '/ws/openfox/feat-x')
+      const session = manager.createSession(projectId, 'Noop-1', undefined, undefined, '/ws/morriscode/feat-x')
 
       await setSessionBranch(manager, session.id, 'feat-x')
 
@@ -521,7 +521,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
 
       manager.setCachedPrompt(
         session.id,
-        'Stable system prompt with Working directory: /ws/openfox/feat-x',
+        'Stable system prompt with Working directory: /ws/morriscode/feat-x',
         [],
         'stable-hash',
       )
@@ -550,7 +550,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
         const cachedAfter = manager.getCachedPrompt(session.id)
         expect(cachedAfter).toBeDefined()
         expect(cachedAfter?.hash).toBe('stable-hash')
-        expect(cachedAfter?.systemPrompt).toBe('Stable system prompt with Working directory: /ws/openfox/feat-x')
+        expect(cachedAfter?.systemPrompt).toBe('Stable system prompt with Working directory: /ws/morriscode/feat-x')
 
         expect(setCachedSpy).not.toHaveBeenCalled()
         expect(resetWarmupSpy).not.toHaveBeenCalled()
@@ -669,7 +669,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
               success: true,
               output: JSON.stringify({
                 workspace: 'feature-x',
-                path: '/tmp/openfox-workspaces/feature-x',
+                path: '/tmp/morriscode-workspaces/feature-x',
                 branch: 'feature-x',
                 message: 'Switched to workspace "feature-x" on branch "feature-x"',
               }),
@@ -764,7 +764,7 @@ describe('SessionManager.switchWorkspace – execution context integrity (issue 
         expect(reminder.content).toContain('feature-x')
         // switchWorkspace resolves the path (manager.ts), so the reminder carries
         // the native form — on Windows that is a backslash path with a drive.
-        expect(reminder.content).toContain(resolve('/tmp/openfox-workspaces', 'feature-x'))
+        expect(reminder.content).toContain(resolve('/tmp/morriscode-workspaces', 'feature-x'))
         expect(reminder.content).toMatch(/branch\s+"feat-x"/)
         expect(reminder.content).not.toContain('requested-branch')
 

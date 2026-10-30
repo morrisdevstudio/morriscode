@@ -1,5 +1,5 @@
 /**
- * Reference OpenFox plugin.
+ * Reference MorrisCode plugin.
  *
  * Plain ESM with JSDoc types so it runs without a build step, while still
  * type-checking against the real `openfox/plugin` contract (`npm run build`).

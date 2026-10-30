@@ -17,7 +17,7 @@ const TEST_PROMPT =
 // Opt-in fallback: when the local model server is unavailable, drive the
 // onboarding wizard with the provider configured in the production config.
 // Default (unset / `local`) keeps the hardcoded local flow untouched.
-const IS_PROD_LLM = resolveLlmMode(process.env['OPENFOX_PUBLISH_E2E_LLM']) === 'prod'
+const IS_PROD_LLM = resolveLlmMode(process.env['MORRISCODE_PUBLISH_E2E_LLM']) === 'prod'
 const TEST_TIMEOUT_MS = IS_PROD_LLM ? 300_000 : 180_000
 const SAVE_READY_TIMEOUT_MS = IS_PROD_LLM ? 90_000 : 30_000
 
@@ -27,9 +27,9 @@ function loadProdLlm(): ProdLlmSelection {
   try {
     raw = readFileSync(path, 'utf-8')
   } catch {
-    throw new Error(`OPENFOX_PUBLISH_E2E_LLM=prod but no production config was found at ${path}`)
+    throw new Error(`MORRISCODE_PUBLISH_E2E_LLM=prod but no production config was found at ${path}`)
   }
-  return selectProdLlm(JSON.parse(raw) as unknown, process.env['OPENFOX_PUBLISH_E2E_PROVIDER'])
+  return selectProdLlm(JSON.parse(raw) as unknown, process.env['MORRISCODE_PUBLISH_E2E_PROVIDER'])
 }
 
 interface TestContext {
@@ -41,8 +41,8 @@ interface TestContext {
 
 async function setupTestEnvironment(): Promise<TestContext> {
   const timestamp = Date.now()
-  const workdir = join(tmpdir(), `openfox-e2e-${timestamp}`)
-  const configDir = join(tmpdir(), `openfox-e2e-config-${timestamp}`)
+  const workdir = join(tmpdir(), `morriscode-e2e-${timestamp}`)
+  const configDir = join(tmpdir(), `morriscode-e2e-config-${timestamp}`)
   await mkdir(workdir, { recursive: true })
   await mkdir(configDir, { recursive: true })
 
@@ -54,7 +54,7 @@ async function setupTestEnvironment(): Promise<TestContext> {
   }
 
   const { writeFile, mkdir: mkd } = await import('node:fs/promises')
-  const prodConfigDir = join(configDir, 'openfox')
+  const prodConfigDir = join(configDir, 'morriscode')
   await mkd(prodConfigDir, { recursive: true })
   await writeFile(join(prodConfigDir, 'config.json'), JSON.stringify(configJson, null, 2), 'utf-8')
 
@@ -62,18 +62,18 @@ async function setupTestEnvironment(): Promise<TestContext> {
   const serverUrl = `http://localhost:${port}`
 
   // Spawn server with isolated config dir so we don't pick up user config with network auth
-  // No LLM env vars — simulates a real user discovering OpenFox with zero config.
+  // No LLM env vars — simulates a real user discovering MorrisCode with zero config.
   // The provider URL is entered manually in the UI during onboarding.
   const serverEnv = {
     ...process.env,
     HOME: configDir,
     XDG_CONFIG_HOME: configDir,
     XDG_DATA_HOME: configDir,
-    OPENFOX_PORT: String(port),
-    OPENFOX_DB_PATH: ':memory:',
-    OPENFOX_WORKDIR: workdir,
-    OPENFOX_LOG_LEVEL: 'warn',
-    OPENFOX_MOCK_LLM: 'false',
+    MORRISCODE_PORT: String(port),
+    MORRISCODE_DB_PATH: ':memory:',
+    MORRISCODE_WORKDIR: workdir,
+    MORRISCODE_LOG_LEVEL: 'warn',
+    MORRISCODE_MOCK_LLM: 'false',
   }
 
   // Start the built production server (tests the dist bundle, not tsx-transpiled source)
@@ -222,19 +222,19 @@ test.describe('Full-stack Build & Verify E2E', () => {
     // Step 3: Skip vision
     await page.getByTestId('onboarding-skip-button').click()
 
-    // After onboarding completes, navigate to home
+    // Onboarding ends without any project, so the app root lands on the split
+    // view — the header project menu is where the first project gets created.
     await page.goto(`${serverUrl}/`)
     await page.waitForLoadState('networkidle')
 
-    // Verify we're on the home page (not onboarding)
+    // Verify we left onboarding
     expect(page.url()).toContain(serverUrl)
     expect(page.url()).not.toContain('/onboarding')
+    await expect(page).toHaveURL(/\/split-view$/, { timeout: 20000 })
 
-    // Wait for content to load
-    await page.waitForTimeout(2000)
-
-    // Click "Open Project" to open the modal
-    await page.getByRole('button', { name: 'Open Project' }).click()
+    // Open the header project menu, then the project manager
+    await page.getByRole('button', { name: 'Select project...' }).click()
+    await page.getByRole('button', { name: 'Manage projects' }).click()
     await page.waitForTimeout(500)
 
     // Click "Create Project"

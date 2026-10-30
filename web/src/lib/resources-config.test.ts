@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authFetch } from './api'
 import { clearCache } from './resourceCache'
-import { configResource, providerModelsResource, providersResource, readConfig } from './resources'
+import {
+  configResource,
+  normalizeServerNetwork,
+  providerModelsResource,
+  providersResource,
+  readConfig,
+  updateServerNetwork,
+} from './resources'
 
 vi.mock('./api', () => ({
   authFetch: vi.fn(),
@@ -95,6 +102,72 @@ describe('configResource', () => {
       workdir: null,
       visionFallback: null,
       locale: 'automatic',
+      serverNetwork: null,
     })
+  })
+})
+
+describe('serverNetwork', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    clearCache()
+  })
+
+  it('normalizes the LAN/HTTPS block reported by /api/config', async () => {
+    vi.mocked(authFetch).mockResolvedValue(
+      jsonResponse({
+        serverNetwork: {
+          host: '0.0.0.0',
+          port: 10369,
+          https: true,
+          urls: ['https://192.168.1.23:10369'],
+          certificatePath: '/cfg/certs/server.crt',
+          certificateGenerated: true,
+        },
+      }),
+    )
+
+    const data = await configResource.refresh()
+    expect(data?.serverNetwork).toEqual({
+      host: '0.0.0.0',
+      port: 10369,
+      https: true,
+      urls: ['https://192.168.1.23:10369'],
+      certificatePath: '/cfg/certs/server.crt',
+      certificateGenerated: true,
+    })
+  })
+
+  it('drops a malformed block and non-string urls instead of rendering them', () => {
+    expect(normalizeServerNetwork('nope')).toBeNull()
+    expect(normalizeServerNetwork({ urls: ['ok', 3, null] })?.urls).toEqual(['ok'])
+  })
+
+  it('persists the settings and writes the saved values into the cache', async () => {
+    vi.mocked(authFetch).mockResolvedValue(jsonResponse({}))
+    await configResource.refresh()
+
+    vi.mocked(authFetch).mockResolvedValue(
+      jsonResponse({
+        restartRequired: true,
+        serverNetwork: { host: '0.0.0.0', port: 10369, https: true, urls: ['https://192.168.1.23:10369'] },
+      }),
+    )
+
+    const result = await updateServerNetwork({ host: '0.0.0.0', https: true })
+
+    expect(authFetch).toHaveBeenCalledWith('/api/config/network', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host: '0.0.0.0', https: true }),
+    })
+    expect(result.restartRequired).toBe(true)
+    expect(readConfig()?.serverNetwork?.https).toBe(true)
+    expect(readConfig()?.serverNetwork?.urls).toEqual(['https://192.168.1.23:10369'])
+  })
+
+  it('reports a rejected save instead of claiming it stuck', async () => {
+    vi.mocked(authFetch).mockResolvedValue({ ok: false, status: 500 } as unknown as Response)
+    await expect(updateServerNetwork({ https: true })).rejects.toThrow(/500/)
   })
 })

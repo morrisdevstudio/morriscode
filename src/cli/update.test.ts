@@ -81,7 +81,7 @@ describe('runUpdate', () => {
 
     const [cmd, args, opts] = mockSpawnSync.mock.calls[0]!
     expect(cmd).toBe('npm')
-    expect(args).toEqual(['view', 'openfox', 'version'])
+    expect(args).toEqual(['view', 'morriscode', 'version'])
     expect((opts as { shell?: boolean }).shell).toBe(false)
   })
 
@@ -92,7 +92,7 @@ describe('runUpdate', () => {
     await runUpdate()
 
     const [cmd, args, opts] = mockSpawnSync.mock.calls[0]!
-    expect(cmd).toBe('npm view openfox version')
+    expect(cmd).toBe('npm view morriscode version')
     expect(args).toEqual([])
     expect((opts as { shell?: boolean }).shell).toBe(true)
   })

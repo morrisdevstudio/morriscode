@@ -19,14 +19,14 @@ import { getSessionState, getEventStore } from '../events/index.js'
 import { VERSION } from '../../constants.js'
 import type { SessionManager } from './manager.js'
 
-export const SESSION_EXPORT_FORMAT = 'openfox-session'
+export const SESSION_EXPORT_FORMAT = 'morriscode-session'
 export const SESSION_EXPORT_VERSION = 1
 
 export const IMPORTED_SESSION_REMINDER =
   'This session was imported from another environment. The latest system reminders are authoritative.'
 
 export interface SessionExportSource {
-  openfoxVersion: string
+  morriscodeVersion: string
   projectName: string
   workdir: string
   mode: string
@@ -87,7 +87,7 @@ const sessionExportSchema = z.object({
   version: z.number().int(),
   exportedAt: z.number(),
   source: z.object({
-    openfoxVersion: z.string(),
+    morriscodeVersion: z.string(),
     projectName: z.string(),
     workdir: z.string(),
     mode: z.string(),
@@ -157,7 +157,7 @@ export function buildSessionExport(sessionManager: SessionManager, sessionId: st
     version: SESSION_EXPORT_VERSION,
     exportedAt: Date.now(),
     source: {
-      openfoxVersion: VERSION,
+      morriscodeVersion: VERSION,
       projectName: project?.name ?? 'unknown',
       workdir: session.workdir,
       mode: session.mode,

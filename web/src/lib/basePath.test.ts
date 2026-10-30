@@ -37,15 +37,15 @@ describe('detectBasePath', () => {
   })
 
   it('extracts subpath from /assets/ script path', async () => {
-    document.body.innerHTML = '<script type="module" src="/openfox/assets/index-abc123.js"></script>'
+    document.body.innerHTML = '<script type="module" src="/morriscode/assets/index-abc123.js"></script>'
     const { detectBasePath } = await import('./basePath')
-    expect(detectBasePath()).toBe('/openfox')
+    expect(detectBasePath()).toBe('/morriscode')
   })
 
   it('extracts deep subpath from /assets/ script path', async () => {
-    document.body.innerHTML = '<script type="module" src="/deep/path/openfox/assets/index-abc123.js"></script>'
+    document.body.innerHTML = '<script type="module" src="/deep/path/morriscode/assets/index-abc123.js"></script>'
     const { detectBasePath } = await import('./basePath')
-    expect(detectBasePath()).toBe('/deep/path/openfox')
+    expect(detectBasePath()).toBe('/deep/path/morriscode')
   })
 
   it('returns empty string for root deployment with /src/main.tsx script (dev mode)', async () => {
@@ -55,9 +55,9 @@ describe('detectBasePath', () => {
   })
 
   it('extracts subpath from /src/main.tsx script path (dev mode)', async () => {
-    document.body.innerHTML = '<script type="module" src="/openfox/src/main.tsx"></script>'
+    document.body.innerHTML = '<script type="module" src="/morriscode/src/main.tsx"></script>'
     const { detectBasePath } = await import('./basePath')
-    expect(detectBasePath()).toBe('/openfox')
+    expect(detectBasePath()).toBe('/morriscode')
   })
 
   it('skips non-matching scripts like Vite HMR client', async () => {
@@ -72,17 +72,17 @@ describe('detectBasePath', () => {
 
 describe('appUrl', () => {
   it('returns non-absolute paths unchanged', async () => {
-    document.body.innerHTML = '<script type="module" src="/openfox/assets/index.js"></script>'
+    document.body.innerHTML = '<script type="module" src="/morriscode/assets/index.js"></script>'
     const { appUrl } = await import('./basePath')
     expect(appUrl('relative/path')).toBe('relative/path')
     expect(appUrl('http://example.com/api')).toBe('http://example.com/api')
   })
 
   it('prefixes path with appBasePath when deployed under subpath', async () => {
-    document.body.innerHTML = '<script type="module" src="/openfox/assets/index.js"></script>'
+    document.body.innerHTML = '<script type="module" src="/morriscode/assets/index.js"></script>'
     const { appUrl } = await import('./basePath')
-    expect(appUrl('/api/test')).toBe('/openfox/api/test')
-    expect(appUrl('/ws')).toBe('/openfox/ws')
+    expect(appUrl('/api/test')).toBe('/morriscode/api/test')
+    expect(appUrl('/ws')).toBe('/morriscode/ws')
   })
 
   it('returns path unchanged when deployed at root', async () => {

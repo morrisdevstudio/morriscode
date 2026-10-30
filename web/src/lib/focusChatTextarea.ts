@@ -1,6 +1,6 @@
 import { shouldAutofocus } from './device'
 
-export const CHAT_TEXTAREA_ID = 'openfox-chat-textarea'
+export const CHAT_TEXTAREA_ID = 'morriscode-chat-textarea'
 
 export function focusChatTextarea(preventScroll?: boolean): void {
   if (!shouldAutofocus()) return

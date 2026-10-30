@@ -1,11 +1,11 @@
 {
-  "name": "openfox",
-  "version": "2.0.161",
+  "name": "morriscode",
+  "version": "0.3.4",
   "description": "Local-LLM-first agentic coding assistant",
   "type": "module",
   "bin": {
-    "openfox": "./dist/cli/index.js",
-    "openfox-dev": "./dist/cli/dev.js"
+    "morriscode": "./dist/cli/index.js",
+    "morriscode-dev": "./dist/cli/dev.js"
   },
   "exports": {
     ".": {
@@ -35,7 +35,7 @@
     "scripts/postinstall.mjs"
   ],
   "scripts": {
-    "dev": "cross-env OPENFOX_DEV=true tsx watch src/cli/dev.ts --no-browser",
+    "dev": "tsx scripts/dev.ts",
     "dev:web": "vite --config web/vite.config.ts",
     "build": "npm run build:server && npm run build:web",
     "build:server": "tsup && node scripts/copy-assets.mjs",
@@ -72,7 +72,7 @@
     "prepare": "husky",
     "postinstall": "node scripts/postinstall.mjs",
     "test:publish:e2e": "tsx scripts/run-publish-e2e.ts",
-    "test:publish:e2e:prod": "cross-env OPENFOX_PUBLISH_E2E_LLM=prod tsx scripts/run-publish-e2e.ts",
+    "test:publish:e2e:prod": "cross-env MORRISCODE_PUBLISH_E2E_LLM=prod tsx scripts/run-publish-e2e.ts",
     "verify:pack": "tsx scripts/verify-pack.ts"
   },
   "dependencies": {
@@ -106,6 +106,7 @@
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",
+    "selfsigned": "^3.0.1",
     "shiki": "^4.2.0",
     "strip-ansi": "^7.2.0",
     "turndown": "^7.2.2",
@@ -185,7 +186,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:co-l/openfox.git"
+    "url": "git@github.com:morrisdevstudio/morriscode.git"
   },
   "overrides": {
     "mysql2": "3.22.3",

@@ -42,12 +42,12 @@ Thumbs.db
 # Turbo
 .turbo/
 
-# OpenFox internal files
-e2e/.openfox/
-e2e-playwright/.openfox/
-e2e/.openfox-test/
-e2e/**/.openfox-test/
-.openfox/pr-description.md
+# MorrisCode internal files
+e2e/.morriscode/
+e2e-playwright/.morriscode/
+e2e/.morriscode-test/
+e2e/**/.morriscode-test/
+.morriscode/pr-description.md
 
 # Logs
 *.log
@@ -68,3 +68,6 @@ worktrees/
 .agent-office/
 
 /plugins/
+# Local test scratch files
+.tmp-vitest/
+.tmp/

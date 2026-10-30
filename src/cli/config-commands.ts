@@ -3,10 +3,10 @@ import { getDefaultModel } from './config.js'
 
 export function printHelp(): void {
   console.log(`
-OpenFox - Local LLM coding assistant
+MorrisCode - Local LLM coding assistant
 
 Usage:
-  openfox [command] [options]
+  morriscode [command] [options]
 
 Commands:
   (none)    Start server for current project

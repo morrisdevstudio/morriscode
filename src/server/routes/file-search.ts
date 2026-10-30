@@ -10,7 +10,7 @@ const IGNORED_PATTERNS = [
   '**/.cache/**',
   '**/__pycache__/**',
   '**/*.lock',
-  '**/.openfox/**',
+  '**/.morriscode/**',
 ]
 
 export function createFileSearchRoutes(): Router {

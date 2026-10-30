@@ -28,7 +28,7 @@ function getSkillsDir(configDir: string): string {
 }
 
 function getProjectSkillsDir(projectDir: string): string {
-  return join(projectDir, '.openfox', 'skills')
+  return join(projectDir, '.morriscode', 'skills')
 }
 
 export interface SkillDiscoveryOptions {
@@ -39,9 +39,9 @@ export interface SkillDiscoveryOptions {
 function portableDisplayName(data: Record<string, unknown>, id: string): string {
   const metadata = data['metadata']
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return id
-  const openfox = (metadata as Record<string, unknown>)['openfox']
-  if (!openfox || typeof openfox !== 'object' || Array.isArray(openfox)) return id
-  const displayName = (openfox as Record<string, unknown>)['displayName']
+  const morriscode = (metadata as Record<string, unknown>)['morriscode']
+  if (!morriscode || typeof morriscode !== 'object' || Array.isArray(morriscode)) return id
+  const displayName = (morriscode as Record<string, unknown>)['displayName']
   return typeof displayName === 'string' && displayName.trim() ? displayName : id
 }
 
@@ -177,11 +177,11 @@ export async function loadDefaultSkills(): Promise<SkillDefinition[]> {
 }
 
 export async function loadUserSkills(configDir: string): Promise<SkillDefinition[]> {
-  return loadSkillsDirectory(getSkillsDir(configDir), 'global-openfox')
+  return loadSkillsDirectory(getSkillsDir(configDir), 'global-morriscode')
 }
 
 export async function loadProjectSkills(projectDir: string): Promise<SkillDefinition[]> {
-  return loadSkillsDirectory(getProjectSkillsDir(projectDir), 'project-openfox')
+  return loadSkillsDirectory(getProjectSkillsDir(projectDir), 'project-morriscode')
 }
 
 let pluginSkillsOverride: SkillDefinition[] = []
@@ -291,7 +291,7 @@ function portableFrontmatter(skill: SkillDefinition): Record<string, unknown> {
   const metadata: Record<string, unknown> = {}
   if (skill.metadata.version) metadata['version'] = skill.metadata.version
   if (skill.metadata.name !== skill.metadata.id) {
-    metadata['openfox'] = { displayName: skill.metadata.name }
+    metadata['morriscode'] = { displayName: skill.metadata.name }
   }
   return {
     name: skill.metadata.id,
@@ -324,22 +324,22 @@ function updatedPortableFrontmatter(
 ): Record<string, unknown> {
   const frontmatter = { ...(existing.rawMetadata ?? {}) }
   const portableMetadata = { ...asRecord(frontmatter['metadata']) }
-  const openfox = { ...asRecord(portableMetadata['openfox']) }
+  const morriscode = { ...asRecord(portableMetadata['morriscode']) }
   frontmatter['name'] = existing.metadata.id
   frontmatter['description'] = metadata.description
   if (metadata.version) portableMetadata['version'] = metadata.version
   else delete portableMetadata['version']
-  if (metadata.name !== existing.metadata.id) openfox['displayName'] = metadata.name
-  else delete openfox['displayName']
-  if (Object.keys(openfox).length) portableMetadata['openfox'] = openfox
-  else delete portableMetadata['openfox']
+  if (metadata.name !== existing.metadata.id) morriscode['displayName'] = metadata.name
+  else delete morriscode['displayName']
+  if (Object.keys(morriscode).length) portableMetadata['morriscode'] = morriscode
+  else delete portableMetadata['morriscode']
   if (Object.keys(portableMetadata).length) frontmatter['metadata'] = portableMetadata
   else delete frontmatter['metadata']
   return frontmatter
 }
 
 function canModifySkill(existing: SkillDefinition): boolean {
-  if (existing.source === 'global-openfox' || existing.source === 'project-openfox') return true
+  if (existing.source === 'global-morriscode' || existing.source === 'project-morriscode') return true
   return (
     !existing.legacy &&
     (existing.source === 'global-shared' || existing.source === 'selected' || existing.source === 'project-shared')

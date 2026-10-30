@@ -11,10 +11,10 @@ import { join } from 'node:path'
 import { createTestServer, type TestServerHandle } from './utils/index.js'
 import { loadGlobalConfig } from '../src/cli/config.js'
 
-const PLUGIN_DIR = join(process.cwd(), 'e2e', '.openfox-test', 'plugins', 'mock-provider')
+const PLUGIN_DIR = join(process.cwd(), 'e2e', '.morriscode-test', 'plugins', 'mock-provider')
 
 const MOCK_PACKAGE_JSON = JSON.stringify({
-  name: '@openfox/mock-provider',
+  name: '@morriscode/mock-provider',
   version: '0.1.0',
   type: 'module',
   openfox: { apiVersion: 1, plugin: 'index.js' },
@@ -119,7 +119,7 @@ describe('Provider Plugin System', () => {
   it('loads the mock plugin with correct metadata', async () => {
     const res = await fetch(`${server.url}/api/plugins`)
     const data = (await res.json()) as { plugins: Array<Record<string, unknown>> }
-    const plugin = data.plugins.find((p) => p['packageName'] === '@openfox/mock-provider')
+    const plugin = data.plugins.find((p) => p['packageName'] === '@morriscode/mock-provider')
     expect(plugin).toBeDefined()
     expect(plugin!['loaded']).toBe(true)
     expect(plugin!['authAdapters']).toEqual(['mock-auth'])

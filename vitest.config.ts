@@ -34,7 +34,7 @@ export default defineConfig({
     exclude: ['e2e/**', 'node_modules/**'],
     setupFiles: ['vitest-localstorage-mock', './web/src/test-setup.ts'],
     env: {
-      NODE_OPTIONS: '--localstorage-file=/tmp/openfox-test-localstorage.json',
+      NODE_OPTIONS: '--localstorage-file=/tmp/morriscode-test-localstorage.json',
     },
     // environment set per-file via @vitest-environment docblock
     coverage: {

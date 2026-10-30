@@ -36,7 +36,7 @@ describe('plugin routes', () => {
   let baseUrl: string
 
   beforeEach(async () => {
-    rootDir = await mkdtemp(join(tmpdir(), 'openfox-plugins-'))
+    rootDir = await mkdtemp(join(tmpdir(), 'morriscode-plugins-'))
     const { app } = createApp({
       config: { mode: 'test', providers: [] } as unknown as Config,
     })

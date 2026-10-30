@@ -553,7 +553,7 @@ describe('SubAgentManager', () => {
     let tempDir: string
 
     beforeEach(async () => {
-      tempDir = await mkdtemp(join(tmpdir(), 'openfox-gitignore-test-'))
+      tempDir = await mkdtemp(join(tmpdir(), 'morriscode-gitignore-test-'))
     })
 
     afterEach(async () => {

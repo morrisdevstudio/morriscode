@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.3.4 - 2026-10-30
+
+### Features
+
+- **Project details on hover** — chat and unread counts, full path, favorite and settings, right from the sidebar.
+
+### Bug Fixes
+
+- **Startup opens the last project** — a full page load now waits for the project list instead of falling back to the split view.
+- **Prepared updates survive cleanup** — a downloaded release is kept instead of being pruned or downloaded again.
+- **Updates install after a restart** — a release prepared before a server restart is now found and applied.
+
+## 0.3.3 - 2026-10-23
+
+### Bug Fixes
+
+- **Automatic retry** — a failed preparation no longer prevents the next check from downloading the release again.
+- **Update diagnostics** — background download and preparation failures are now logged and kept visible.
+
+## 0.3.2 - 2026-10-23
+
+### Bug Fixes
+
+- **Windows installer** — the startup task is now registered through the Windows API, so paths containing spaces no longer break the launcher.
+
+## 0.3.1 - 2026-10-23
+
+### Features
+
+- **Signed automatic updates** — MorrisCode checks GitHub releases, downloads signed packages in the background, and installs them when you click.
+- **Automatic rollback** — a stable launcher restores the previous version, configuration, and database if a new release cannot start.
+- **Release installers** — Windows and Linux installers verify the signature before installing and register startup automatically.
+
+### Enhancements
+
+- **Update dialog** — shows download progress, release notes, and a single “Install and restart” action.
+- **Automatic update toggle** — enable or disable background checks from Settings → Advanced.
+
+## 0.1.0
+
+MorrisCode fork of OpenFox 2.0.161.
+
+This changelog is inherited from upstream OpenFox: everything below 0.1.0 describes
+upstream releases up to the fork point.
+
+### Changes
+
+- **Rebrand** — package name, binaries, configuration and data directories, the
+  `OPENFOX_*` environment variables (now `MORRISCODE_*`), storage keys, the project-level
+  `.openfox/` directory (now `.morriscode/`) and every user-facing string.
+- **Interface restyle** — the web UI is rebuilt around a neutral dark palette and a
+  sans-serif interface font, with monospace reserved for code, paths and metrics.
+- **Plugin contract preserved** — the `openfox` manifest key and the `openfox/plugin` and
+  `openfox/provider` import specifiers are unchanged, so existing plugins keep working.
+
 ## 2.0.161 - 2026-10-05
 
 ### Features

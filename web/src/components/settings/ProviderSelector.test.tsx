@@ -171,6 +171,9 @@ vi.mock('../../lib/agents-actions', () => ({
 
 vi.mock('../../hooks/useResource', () => ({
   useResource: () => ({ data: mockAgentsData, loading: false, error: undefined, refresh: vi.fn() }),
+  // The usage indicator reads its own resource through the gated variant; these
+  // tests care about the label, so it answers with no usage at all.
+  useResourceWhen: () => ({ data: undefined, loading: false, error: undefined, refresh: vi.fn() }),
 }))
 
 vi.mock('../../hooks/useKeybindings', () => ({

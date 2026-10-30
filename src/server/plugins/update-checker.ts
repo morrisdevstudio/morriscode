@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { readdir, readFile, stat } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { NotificationService } from './notifications.js'
 import type { HookLogger } from './hooks.js'
 import { getSetting } from '../db/settings.js'
+import { packageDirectories } from './loader.js'
 
 const execFileP = promisify(execFile)
 
@@ -143,46 +144,16 @@ export class PluginUpdateChecker {
 
   private async discoverPluginDirectories(pluginsDir: string): Promise<string[]> {
     const roots = [pluginsDir, join(pluginsDir, 'node_modules')]
-    const directories: string[] = []
     const seen = new Set<string>()
-
     for (const root of roots) {
-      let entries
-      try {
-        entries = await readdir(root, { withFileTypes: true })
-      } catch {
-        continue
-      }
-
-      for (const entry of entries) {
-        if (entry.name.startsWith('.') || (root === pluginsDir && entry.name === 'node_modules')) continue
-        const entryPath = join(root, entry.name)
-        const isDirectory =
-          entry.isDirectory() ||
-          (entry.isSymbolicLink() && (await stat(entryPath).catch(() => undefined))?.isDirectory())
-        if (!isDirectory) continue
-
-        if (entry.name.startsWith('@')) {
-          const scoped = await readdir(entryPath, { withFileTypes: true }).catch(() => [])
-          for (const child of scoped) {
-            if (child.name.startsWith('.')) continue
-            const childPath = join(entryPath, child.name)
-            const childIsDirectory =
-              child.isDirectory() ||
-              (child.isSymbolicLink() && (await stat(childPath).catch(() => undefined))?.isDirectory())
-            if (childIsDirectory && !seen.has(childPath)) {
-              seen.add(childPath)
-              directories.push(childPath)
-            }
-          }
-        } else if (!seen.has(entryPath)) {
-          seen.add(entryPath)
-          directories.push(entryPath)
-        }
+      for (const directory of await packageDirectories(root, {
+        skipHidden: true,
+        skipNodeModules: root === pluginsDir,
+      })) {
+        seen.add(directory)
       }
     }
-
-    return directories
+    return [...seen]
   }
 
   private async checkGitUpdate(

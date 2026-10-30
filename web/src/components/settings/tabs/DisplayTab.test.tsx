@@ -86,34 +86,6 @@ describe('DisplayTab Composer setting', () => {
   })
 })
 
-describe('DisplayTab projects above sessions toggle', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    Object.keys(mockSettings).forEach((k) => delete mockSettings[k])
-    setLocale('en')
-  })
-
-  it('renders the projects above sessions toggle off by default', () => {
-    render(<DisplayTab />)
-
-    const label = screen.getByText('Show projects above sessions on home page').closest('label') as HTMLElement
-    expect(label).toBeTruthy()
-    const toggle = within(label).getByRole('button')
-    expect(toggle.getAttribute('aria-pressed')).toBe('false')
-  })
-
-  it('persists turning the projects above sessions toggle on', async () => {
-    const user = userEvent.setup()
-    render(<DisplayTab />)
-
-    const label = screen.getByText('Show projects above sessions on home page').closest('label') as HTMLElement
-    const toggle = within(label).getByRole('button')
-    await user.click(toggle)
-
-    expect(mockSetSetting).toHaveBeenCalledWith(SETTINGS_KEYS.DISPLAY_SHOW_PROJECTS_ABOVE_SESSIONS, 'true')
-  })
-})
-
 describe('DisplayTab tool call streaming toggle', () => {
   beforeEach(() => {
     vi.clearAllMocks()

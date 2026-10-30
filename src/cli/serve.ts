@@ -1,22 +1,30 @@
 import { createServer } from '../server/index.js'
 import { loadConfig } from '../server/config.js'
 import { logger } from '../server/utils/logger.js'
-import { displayStartupBanner } from '../server/utils/network.js'
+import { displayStartupBanner, serverScheme } from '../server/utils/network.js'
+import { describeCertificate } from '../server/tls.js'
 import { detectProviderDefaultsFromUrl } from '../server/llm/backend.js'
 import { loadGlobalConfig, getActiveProvider, getDefaultModel } from './config.js'
 import { getDatabasePath, getGlobalConfigPath, ensureDataDirExists } from './paths.js'
 import open from 'open'
 import type { Mode } from './main.js'
 import type { LlmBackend } from '../shared/types.js'
+import { isLoopbackHost } from '../shared/network-security.js'
 
 export interface ServeOptions {
   mode: Mode
   port?: number
   openBrowser?: boolean
+  /** CLI override for server.host — wins over env and the global config. */
+  host?: string
+  /** CLI override for server.https — wins over env and the global config. */
+  https?: boolean
+  httpsCert?: string
+  httpsKey?: string
 }
 
 export async function runServe(options: ServeOptions): Promise<void> {
-  const { mode, port, openBrowser } = options
+  const { mode, port, openBrowser, host, https, httpsCert, httpsKey } = options
 
   // Ensure data directory exists before starting server
   await ensureDataDirExists(mode)
@@ -48,6 +56,11 @@ export async function runServe(options: ServeOptions): Promise<void> {
   const providerThinkingField =
     activeProvider?.thinkingField ?? detectProviderDefaultsFromUrl(activeProvider?.url ?? '')?.thinkingField
 
+  // TLS material precedence: CLI flag > env > global config.
+  const resolvedHttpsCert = httpsCert ?? env.server.httpsCert ?? globalConfig.server.httpsCert
+  const resolvedHttpsKey = httpsKey ?? env.server.httpsKey ?? globalConfig.server.httpsKey
+  const resolvedHost = host ?? env.server.host ?? globalConfig.server.host ?? '127.0.0.1'
+
   const merged = {
     ...env,
     llm: {
@@ -68,12 +81,16 @@ export async function runServe(options: ServeOptions): Promise<void> {
     server: {
       ...env.server,
       port: port ?? env.server.port,
-      host: env.server.host ?? globalConfig.server.host ?? '127.0.0.1',
+      host: resolvedHost,
       openBrowser: openBrowser ?? globalConfig.server.openBrowser,
+      https:
+        https ?? (!isLoopbackHost(resolvedHost) || env.server.https === true || globalConfig.server.https === true),
+      ...(resolvedHttpsCert !== undefined ? { httpsCert: resolvedHttpsCert } : {}),
+      ...(resolvedHttpsKey !== undefined ? { httpsKey: resolvedHttpsKey } : {}),
     },
     database: {
-      // Use env OPENFOX_DB_PATH if explicitly set (e.g., ":memory:" for tests), otherwise use standard path
-      path: env.database.path !== './openfox.db' ? env.database.path : getDatabasePath(mode),
+      // Use env MORRISCODE_DB_PATH if explicitly set (e.g., ":memory:" for tests), otherwise use standard path
+      path: env.database.path !== './morriscode.db' ? env.database.path : getDatabasePath(mode),
     },
     logging: {
       level: globalConfig.logging?.level ?? ('error' as const),
@@ -99,7 +116,7 @@ export async function runServe(options: ServeOptions): Promise<void> {
       | undefined,
     // Workdir precedence: .env override → global config → process.cwd()
     // Normalize: remove trailing slash to prevent double slashes in paths
-    workdir: (process.env['OPENFOX_WORKDIR'] ?? globalConfig.workspace?.workdir ?? process.cwd()).replace(/\/$/, ''),
+    workdir: (process.env['MORRISCODE_WORKDIR'] ?? globalConfig.workspace?.workdir ?? process.cwd()).replace(/\/$/, ''),
     ...((env.disableAutoSessionTitle ?? globalConfig.disableAutoSessionTitle) !== undefined
       ? { disableAutoSessionTitle: env.disableAutoSessionTitle ?? globalConfig.disableAutoSessionTitle }
       : {}),
@@ -113,13 +130,15 @@ export async function runServe(options: ServeOptions): Promise<void> {
     port: merged.server.port,
     databasePath: merged.database.path,
     configPath: getGlobalConfigPath(mode),
+    https: merged.server.https === true,
+    certificate: describeCertificate(merged),
   })
 
   if (merged.server.openBrowser) {
-    open(`http://${merged.server.host === '127.0.0.1' ? 'localhost' : merged.server.host}:${merged.server.port}`).catch(
-      () => {
-        logger.warn('Could not open browser automatically')
-      },
-    )
+    const browserHost = merged.server.host === '127.0.0.1' ? 'localhost' : merged.server.host
+    const scheme = serverScheme(merged.server.https === true)
+    open(`${scheme}://${browserHost}:${merged.server.port}`).catch(() => {
+      logger.warn('Could not open browser automatically')
+    })
   }
 }

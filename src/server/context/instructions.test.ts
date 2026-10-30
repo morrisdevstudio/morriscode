@@ -24,7 +24,7 @@ describe('instructions', () => {
     config.database.path = ':memory:'
     initDatabase(config)
     // Create a unique temp directory for each test
-    testDir = join(tmpdir(), `openfox-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `morriscode-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     await mkdir(testDir, { recursive: true })
   })
 
@@ -186,7 +186,7 @@ describe('instructions', () => {
     })
 
     it('combines global, project, and file instructions in order', async () => {
-      const project = createProject('OpenFox', testDir)
+      const project = createProject('MorrisCode', testDir)
       setSetting(SETTINGS_KEYS.GLOBAL_INSTRUCTIONS, 'Global rule')
       updateProject(project.id, { customInstructions: 'Project rule' })
       await writeFile(join(testDir, 'AGENTS.md'), '# Local instructions\nUse tests')
@@ -198,13 +198,13 @@ describe('instructions', () => {
       expect(result.content).toContain('## FILE INSTRUCTIONS')
       expect(result.files).toEqual([
         { path: 'Global Instructions', source: 'global', content: 'Global rule' },
-        { path: 'Project: OpenFox', source: 'project', content: 'Project rule' },
+        { path: 'Project: MorrisCode', source: 'project', content: 'Project rule' },
         { path: join(testDir, 'AGENTS.md'), source: 'agents-md', content: '# Local instructions\nUse tests' },
       ])
     })
 
     it('injects the LANGUAGE section first when a language is set', async () => {
-      const project = createProject('OpenFox', testDir)
+      const project = createProject('MorrisCode', testDir)
       setSetting(SETTINGS_KEYS.LANGUAGE, 'French')
       setSetting(SETTINGS_KEYS.GLOBAL_INSTRUCTIONS, 'Global rule')
 
@@ -216,7 +216,7 @@ describe('instructions', () => {
     })
 
     it('omits the LANGUAGE section when language is automatic', async () => {
-      const project = createProject('OpenFox', testDir)
+      const project = createProject('MorrisCode', testDir)
       setSetting(SETTINGS_KEYS.LANGUAGE, 'automatic')
       setSetting(SETTINGS_KEYS.GLOBAL_INSTRUCTIONS, 'Global rule')
 
@@ -227,14 +227,14 @@ describe('instructions', () => {
     })
 
     it('omits the LANGUAGE section when language is not set', async () => {
-      const project = createProject('OpenFox', testDir)
+      const project = createProject('MorrisCode', testDir)
       const result = await getAllInstructions(testDir, project.id)
 
       expect(result.content).not.toContain('## LANGUAGE')
     })
 
     it('keeps file entries even when a discovered instruction file becomes unreadable', async () => {
-      const project = createProject('OpenFox', testDir)
+      const project = createProject('MorrisCode', testDir)
       const path = join(testDir, 'AGENTS.md')
       await writeFile(path, '# Local instructions')
       await rm(path)

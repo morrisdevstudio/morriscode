@@ -16,8 +16,8 @@ describe('SkillLibraryPanel', () => {
     render(
       <SkillLibraryPanel
         selectedDirectory={{
-          configuredPath: '/Users/test/.config/openfox/skills',
-          resolvedPath: '/Users/test/.config/openfox/skills',
+          configuredPath: '/Users/test/.config/morriscode/skills',
+          resolvedPath: '/Users/test/.config/morriscode/skills',
           available: true,
           custom: false,
         }}
@@ -27,7 +27,7 @@ describe('SkillLibraryPanel', () => {
         onInstall={vi.fn()}
       />,
     )
-    expect(screen.getByText('/Users/test/.config/openfox/skills')).toBeTruthy()
+    expect(screen.getByText('/Users/test/.config/morriscode/skills')).toBeTruthy()
     expect(screen.getByText('Drop one skill folder here')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Change folder' }))

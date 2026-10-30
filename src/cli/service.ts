@@ -5,9 +5,9 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { cliT } from './i18n.js'
 
-const RUN_SCRIPT_PATH = '~/.local/state/openfox/bin/run.sh'
-const SERVICE_PATH = '~/.config/systemd/user/openfox.service'
-const SERVICE_NAME = 'openfox'
+const RUN_SCRIPT_PATH = '~/.local/state/morriscode/bin/run.sh'
+const SERVICE_PATH = '~/.config/systemd/user/morriscode.service'
+const SERVICE_NAME = 'morriscode'
 
 function expandPath(path: string): string {
   if (path.startsWith('~/')) {
@@ -103,7 +103,7 @@ export async function detectHeadless(): Promise<boolean> {
 }
 
 async function createWrapperScript(headless: boolean): Promise<void> {
-  const binDir = expandPath('~/.local/state/openfox/bin')
+  const binDir = expandPath('~/.local/state/morriscode/bin')
   await mkdir(binDir, { recursive: true })
 
   const scriptPath = expandPath(RUN_SCRIPT_PATH)
@@ -111,25 +111,25 @@ async function createWrapperScript(headless: boolean): Promise<void> {
 source ~/.profile 2>/dev/null || true
 source ~/.bashrc 2>/dev/null || true
 ${headless ? '' : DISPLAY_POLLING_BLOCK}
-# Find openfox - respect user's PATH, fallback to nvm search for non-interactive cases
-if ! openfox_bin=$(which openfox 2>/dev/null); then
-  openfox_bindir=""
+# Find morriscode - respect user's PATH, fallback to nvm search for non-interactive cases
+if ! morriscode_bin=$(which morriscode 2>/dev/null); then
+  morriscode_bindir=""
   for NVMVER in "$HOME"'/versions/node/'*'/bin/'; do
-    [ -f "$NVMVER"'openfox' ] && openfox_bindir="$NVMVER" && break
-    [ -L "$NVMVER"'openfox' ] && openfox_bindir="$NVMVER" && break
+    [ -f "$NVMVER"'morriscode' ] && morriscode_bindir="$NVMVER" && break
+    [ -L "$NVMVER"'morriscode' ] && morriscode_bindir="$NVMVER" && break
   done
-  if [ -n "$openfox_bindir" ]; then
-    export PATH="$openfox_bindir:$PATH"
-    openfox_bin=$(readlink -f "$openfox_bindir"'openfox')
+  if [ -n "$morriscode_bindir" ]; then
+    export PATH="$morriscode_bindir:$PATH"
+    morriscode_bin=$(readlink -f "$morriscode_bindir"'morriscode')
   fi
 fi
 
-if [ -z "$openfox_bin" ]; then
-  echo "openfox not found in PATH and no nvm install detected" >&2
+if [ -z "$morriscode_bin" ]; then
+  echo "morriscode not found in PATH and no nvm install detected" >&2
   exit 1
 fi
 
-exec "$openfox_bin" "$@"
+exec "$morriscode_bin" "$@"
 `
   await writeFile(scriptPath, scriptContent, { encoding: 'utf-8' })
 
@@ -146,7 +146,7 @@ async function createSystemdService(headless: boolean): Promise<void> {
 
   const servicePath = expandPath(SERVICE_PATH)
   const serviceContent = `[Unit]
-Description=OpenFox Agentic Coding Assistant
+Description=MorrisCode Agentic Coding Assistant
 After=${target}${wants}
 
 [Service]
@@ -155,7 +155,7 @@ ExecStart=${expandPath(RUN_SCRIPT_PATH)}
 Restart=always
 RestartSec=5
 KillMode=control-group
-Environment=OPENFOX_SERVICE=true
+Environment=MORRISCODE_SERVICE=true
 
 [Install]
 WantedBy=${target}
@@ -168,8 +168,8 @@ export async function runServiceCommand(_mode: Mode, subcommand?: string, ...arg
   if (process.platform === 'win32') {
     console.log(
       cliT({
-        en: 'openfox service is not supported on Windows (it relies on systemd). Run `openfox` directly instead.',
-        fr: 'openfox service n’est pas pris en charge sur Windows (il repose sur systemd). Lancez `openfox` directement à la place.',
+        en: 'morriscode service is not supported on Windows (it relies on systemd). Run `morriscode` directly instead.',
+        fr: 'morriscode service n’est pas pris en charge sur Windows (il repose sur systemd). Lancez `morriscode` directement à la place.',
       }),
     )
     process.exitCode = 1
@@ -231,10 +231,10 @@ function printServiceHelp(): void {
   console.log(
     cliT({
       en: `
-OpenFox Service Management
+MorrisCode Service Management
 
 Usage:
-  openfox service <command>
+  morriscode service <command>
 
 Commands:
   install    Install and enable the systemd service
@@ -248,10 +248,10 @@ Commands:
   uninstall  Disable and remove the service files
 `,
       fr: `
-Gestion du service OpenFox
+Gestion du service MorrisCode
 
 Utilisation :
-  openfox service <commande>
+  morriscode service <commande>
 
 Commandes :
   install    Installer et activer le service systemd
@@ -274,15 +274,15 @@ async function serviceInstall(headlessOverride?: boolean): Promise<void> {
   if (headless) {
     console.log(
       cliT({
-        en: 'Installing OpenFox service (headless mode)...\n',
-        fr: 'Installation du service OpenFox (mode sans affichage)...\n',
+        en: 'Installing MorrisCode service (headless mode)...\n',
+        fr: 'Installation du service MorrisCode (mode sans affichage)...\n',
       }),
     )
   } else {
     console.log(
       cliT({
-        en: 'Installing OpenFox service (desktop mode)...\n',
-        fr: 'Installation du service OpenFox (mode bureau)...\n',
+        en: 'Installing MorrisCode service (desktop mode)...\n',
+        fr: 'Installation du service MorrisCode (mode bureau)...\n',
       }),
     )
     console.log(
@@ -326,8 +326,8 @@ async function serviceStart(): Promise<void> {
   if (!installed) {
     console.log(
       cliT({
-        en: 'Service not installed. Run "openfox service install" first.',
-        fr: 'Service non installé. Lancez d’abord « openfox service install ».',
+        en: 'Service not installed. Run "morriscode service install" first.',
+        fr: 'Service non installé. Lancez d’abord « morriscode service install ».',
       }),
     )
     return
@@ -409,7 +409,7 @@ async function serviceLogs(args: string[]): Promise<void> {
 }
 
 async function serviceUninstall(): Promise<void> {
-  console.log(cliT({ en: 'Uninstalling OpenFox service...\n', fr: 'Désinstallation du service OpenFox...\n' }))
+  console.log(cliT({ en: 'Uninstalling MorrisCode service...\n', fr: 'Désinstallation du service MorrisCode...\n' }))
 
   const installed = await pathExists(SERVICE_PATH)
   if (!installed) {

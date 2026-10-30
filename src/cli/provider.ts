@@ -28,18 +28,18 @@ export function printProviderHelp(): void {
       en: `
 Provider Management Commands:
 
-  openfox provider add       Add a new provider
-  openfox provider list      List all configured providers
-  openfox provider use       Switch to a different provider
-  openfox provider remove    Remove a provider
+  morriscode provider add       Add a new provider
+  morriscode provider list      List all configured providers
+  morriscode provider use       Switch to a different provider
+  morriscode provider remove    Remove a provider
 `,
       fr: `
 Commandes de gestion des fournisseurs :
 
-  openfox provider add       Ajouter un nouveau fournisseur
-  openfox provider list      Lister tous les fournisseurs configurés
-  openfox provider use       Changer de fournisseur
-  openfox provider remove    Supprimer un fournisseur
+  morriscode provider add       Ajouter un nouveau fournisseur
+  morriscode provider list      Lister tous les fournisseurs configurés
+  morriscode provider use       Changer de fournisseur
+  morriscode provider remove    Supprimer un fournisseur
 `,
     }),
   )
@@ -373,8 +373,8 @@ export async function runProviderList(mode: Mode): Promise<void> {
   if (config.providers.length === 0) {
     log.warn(
       cliT({
-        en: 'No providers configured. Run `openfox provider add` to add one.',
-        fr: 'Aucun fournisseur configuré. Lancez `openfox provider add` pour en ajouter un.',
+        en: 'No providers configured. Run `morriscode provider add` to add one.',
+        fr: 'Aucun fournisseur configuré. Lancez `morriscode provider add` pour en ajouter un.',
       }),
     )
     return
@@ -413,8 +413,8 @@ export async function runProviderUse(mode: Mode): Promise<void> {
   if (config.providers.length === 0) {
     log.warn(
       cliT({
-        en: 'No providers configured. Run `openfox provider add` to add one.',
-        fr: 'Aucun fournisseur configuré. Lancez `openfox provider add` pour en ajouter un.',
+        en: 'No providers configured. Run `morriscode provider add` to add one.',
+        fr: 'Aucun fournisseur configuré. Lancez `morriscode provider add` pour en ajouter un.',
       }),
     )
     return

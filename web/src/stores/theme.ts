@@ -69,7 +69,7 @@ interface ThemeState {
 
 function getUserPresets(): UserThemePreset[] {
   try {
-    const saved = localStorage.getItem('openfox:userPresets')
+    const saved = localStorage.getItem('morriscode:userPresets')
     if (saved) return JSON.parse(saved)
   } catch {
     // ignore
@@ -79,7 +79,7 @@ function getUserPresets(): UserThemePreset[] {
 
 function getSystemThemePrefs(): { darkPreset: string; lightPreset: string } {
   try {
-    const saved = localStorage.getItem('openfox:systemThemePrefs')
+    const saved = localStorage.getItem('morriscode:systemThemePrefs')
     if (saved) return JSON.parse(saved) as { darkPreset: string; lightPreset: string }
   } catch {
     // ignore
@@ -233,7 +233,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
 
     getSavedTheme: () => {
       try {
-        const saved = localStorage.getItem('openfox:theme')
+        const saved = localStorage.getItem('morriscode:theme')
         if (!saved) return null
         // Handle both plain preset name and JSON format
         if (saved[0] !== '{') return JSON.stringify({ preset: saved })
@@ -251,12 +251,12 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
 
     saveTheme: async (themeJson: string) => {
-      localStorage.setItem('openfox:theme', themeJson)
+      localStorage.setItem('morriscode:theme', themeJson)
       await setSetting(SETTINGS_KEYS.DISPLAY_THEME, themeJson)
     },
 
     clearCustomTheme: () => {
-      localStorage.removeItem('openfox:theme')
+      localStorage.removeItem('morriscode:theme')
       set({ isCustom: false, isCustomizing: false, basePreset: '' })
     },
 
@@ -343,7 +343,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
 
     saveUserPresets: () => {
-      localStorage.setItem('openfox:userPresets', JSON.stringify(get().userPresets))
+      localStorage.setItem('morriscode:userPresets', JSON.stringify(get().userPresets))
       // Fire-and-forget sync to server
       void setSetting(SETTINGS_KEYS.DISPLAY_USER_PRESETS, JSON.stringify(get().userPresets)).catch(() => {})
     },
@@ -351,7 +351,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     setSystemDarkPreset: (presetId: string) => {
       set({ systemDarkPreset: presetId })
       localStorage.setItem(
-        'openfox:systemThemePrefs',
+        'morriscode:systemThemePrefs',
         JSON.stringify({ darkPreset: presetId, lightPreset: get().systemLightPreset }),
       )
       void setSetting(
@@ -366,7 +366,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     setSystemLightPreset: (presetId: string) => {
       set({ systemLightPreset: presetId })
       localStorage.setItem(
-        'openfox:systemThemePrefs',
+        'morriscode:systemThemePrefs',
         JSON.stringify({ darkPreset: get().systemDarkPreset, lightPreset: presetId }),
       )
       void setSetting(

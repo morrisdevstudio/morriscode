@@ -287,7 +287,7 @@ describe('mark-done default command', () => {
 })
 
 async function createProjectCommandFile(projectDir: string, id: string, name: string, prompt: string): Promise<void> {
-  const commandsDir = join(projectDir, '.openfox', 'commands')
+  const commandsDir = join(projectDir, '.morriscode', 'commands')
   await mkdir(commandsDir, { recursive: true })
   await writeFile(
     join(commandsDir, `${id}.command.md`),
@@ -307,7 +307,7 @@ describe('loadProjectCommands', () => {
     expect(commands).toEqual([])
   })
 
-  it('should load valid .command.md files from .openfox/commands/', async () => {
+  it('should load valid .command.md files from .morriscode/commands/', async () => {
     await createProjectCommandFile(tempDir, 'proj-cmd', 'Project Command', 'Do the project thing.')
 
     const commands = await loadProjectCommands(tempDir)

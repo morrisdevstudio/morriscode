@@ -38,7 +38,7 @@ interface TaskEditorProps {
   onSaved: (task: ProjectTask) => void
 }
 
-const DRAFT_KEY = 'openfox:task-draft'
+const DRAFT_KEY = 'morriscode:task-draft'
 
 // Height buffer added on top of the measured content height so the textarea
 // never shows an internal scrollbar from sub-pixel overflow rounding.

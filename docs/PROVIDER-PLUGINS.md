@@ -1,6 +1,6 @@
 # Provider Plugins
 
-OpenFox supports third-party provider plugins that add new authentication methods and API transports. This document explains the plugin system, how to write a plugin, and how it integrates with the runtime.
+MorrisCode supports third-party provider plugins that add new authentication methods and API transports. This document explains the plugin system, how to write a plugin, and how it integrates with the runtime.
 
 ---
 
@@ -30,6 +30,8 @@ A transport adapter implements the wire protocol for a specific LLM API. It:
 
 - Lists available models with their capabilities (context window, reasoning efforts, etc.)
 - Sends completion requests and streams responses
+- Optionally reports the account's metered usage via `getUsage()`, which the UI shows
+  next to the provider selector
 - Receives a `ProviderRequestContext` with the resolved model, credentials, and metadata
 
 ### Preset
@@ -44,9 +46,9 @@ A preset is a UI convenience: it appears as a clickable tile in the provider set
 
 A plugin is an npm package. The runtime discovers plugins in these locations (in order):
 
-1. `{configDirectory}/plugins/` — primary location for user-installed plugins (`~/.config/openfox/plugins/` in production, `~/.config/openfox-dev/plugins/` in development)
+1. `{configDirectory}/plugins/` — primary location for user-installed plugins (`~/.config/morriscode/plugins/` in production, `~/.config/morriscode-dev/plugins/` in development)
 2. `{cwd}/node_modules/` — for local development
-3. The OpenFox installation's own `node_modules/`
+3. The MorrisCode installation's own `node_modules/`
 
 ```
 my-provider-plugin/
@@ -124,6 +126,14 @@ interface ProviderTransportAdapter {
   /** Fetch the catalog of available models. */
   listModels(context: ProviderRequestContext): Promise<ModelConfig[]>
 
+  /**
+   * Optional. Latest metered usage for this account, or `undefined` when the provider
+   * does not meter usage — or when nothing has been observed yet. Returning
+   * `undefined` rather than throwing keeps the caller simple: no data means nothing
+   * to display, and the indicator stays hidden.
+   */
+  getUsage?(context: ProviderRequestContext): Promise<ProviderUsage | undefined>
+
   /** Send a non-streaming completion request. */
   complete(request: LLMCompletionRequest, context: ProviderRequestContext): Promise<LLMCompletionResponse>
 
@@ -145,6 +155,13 @@ interface ProviderRequestContext {
 }
 ```
 
+`ProviderUsage` describes the metered windows a backend reports — the short slot first,
+then the long one — each with `usedPercent` (0-100), an optional `windowMinutes` and an
+optional `resetsAt` (epoch seconds), plus the optional plan label and credits. It is
+defined in `src/shared/types.ts` and re-exported by `morriscode/provider`. The ChatGPT
+provider reads it from the backend's `x-codex-*` response headers and from its
+`codex.rate_limits` stream event, so nothing extra has to be requested.
+
 ### Security considerations
 
 - Plugins run **in-process** with full access to the Node.js runtime. Only install plugins you trust.
@@ -157,7 +174,7 @@ interface ProviderRequestContext {
 ## Lifecycle
 
 ```
-OpenFox starts
+MorrisCode starts
   │
   ├── Scan plugins directory for packages with openfox.plugin field
   ├── Validate apiVersion === 1 (skip with diagnostic if not)
@@ -258,9 +275,9 @@ export function register(registry: ProviderPluginRegistry) {
 1. Build your plugin package
 2. Copy it to the plugins directory:
    ```bash
-   mkdir -p ~/.config/openfox-dev/plugins/my-plugin
-   cp -r dist/* ~/.config/openfox-dev/plugins/my-plugin/
+   mkdir -p ~/.config/morriscode-dev/plugins/my-plugin
+   cp -r dist/* ~/.config/morriscode-dev/plugins/my-plugin/
    ```
-3. Restart OpenFox (dev mode picks up `~/.config/openfox-dev/`)
+3. Restart MorrisCode (dev mode picks up `~/.config/morriscode-dev/`)
 4. Check `GET /api/plugins` for load status
 5. The preset appears in the "Add Provider" wizard under the available inference engines

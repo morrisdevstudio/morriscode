@@ -50,7 +50,7 @@ describe('file tracking integration', () => {
     initEventStore(getDatabase())
 
     // Create test directory
-    testDir = join(tmpdir(), `openfox-file-tracking-test-${Date.now()}`)
+    testDir = join(tmpdir(), `morriscode-file-tracking-test-${Date.now()}`)
     await mkdir(testDir, { recursive: true })
 
     // Create a test project and session

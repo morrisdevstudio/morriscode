@@ -230,7 +230,7 @@ export function StatsModal({ isOpen, onClose, summary, sessionId }: StatsModalPr
 
       // Download
       const link = document.createElement('a')
-      link.download = `openfox-stats-${new Date().toISOString().slice(0, 10)}.png`
+      link.download = `morriscode-stats-${new Date().toISOString().slice(0, 10)}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     } catch (err) {
@@ -345,7 +345,7 @@ export function StatsModal({ isOpen, onClose, summary, sessionId }: StatsModalPr
               <button
                 onClick={() => void loadFull()}
                 disabled={loadingFull}
-                className="px-3 py-1.5 rounded bg-accent-primary/25 text-text-primary hover:bg-accent-primary/40 transition-colors text-xs font-medium disabled:opacity-50"
+                className="px-3 py-1.5 rounded-md border border-border bg-bg-tertiary text-text-primary hover:bg-border transition-colors text-xs font-medium disabled:opacity-50"
               >
                 {loadingFull
                   ? t({ en: 'Loading…', fr: 'Chargement…' })

@@ -5,7 +5,7 @@ import type { Mode } from './main.js'
 import { loadAuthConfig } from './auth.js'
 import { loadGlobalConfig } from './config.js'
 import { getAuthKeyPath } from './paths.js'
-import { buildOpenFoxMcpBootstrap, type OpenFoxMcpBootstrapConfig } from '../server/mcp/server/bootstrap.js'
+import { buildMorrisCodeMcpBootstrap, type MorrisCodeMcpBootstrapConfig } from '../server/mcp/server/bootstrap.js'
 import { cliT } from './i18n.js'
 
 const MODE_DEFAULT_PORTS: Record<Mode, number> = { production: 10369, development: 10469, test: 10369 }
@@ -32,16 +32,18 @@ export function portCandidates(preferred: number, fallback: number): number[] {
 }
 
 /**
- * Return the first port where the OpenFox /api/health endpoint responds, or
+ * Return the first port where the MorrisCode /api/health endpoint responds, or
  * null when no server is found on any candidate.
  */
-export async function findLivePort(host: string, candidates: number[]): Promise<number | null> {
+export async function findLivePort(host: string, candidates: number[], https = false): Promise<number | null> {
   for (const port of candidates) {
     try {
-      const res = await fetch(`http://${host}:${port}/api/health`, { signal: AbortSignal.timeout(400) })
+      const res = await fetch(`${https ? 'https' : 'http'}://${host}:${port}/api/health`, {
+        signal: AbortSignal.timeout(400),
+      })
       if (res.ok) return port
     } catch {
-      // Port is not serving OpenFox — keep probing
+      // Port is not serving MorrisCode — keep probing
     }
   }
   return null
@@ -86,7 +88,7 @@ export function signSessionToken(privateKey: string, passwordValue: string): str
  * Render the bootstrap config as a paste-ready MCP client configuration
  * (mcpServers block, as used by Claude Desktop, Cursor, and friends).
  */
-export function renderMcpClientConfig(bootstrap: OpenFoxMcpBootstrapConfig): string {
+export function renderMcpClientConfig(bootstrap: MorrisCodeMcpBootstrapConfig): string {
   const server: Record<string, unknown> = { url: bootstrap.url }
   if (bootstrap.headers) {
     server['headers'] = bootstrap.headers
@@ -99,16 +101,17 @@ export async function runMcpCommand(mode: Mode, options: { password?: string; po
   const auth = await loadAuthConfig(mode)
 
   const host = config.server?.host ?? '127.0.0.1'
+  const https = config.server?.https === true
   const configuredPort = config.server?.port ?? MODE_DEFAULT_PORTS[mode]
   const requestedPort = options.port ?? configuredPort
 
-  const livePort = await findLivePort(probeHost(host), portCandidates(MODE_DEFAULT_PORTS[mode], requestedPort))
+  const livePort = await findLivePort(probeHost(host), portCandidates(MODE_DEFAULT_PORTS[mode], requestedPort), https)
   const port = livePort ?? requestedPort
   if (!livePort) {
     console.warn(
       cliT({
-        en: `\n⚠ No running OpenFox server detected near port ${requestedPort} — the config below assumes it will start there.`,
-        fr: `\n⚠ Aucun serveur OpenFox en cours détecté près du port ${requestedPort} — la configuration ci-dessous suppose qu’il démarrera là.`,
+        en: `\n⚠ No running MorrisCode server detected near port ${requestedPort} — the config below assumes it will start there.`,
+        fr: `\n⚠ Aucun serveur MorrisCode en cours détecté près du port ${requestedPort} — la configuration ci-dessous suppose qu’il démarrera là.`,
       }),
     )
   }
@@ -122,7 +125,7 @@ export async function runMcpCommand(mode: Mode, options: { password?: string; po
 
     let entered = options.password
     if (entered == null) {
-      const pwd = await password({ message: cliT({ en: 'OpenFox password:', fr: 'Mot de passe OpenFox :' }) })
+      const pwd = await password({ message: cliT({ en: 'MorrisCode password:', fr: 'Mot de passe MorrisCode :' }) })
       if (isCancel(pwd)) {
         cancel()
         process.exit(1)
@@ -137,9 +140,9 @@ export async function runMcpCommand(mode: Mode, options: { password?: string; po
     sessionToken = signSessionToken(privateKey, entered)
   }
 
-  const bootstrap = buildOpenFoxMcpBootstrap({ host, port, authRequired, sessionToken })
+  const bootstrap = buildMorrisCodeMcpBootstrap({ host, port, https, authRequired, sessionToken })
 
-  console.log(cliT({ en: 'OpenFox MCP client config', fr: 'Configuration client MCP OpenFox' }))
+  console.log(cliT({ en: 'MorrisCode MCP client config', fr: 'Configuration client MCP MorrisCode' }))
   console.log(cliT({ en: '=========================', fr: '=========================' }))
   console.log()
   console.log(cliT({ en: `Endpoint: ${bootstrap.url}`, fr: `Point de terminaison : ${bootstrap.url}` }))

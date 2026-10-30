@@ -9,9 +9,9 @@ vi.mock('./icons', () => ({
 
 describe('ModalCrumbTitle', () => {
   it('renders the project name, a chevron, and the action label', () => {
-    const html = renderToStaticMarkup(<ModalCrumbTitle projectName="openfox">Tasks</ModalCrumbTitle>)
+    const html = renderToStaticMarkup(<ModalCrumbTitle projectName="morriscode">Tasks</ModalCrumbTitle>)
 
-    expect(html).toContain('openfox')
+    expect(html).toContain('morriscode')
     expect(html).toContain('[chevron]')
     expect(html).toContain('Tasks')
   })

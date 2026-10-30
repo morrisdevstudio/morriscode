@@ -1,5 +1,7 @@
 import type { Provider, Config, LlmBackend, ModelConfig } from '../shared/types.js'
 import type { ProviderRegistry } from './providers/plugins/registry.js'
+import type { ProviderTransportAdapter, ProviderUsage } from '../provider/index.js'
+import { findBuiltInUsageSource, type BuiltInUsageSource } from './providers/builtin/usage-sources.js'
 import { createTransportLLMClient } from './providers/adapters/transport-client.js'
 import { createLLMClient, clearModelCache, getModelProfile, type LLMClientWithModel } from './llm/index.js'
 import { logger } from './utils/logger.js'
@@ -442,6 +444,8 @@ export interface ProviderManager {
   setProviders(providers: Provider[], defaultModelSelection?: string): void
   getProviderStatus(providerId: string): 'connected' | 'disconnected' | 'unknown'
   getProviderModels(providerId: string): Promise<ModelConfig[]>
+  /** Metered usage of the provider's account, when its transport reports one. */
+  getProviderUsage(providerId: string): Promise<ProviderUsage | undefined>
   setDefaultModelSelection(providerId: string, model: string): Promise<{ success: boolean; error?: string }>
   updateModelContext(
     providerId: string,
@@ -492,6 +496,27 @@ export function parseDefaultModelSelection(selection?: string): {
 
 export interface ProviderManagerOptions {
   adapters?: ProviderRegistry
+}
+
+/**
+ * A transport that meters its own usage wins; otherwise a provider MorrisCode knows
+ * how to read directly (see providers/builtin/usage-sources).
+ */
+function selectUsageReader(
+  transport: ProviderTransportAdapter | undefined,
+  source: BuiltInUsageSource | undefined,
+  provider: Provider,
+): (() => Promise<ProviderUsage | undefined>) | undefined {
+  if (transport?.getUsage) {
+    const getUsage = transport.getUsage.bind(transport)
+    return () =>
+      getUsage({
+        providerId: provider.id,
+        ...(provider.credentialRef && { credentialRef: provider.credentialRef }),
+      })
+  }
+  if (source) return () => source.getUsage(provider)
+  return undefined
 }
 
 export function createProviderManager(config: Config, options: ProviderManagerOptions = {}): ProviderManager {
@@ -878,6 +903,26 @@ export function createProviderManager(config: Config, options: ProviderManagerOp
 
       // Fallback: fetch from backend if no stored models; collapse suffix variants
       return collapseModeFamilies(await fetchProviderModels(provider))
+    },
+
+    async getProviderUsage(providerId: string): Promise<ProviderUsage | undefined> {
+      const provider = providers.find((p) => p.id === providerId)
+      if (!provider) return undefined
+      const transport = options.adapters?.getTransport(resolveTransportAdapter(provider))
+      const readUsage = selectUsageReader(transport, findBuiltInUsageSource(provider), provider)
+      if (!readUsage) return undefined
+
+      try {
+        return await readUsage()
+      } catch (error) {
+        // The indicator hides itself when there is nothing to show; a provider whose
+        // usage endpoint is unhappy must not break the rest of the app.
+        logger.warn('Provider usage unavailable', {
+          providerId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        return undefined
+      }
     },
 
     async setDefaultModelSelection(providerId: string, model: string) {
