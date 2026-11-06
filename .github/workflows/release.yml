@@ -73,11 +73,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          retention-days: 1
           path: ${{ env.ASSET }}
           if-no-files-found: error
 
   publish:
     needs: build
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     environment: release
     steps:
@@ -141,3 +145,22 @@ jobs:
             --draft
           gh release upload "$GITHUB_REF_NAME" release-assets/* --repo "$RELEASES_REPO" --clobber
           gh release edit "$GITHUB_REF_NAME" --draft=false --repo "$RELEASES_REPO"
+
+      - name: Remove intermediates after successful publication
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+              per_page: 100
+            });
+            for (const artifact of artifacts) {
+              if (!/^release-(win32|linux)-x64$/.test(artifact.name)) continue;
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id
+              });
+            }
